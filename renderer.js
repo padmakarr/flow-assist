@@ -130,7 +130,7 @@
     if (maxLen != null && maxLen > 0 && s.length > maxLen) {
       s = s.slice(0, maxLen) + '…';
     }
-    return formatMultilineWithLinks(s);
+    return formatRichDescription(s);
   }
 
   /** One pill per category (Included-style), for summary / export progress rows. */
@@ -547,9 +547,14 @@
     return 0;
   }
 
+  var SIDEBAR_MODE_STORAGE_KEY = 'flowassist_sidebar_mode';
+
   var state = {
     data: { settings: DEFAULT_SETTINGS, tasks: [] },
     view: 'list',
+    sidebarMode: 'full',
+    /** Docked width before hide; used when showing sidebar again from the top-bar toggle. */
+    sidebarRestoreMode: 'full',
     calendarFilter: 'assigned',
     calendarView: 'month',
     calendarFocusDate: new Date().toISOString().slice(0, 10),
@@ -1008,6 +1013,13 @@
     return save().then(function () { render(); });
   }
 
+  function deleteProgressUpdate(taskId, updateId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.progress_updates) return Promise.resolve();
+    task.progress_updates = task.progress_updates.filter(function (p) { return p.id !== updateId; });
+    return save().then(function () { render(); });
+  }
+
   function addSubtask(taskId, payload) {
     var task = state.data.tasks.find(function (t) { return t.id === taskId; });
     if (!task) return Promise.resolve();
@@ -1089,6 +1101,15 @@
       u.categories = Array.isArray(payload.categories) ? payload.categories.slice() : [];
     }
     s.progress_updates = sortProgressUpdatesOldestFirst(s.progress_updates);
+    return save().then(function () { render(); });
+  }
+
+  function deleteSubtaskProgressUpdate(taskId, subtaskId, updateId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.subtasks) return Promise.resolve();
+    var s = task.subtasks.find(function (x) { return x.id === subtaskId; });
+    if (!s || !s.progress_updates) return Promise.resolve();
+    s.progress_updates = s.progress_updates.filter(function (p) { return p.id !== updateId; });
     return save().then(function () { render(); });
   }
 
@@ -1187,6 +1208,28 @@
   var exportSummaryBtn = $('export-summary-btn');
   var summaryOutput = $('summary-output');
 
+  var EXPORT_OPTIONS_STORAGE_KEY = 'flowAssist.exportOptions';
+  function getExportOptions() {
+    try {
+      var raw = localStorage.getItem(EXPORT_OPTIONS_STORAGE_KEY);
+      var o = raw ? JSON.parse(raw) : {};
+      return {
+        showProgressEntryHours: o.showProgressEntryHours === true
+      };
+    } catch (err) {
+      return { showProgressEntryHours: false };
+    }
+  }
+  function setExportOptions(partial) {
+    var cur = getExportOptions();
+    if (partial && partial.showProgressEntryHours != null) {
+      cur.showProgressEntryHours = !!partial.showProgressEntryHours;
+    }
+    try {
+      localStorage.setItem(EXPORT_OPTIONS_STORAGE_KEY, JSON.stringify(cur));
+    } catch (e) {}
+  }
+
   function escapeHtml(s) {
     if (s == null) return '';
     var div = document.createElement('div');
@@ -1265,6 +1308,238 @@
     return linkifyPlainText(plain || '').replace(/\r\n|\n|\r/g, '<br>');
   }
 
+  /** Toolbar above rich text areas; inserts markdown-like markers at the cursor. */
+  function renderRichFormatToolbarHtml() {
+    return '<div class="rich-format-toolbar" role="toolbar" aria-label="Text formatting">' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="bold" title="Bold (**text**)"><strong>B</strong></button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="italic" title="Italic (*text*)"><em>I</em></button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="underline" title="Underline (++text++)"><span class="rich-fmt-u">U</span></button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="bullet" title="Bullet (line starts with &quot;- &quot;)">•</button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="numlist" title="Numbered list (line starts with &quot;1. &quot;)">1.</button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="code" title="Inline code (`code`)">&lt;/&gt;</button>' +
+      '<button type="button" class="rich-fmt-btn" data-rich-cmd="codeblock" title="Fenced code (```)">{ }</button>' +
+      '</div>';
+  }
+
+  function applyRichToolbarCommand(textarea, cmd) {
+    if (!textarea || !cmd) return;
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var val = textarea.value;
+    var sel = val.slice(start, end);
+    function wrap(before, after, emptyMid) {
+      var mid = sel || emptyMid || 'text';
+      var ins = before + mid + after;
+      textarea.value = val.slice(0, start) + ins + val.slice(end);
+      var ns = start + before.length;
+      var ne = ns + mid.length;
+      textarea.focus();
+      textarea.setSelectionRange(ns, ne);
+      autoResizeTextarea(textarea);
+    }
+    if (cmd === 'bold') return wrap('**', '**', 'bold');
+    if (cmd === 'italic') return wrap('*', '*', 'italic');
+    if (cmd === 'underline') return wrap('++', '++', 'text');
+    if (cmd === 'code') return wrap('`', '`', 'code');
+    if (cmd === 'codeblock') {
+      var body = sel || 'code';
+      var block = '```\n' + body + '\n```';
+      textarea.value = val.slice(0, start) + block + val.slice(end);
+      textarea.focus();
+      var n0 = start + 4;
+      var n1 = n0 + body.length;
+      textarea.setSelectionRange(n0, n1);
+      autoResizeTextarea(textarea);
+      return;
+    }
+    if (cmd === 'bullet') {
+      var lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      var beforeCursor = val.slice(lineStart, start);
+      if (/^\s*$/.test(beforeCursor)) {
+        textarea.value = val.slice(0, lineStart) + '- ' + val.slice(lineStart);
+        textarea.setSelectionRange(start + 2, end + 2);
+      } else {
+        textarea.value = val.slice(0, start) + '\n- ' + val.slice(end);
+        textarea.setSelectionRange(start + 3, start + 3);
+      }
+      textarea.focus();
+      autoResizeTextarea(textarea);
+      return;
+    }
+    if (cmd === 'numlist') {
+      var numPrefix = '1. ';
+      var ls = val.lastIndexOf('\n', start - 1) + 1;
+      var beforeC = val.slice(ls, start);
+      var delta = numPrefix.length;
+      if (/^\s*$/.test(beforeC)) {
+        textarea.value = val.slice(0, ls) + numPrefix + val.slice(ls);
+        textarea.setSelectionRange(start + delta, end + delta);
+      } else {
+        textarea.value = val.slice(0, start) + '\n' + numPrefix + val.slice(end);
+        textarea.setSelectionRange(start + 1 + delta, start + 1 + delta);
+      }
+      textarea.focus();
+      autoResizeTextarea(textarea);
+    }
+  }
+
+  function bindRichFormatToolbars(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll('.rich-format-toolbar').forEach(function (toolbar) {
+      if (toolbar.getAttribute('data-rich-bound') === '1') return;
+      toolbar.setAttribute('data-rich-bound', '1');
+      var wrap = toolbar.closest('.rich-textarea-wrap');
+      var ta = wrap && wrap.querySelector('textarea');
+      if (!ta) return;
+      toolbar.querySelectorAll('[data-rich-cmd]').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          applyRichToolbarCommand(ta, btn.getAttribute('data-rich-cmd'));
+        });
+      });
+    });
+  }
+
+  function linkifyTextNodesInHtml(html) {
+    if (html == null || html === '') return '';
+    try {
+      var tpl = document.createElement('template');
+      tpl.innerHTML = html;
+      var walk = document.createTreeWalker(tpl.content, NodeFilter.SHOW_TEXT, null, false);
+      var nodes = [];
+      while (walk.nextNode()) nodes.push(walk.currentNode);
+      nodes.forEach(function (tn) {
+        var el = tn.parentElement;
+        var skip = false;
+        while (el) {
+          var name = el.nodeName;
+          if (name === 'A' || name === 'CODE' || name === 'PRE') {
+            skip = true;
+            break;
+          }
+          el = el.parentElement;
+        }
+        if (skip) return;
+        var t = tn.textContent;
+        if (!t) return;
+        URL_IN_TEXT_RE.lastIndex = 0;
+        if (!URL_IN_TEXT_RE.test(t)) return;
+        URL_IN_TEXT_RE.lastIndex = 0;
+        var frag = document.createRange().createContextualFragment(linkifyPlainText(t));
+        tn.parentNode.replaceChild(frag, tn);
+      });
+      return tpl.innerHTML;
+    } catch (err) {
+      return html;
+    }
+  }
+
+  function applyRichInlineFormats(escapedLine) {
+    var x = escapedLine;
+    x = x.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    x = x.replace(/\+\+([^+]+)\+\+/g, '<u>$1</u>');
+    x = x.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, function (_, a, b, c) {
+      return a + '<em>' + b + '</em>' + c;
+    });
+    return x;
+  }
+
+  function formatRichPlainBlock(text) {
+    if (text == null || text === '') return '';
+    var lines = String(text).split(/\r\n|\n|\r/);
+    var chunks = [];
+    var buf = [];
+    function flushBuf() {
+      if (!buf.length) return;
+      var joined = buf.map(function (ln) {
+        var e = escapeHtml(ln);
+        e = applyRichInlineFormats(e);
+        return linkifyTextNodesInHtml(e);
+      }).join('<br>');
+      chunks.push(joined);
+      buf = [];
+    }
+    var i = 0;
+    while (i < lines.length) {
+      if (/^\s*[-*]\s+/.test(lines[i])) {
+        flushBuf();
+        var itemsU = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+          var itemTextU = lines[i].replace(/^\s*[-*]\s+/, '');
+          var eU = escapeHtml(itemTextU);
+          eU = applyRichInlineFormats(eU);
+          eU = linkifyTextNodesInHtml(eU);
+          itemsU.push('<li class="rich-li">' + eU + '</li>');
+          i++;
+        }
+        chunks.push('<ul class="rich-ul">' + itemsU.join('') + '</ul>');
+      } else if (/^\s*\d+[.)]\s+/.test(lines[i])) {
+        flushBuf();
+        var itemsO = [];
+        while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+          var itemTextO = lines[i].replace(/^\s*\d+[.)]\s+/, '');
+          var eO = escapeHtml(itemTextO);
+          eO = applyRichInlineFormats(eO);
+          eO = linkifyTextNodesInHtml(eO);
+          itemsO.push('<li class="rich-li">' + eO + '</li>');
+          i++;
+        }
+        chunks.push('<ol class="rich-ol">' + itemsO.join('') + '</ol>');
+      } else {
+        buf.push(lines[i]);
+        i++;
+      }
+    }
+    flushBuf();
+    return chunks.join('');
+  }
+
+  function segmentRichFencedBlocks(s) {
+    var out = [];
+    var re = /```([a-zA-Z0-9]*)\r?\n([\s\S]*?)```/g;
+    var last = 0;
+    var m;
+    while ((m = re.exec(s)) !== null) {
+      if (m.index > last) out.push({ t: 'text', v: s.slice(last, m.index) });
+      out.push({ t: 'fence', v: m[2] });
+      last = m.index + m[0].length;
+    }
+    if (last < s.length) out.push({ t: 'text', v: s.slice(last) });
+    if (!out.length) out.push({ t: 'text', v: s });
+    return out;
+  }
+
+  function splitTextInlineCode(text) {
+    var parts = [];
+    var re = /`([^`\n]+)`/g;
+    var last = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parts.push({ t: 'text', v: text.slice(last, m.index) });
+      parts.push({ t: 'inline', v: m[1] });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push({ t: 'text', v: text.slice(last) });
+    if (!parts.length) parts.push({ t: 'text', v: text });
+    return parts;
+  }
+
+  /** Rich text for descriptions & notes: **bold** *italic* ++underline++ `code` ``` fences ``` bullets (- or *), numbered lines (1. item or 1) item). URLs auto-link outside code. */
+  function formatRichDescription(plain) {
+    if (plain == null || plain === '') return '';
+    var segs = segmentRichFencedBlocks(String(plain));
+    return segs.map(function (seg) {
+      if (seg.t === 'fence') {
+        return '<pre class="rich-code-block"><code>' + escapeHtml(seg.v) + '</code></pre>';
+      }
+      return splitTextInlineCode(seg.v).map(function (p) {
+        if (p.t === 'inline') return '<code class="rich-code">' + escapeHtml(p.v) + '</code>';
+        return formatRichPlainBlock(p.v);
+      }).join('');
+    }).join('');
+  }
+
   function decodeAttr(s) {
     if (s == null || s === '') return '';
     return String(s)
@@ -1297,7 +1572,7 @@
       var addressedInfo = isAddressed
         ? '<div class="concern-addressed-info">' +
             '<span class="concern-addressed-label">Addressed: ' + escapeHtml(c.addressed_date || '') + '</span>' +
-            (c.addressed_comment ? '<div class="concern-addressed-comment">' + formatMultilineWithLinks(c.addressed_comment) + '</div>' : '') +
+            (c.addressed_comment ? '<div class="concern-addressed-comment">' + formatRichDescription(c.addressed_comment) + '</div>' : '') +
           '</div>'
         : '';
       return '<li class="concern-item' + (isAddressed ? ' concern-item-addressed' : '') + '" data-concern-id="' + escapeHtml(c.id) + '">' +
@@ -1307,12 +1582,13 @@
             '<span class="concern-logged-date">' + escapeHtml(c.logged_date || '') + '</span>' +
             (!isAddressed ? '<button type="button" class="btn-edit-cyan btn-concern-update-toggle" title="Update concern">✎</button>' : '') +
           '</div>' +
-          '<div class="concern-description">' + formatMultilineWithLinks(c.description || '') + '</div>' +
+          '<div class="concern-description">' + formatRichDescription(c.description || '') + '</div>' +
           addressedInfo +
         '</div>' +
         (!isAddressed
           ? '<div class="concern-update-form hidden">' +
-              '<textarea class="concern-update-comment auto-resize" rows="2" placeholder="Comment on how the concern was addressed…"></textarea>' +
+              '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+              '<textarea class="concern-update-comment auto-resize rich-text-target" rows="2" placeholder="Comment on how the concern was addressed…"></textarea></div>' +
               '<input type="date" class="concern-addressed-date-in" value="' + today + '">' +
               '<button type="button" class="btn-small concern-submit-update-btn">Mark as Addressed</button>' +
             '</div>'
@@ -1328,7 +1604,8 @@
       '<h4 class="task-update-title">Concerns' + countLabel + '</h4>' +
       (list ? '<ul class="concern-list">' + list + '</ul>' : '') +
       '<div class="concern-add-form">' +
-        '<textarea class="concern-desc-in auto-resize" rows="2" placeholder="Describe the concern…"></textarea>' +
+        '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+        '<textarea class="concern-desc-in auto-resize rich-text-target" rows="2" placeholder="Describe the concern…"></textarea></div>' +
         '<input type="date" class="concern-date-in" value="' + today + '">' +
         '<button type="button" class="btn-small log-concern-btn">Log Concern</button>' +
       '</div>' +
@@ -1376,7 +1653,7 @@
 
     var subBody = '';
     if (isSubExpanded) {
-      var subDesc = formatMultilineWithLinks(s.description || '');
+      var subDesc = formatRichDescription(s.description || '');
       subBody = '<div class="subtask-body">' +
         '<div class="subtask-summary-export-flags">' +
           '<label class="flag-check"><input type="checkbox" class="subtask-exclude-summary"' + (isTruthyFlag(s.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
@@ -1390,6 +1667,7 @@
         '<div class="subtask-details-block task-toggleable-block task-block-collapsed">' +
           '<h4 class="task-details-title">Sub-task details</h4>' +
           '<div class="task-details-grid">' +
+            '<label class="task-detail-title-field">Title <input type="text" class="subtask-detail-title" value="' + escapeHtml(s.title || '') + '" placeholder="Sub-task title" autocomplete="off"></label>' +
             '<label>Priority <input type="number" class="subtask-detail-priority" min="1" max="10" value="' + (s.priority != null ? s.priority : 1) + '" placeholder="1–10"></label>' +
             '<label>Difficulty ' + renderDifficultySelectHtml(s.difficulty, 'subtask-detail-difficulty') + '</label>' +
             '<label>Assigned <input type="date" class="subtask-detail-assigned" value="' + escapeHtml(s.assigned_date || '') + '" placeholder="YYYY-MM-DD"></label>' +
@@ -1405,11 +1683,12 @@
           '</div>' +
           '<button type="button" class="btn-small save-subtask-details-btn">Save details</button>' +
         '</div>' +
-        '<div class="subtask-description-block">' +
+          '<div class="subtask-description-block">' +
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
             '<div class="task-description-view">' + (subDesc || '<em class="no-desc">No description</em>') + '</div>' +
-            '<textarea class="task-description-edit hidden subtask-desc-edit auto-resize" rows="2" placeholder="Description…">' + escapeHtml(s.description || '') + '</textarea>' +
+            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+            '<textarea class="task-description-edit hidden subtask-desc-edit auto-resize rich-text-target" rows="2" placeholder="Description…">' + escapeHtml(s.description || '') + '</textarea></div>' +
             '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description">✎</button>' +
           '</div>' +
         '</div>' +
@@ -1427,20 +1706,25 @@
                     '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoined ? ' · ' + escapeHtml(catJoined) : '') + '</span>' +
                     '<button type="button" class="btn-edit-cyan btn-edit-subtask-progress" title="Edit">✎</button>' +
                   '</div>' +
-                  '<div class="progress-text">' + (formatMultilineWithLinks(p.text || '') || '') + '</div>' +
+                  '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
                 '</div>' +
                 '<div class="progress-item-edit hidden">' +
-                  '<textarea class="progress-edit-text auto-resize" rows="2" placeholder="Note"></textarea>' +
+                  '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+                  '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
                   '<input type="date" class="progress-edit-date">' +
                   '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
                   renderProgressCategoryRowHtml(pCats, 'progress-edit-cat-' + p.id) +
+                  '<div class="progress-edit-actions">' +
                   '<button type="button" class="btn-small progress-save-btn subtask-progress-save">Save</button>' +
+                  '<button type="button" class="btn-small progress-delete-btn">Delete</button>' +
+                  '</div>' +
                 '</div>' +
               '</li>';
             }).join('') + '</ul>' : '') +
           '</div>' +
           '<div class="progress-add">' +
-            '<textarea class="progress-text-in subtask-progress-text auto-resize" rows="2" placeholder="Progress note…"></textarea>' +
+            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+            '<textarea class="progress-text-in subtask-progress-text auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
             '<input type="date" class="progress-date-in subtask-progress-date" value="' + today + '">' +
             '<input type="number" class="progress-effort-in subtask-progress-effort" placeholder="Hrs" min="0" step="0.5">' +
             renderProgressCategoryRowHtml([], 'subtask-progress-add-cat-' + taskId + '-' + s.id) +
@@ -1514,7 +1798,7 @@
 
     var bodyHtml = '';
     if (isExpanded) {
-      var desc = formatMultilineWithLinks(task.description || '');
+      var desc = formatRichDescription(task.description || '');
       bodyHtml = '<div class="task-body">' +
         '<div class="task-body-actions">' +
           '<div class="status-buttons" data-status-target="task">' +
@@ -1539,6 +1823,7 @@
         '<div class="task-details-block task-toggleable-block task-block-collapsed">' +
           '<h4 class="task-details-title">Task details</h4>' +
           '<div class="task-details-grid">' +
+            '<label class="task-detail-title-field">Title <input type="text" class="task-detail-title" value="' + escapeHtml(task.title || '') + '" placeholder="Task title" autocomplete="off"></label>' +
             '<label>Priority <input type="number" class="task-detail-priority" min="1" max="10" value="' + (task.priority != null ? task.priority : '') + '" placeholder="1–10"></label>' +
             '<label>Difficulty ' + renderDifficultySelectHtml(task.difficulty, 'task-detail-difficulty') + '</label>' +
             '<label>Tags <input type="text" class="task-detail-tags" value="' + escapeHtml((task.tags || []).map(function (t) { return (t || '').replace(/^#/, ''); }).join(', ')) + '" placeholder="e.g. tag1, tag2"></label>' +
@@ -1616,7 +1901,8 @@
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
             '<div class="task-description-view">' + (desc || '<em class="no-desc">No description</em>') + '</div>' +
-            '<textarea class="task-description-edit hidden auto-resize" rows="3" placeholder="Description…">' + escapeHtml(task.description || '') + '</textarea>' +
+            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+            '<textarea class="task-description-edit hidden auto-resize rich-text-target" rows="3" placeholder="Description…">' + escapeHtml(task.description || '') + '</textarea></div>' +
             '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description">✎</button>' +
           '</div>' +
         '</div>' +
@@ -1634,20 +1920,25 @@
                     '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoinedM ? ' · ' + escapeHtml(catJoinedM) : '') + '</span>' +
                     '<button type="button" class="btn-edit-cyan btn-edit-progress" title="Edit">✎</button>' +
                   '</div>' +
-                  '<div class="progress-text">' + (formatMultilineWithLinks(p.text || '') || '') + '</div>' +
+                  '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
                 '</div>' +
                 '<div class="progress-item-edit hidden">' +
-                  '<textarea class="progress-edit-text auto-resize" rows="2" placeholder="Note"></textarea>' +
+                  '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+                  '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
                   '<input type="date" class="progress-edit-date">' +
                   '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
                   renderProgressCategoryRowHtml(pCatsM, 'progress-edit-cat-' + p.id) +
+                  '<div class="progress-edit-actions">' +
                   '<button type="button" class="btn-small progress-save-btn">Save</button>' +
+                  '<button type="button" class="btn-small progress-delete-btn">Delete</button>' +
+                  '</div>' +
                 '</div>' +
               '</li>';
             }).join('') + '</ul>' : '') +
           '</div>' +
           '<div class="progress-add">' +
-            '<textarea class="progress-text-in auto-resize" rows="2" placeholder="Progress note…"></textarea>' +
+            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+            '<textarea class="progress-text-in auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
             '<input type="date" class="progress-date-in" value="' + today + '">' +
             '<input type="number" class="progress-effort-in" placeholder="Hrs" min="0" step="0.5">' +
             renderProgressCategoryRowHtml([], 'progress-add-cat-' + task.id) +
@@ -1682,7 +1973,9 @@
             '<h4 class="task-details-title">New sub-task</h4>' +
             '<div class="new-subtask-form">' +
               '<label>Title <input type="text" class="new-subtask-title-in" placeholder="Sub-task title"></label>' +
-              '<label>Description <textarea class="new-subtask-desc-in auto-resize" rows="3" placeholder="Description…"></textarea></label>' +
+              '<label class="new-subtask-desc-label">Description</label>' +
+              '<div class="rich-textarea-wrap new-subtask-desc-wrap">' + renderRichFormatToolbarHtml() +
+              '<textarea class="new-subtask-desc-in auto-resize rich-text-target" rows="3" placeholder="Description…"></textarea></div>' +
               '<div class="task-details-grid">' +
                 '<label>Priority <input type="number" class="new-subtask-priority-in" min="1" max="10" value="1" placeholder="1–10"></label>' +
                 '<label>Difficulty ' + renderDifficultySelectHtml(DEFAULT_TASK_DIFFICULTY, 'new-subtask-difficulty') + '</label>' +
@@ -1841,7 +2134,7 @@
           updateTask(taskId, { description: descEdit.value });
           descEdit.classList.add('hidden');
           descView.classList.remove('hidden');
-          descView.innerHTML = descEdit.value ? formatMultilineWithLinks(descEdit.value) : '<em class="no-desc">No description</em>';
+          descView.innerHTML = descEdit.value ? formatRichDescription(descEdit.value) : '<em class="no-desc">No description</em>';
           toggleDesc.textContent = '✎';
         }
       });
@@ -1850,6 +2143,12 @@
     card.querySelectorAll('.save-task-details-btn').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
+        var titleEl = card.querySelector('.task-detail-title');
+        var newTitle = titleEl ? titleEl.value.trim() : '';
+        if (!newTitle) {
+          alert('Title cannot be empty.');
+          return;
+        }
         var priorityEl = card.querySelector('.task-detail-priority');
         var tagsEl = card.querySelector('.task-detail-tags');
         var assignedEl = card.querySelector('.task-detail-assigned');
@@ -1867,7 +2166,7 @@
         var projEl = card.querySelector('.task-details-block .task-project-select');
         var project = projEl ? projEl.value.trim() : '';
         var diffEl = card.querySelector('.task-details-block .task-difficulty-select');
-        var updates = {};
+        var updates = { title: newTitle };
         if (priority != null) updates.priority = priority;
         if (diffEl) updates.difficulty = diffEl.value;
         if (tags != null) updates.tags = tags;
@@ -1981,6 +2280,16 @@
       });
     });
 
+    card.querySelectorAll('ul.progress-list:not(.subtask-progress-list) .progress-delete-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!confirm('Delete this progress entry?')) return;
+        var li = btn.closest('.progress-item');
+        var updateId = li && li.dataset.updateId;
+        if (updateId) deleteProgressUpdate(taskId, updateId);
+      });
+    });
+
     card.querySelectorAll('.subtask-card').forEach(function (subCard) {
       var subTaskId = subCard.dataset.taskId;
       var subId = subCard.dataset.subtaskId;
@@ -2039,7 +2348,7 @@
             updateSubtask(subTaskId, subId, { description: subDescEdit.value });
             subDescEdit.classList.add('hidden');
             subDescView.classList.remove('hidden');
-            subDescView.innerHTML = subDescEdit.value ? formatMultilineWithLinks(subDescEdit.value) : '<em class="no-desc">No description</em>';
+            subDescView.innerHTML = subDescEdit.value ? formatRichDescription(subDescEdit.value) : '<em class="no-desc">No description</em>';
             toggleSubDesc.textContent = '✎';
           }
         });
@@ -2058,6 +2367,12 @@
       subCard.querySelectorAll('.save-subtask-details-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
+          var subTitleEl = subCard.querySelector('.subtask-detail-title');
+          var newSubTitle = subTitleEl ? subTitleEl.value.trim() : '';
+          if (!newSubTitle) {
+            alert('Title cannot be empty.');
+            return;
+          }
           var priorityEl = subCard.querySelector('.subtask-detail-priority');
           var assignedEl = subCard.querySelector('.subtask-detail-assigned');
           var effortEl = subCard.querySelector('.subtask-detail-effort');
@@ -2069,7 +2384,7 @@
           var projEl = subCard.querySelector('.subtask-details-block .task-project-select');
           var project = projEl ? projEl.value.trim() : '';
           var diffEl = subCard.querySelector('.subtask-details-block .task-difficulty-select');
-          var updates = {};
+          var updates = { title: newSubTitle };
           if (priority != null) updates.priority = priority;
           if (diffEl) updates.difficulty = diffEl.value;
           if (assigned_date != null) updates.assigned_date = assigned_date;
@@ -2146,6 +2461,16 @@
           });
           edit.classList.add('hidden');
           view.classList.remove('hidden');
+        });
+      });
+
+      subCard.querySelectorAll('.subtask-progress-list .progress-delete-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!confirm('Delete this progress entry?')) return;
+          var li = btn.closest('.progress-item');
+          var updateId = li && li.dataset.updateId;
+          if (updateId) deleteSubtaskProgressUpdate(subTaskId, subId, updateId);
         });
       });
 
@@ -2326,6 +2651,8 @@
     card.querySelectorAll('.category-dropdown-wrap').forEach(function (w) {
       bindCategoryDropdownInWrap(w);
     });
+
+    bindRichFormatToolbars(card);
   }
 
   function isTaskCompleted(task) {
@@ -2577,6 +2904,7 @@
   function buildSummaryExportHtmlParts(meta, opts) {
     opts = opts || {};
     var brief = !!opts.brief;
+    var showProgressEntryHours = !!opts.showProgressEntryHours;
     var from = meta.from;
     var to = meta.to;
     var activeTasks = meta.activeTasks || [];
@@ -2674,26 +3002,36 @@
       if (!updates || !updates.length) return '<span class="muted">No progress made.</span>';
       var ordered = sortProgressUpdatesOldestFirst(updates);
       var blocks = ordered.map(function (p, i) {
-        var num = '<span class="export-progress-num">' + escapeHtml(String(i + 1) + '.') + '</span>';
-        var pills = summaryProgressCategoryPillsHtml(progressUpdateCategoriesArray(p), 'export-progress-category-pill');
-        var effort = summaryProgressEffortHtml(p, 'export-progress-effort');
-        var line1 = '<div class="export-progress-line1">' + num + pills + effort + '</div>';
+        var numCell = '<span class="export-progress-num-cell">' + escapeHtml(String(i + 1) + '.') + '</span>';
+        var catsArr = progressUpdateCategoriesArray(p);
+        var hasCats = catsArr.some(function (c) { return String(c || '').trim(); });
+        var pills = summaryProgressCategoryPillsHtml(catsArr, 'export-progress-category-pill');
         var body = formatProgressSummaryTextHtml((p.text || '').trim(), 5000);
-        var line2 = body ? '<div class="export-progress-desc">' + body + '</div>' : '';
-        return '<div class="export-progress-item">' + line1 + line2 + '</div>';
+        var effort = showProgressEntryHours ? summaryProgressEffortHtml(p, 'export-progress-effort') : '';
+        var headParts = [];
+        if (hasCats && pills) headParts.push(pills);
+        if (effort) headParts.push(effort);
+        var headHtml = headParts.length
+          ? '<div class="export-progress-head">' + headParts.join('') + '</div>'
+          : '';
+        var textHtml = body
+          ? '<div class="export-progress-text">' + body + '</div>'
+          : '<div class="export-progress-text"><span class="muted">No note</span></div>';
+        return '<div class="export-progress-item">' + numCell +
+          '<div class="export-progress-content">' + headHtml + textHtml + '</div></div>';
       });
       return blocks.join('');
     }
     function taskDetailsHtml(desc) {
       if (!desc || !String(desc).trim()) return '—';
-      return linkifyPlainText(String(desc).trim()).replace(/\r\n|\n|\r/g, '<br>');
+      return formatRichDescription(String(desc).trim());
     }
     function exportProgressConcernsHtml(concerns) {
       var out = [];
       (concerns || []).forEach(function (c) {
         var st = c.status || 'Open';
         var cls = st === 'Addressed' ? 'concern-addressed' : 'concern-open';
-        out.push('<div class="' + cls + '">' + linkifyPlainText(c.description || '') + (c.addressed_comment ? ' (' + linkifyPlainText(c.addressed_comment) + ')' : '') + '</div>');
+        out.push('<div class="' + cls + '">' + formatRichDescription(c.description || '') + (c.addressed_comment ? ' (' + formatRichDescription(c.addressed_comment) + ')' : '') + '</div>');
       });
       return out.length ? out.join('') : '<span class="muted">None</span>';
     }
@@ -3269,13 +3607,14 @@
       '.export-p-label{font-weight:700;margin-top:2px;color:#0f172a;font-size:11px}' +
       '.export-p-label-gap{margin-top:12px}' +
       '.export-p-body,.export-c-body{margin:6px 0 0}' +
-      '.export-progress-item{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0 0 14px}' +
+      '.export-progress-item{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:8px;align-items:start;margin:0 0 14px}' +
       '.export-progress-item:last-child{margin-bottom:0}' +
-      '.export-progress-line1{display:flex;flex-wrap:wrap;align-items:center;gap:8px}' +
-      '.export-progress-num{font-weight:700;color:#64748b;flex-shrink:0}' +
+      '.export-progress-num-cell{grid-column:1;grid-row:1;font-weight:700;color:#64748b;text-align:left;line-height:1.55;white-space:nowrap}' +
+      '.export-progress-content{grid-column:2;grid-row:1;min-width:0;display:flex;flex-direction:column;gap:5px}' +
+      '.export-progress-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;line-height:1.55}' +
+      '.export-progress-text{font-size:11.5px;line-height:1.55;color:#334155;word-wrap:break-word;overflow-wrap:break-word}' +
       '.export-progress-effort{font-size:11px;font-weight:600;color:#64748b;flex-shrink:0}' +
       '.export-progress-category-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:9px;font-weight:700;border:1px solid #a5b4fc;background:linear-gradient(180deg,#eef2ff 0%,#e0e7ff 100%);color:#4338ca;vertical-align:middle}' +
-      '.export-progress-desc{padding-left:14px;margin-left:4px;border-left:2px solid #e2e8f0;font-size:11.5px;line-height:1.55;color:#334155;word-wrap:break-word;overflow-wrap:break-word}' +
       'tr.export-row-highlight td{background-color:#ecfdf5!important}' +
       'tr.export-row-highlight.export-row-main td,tr.export-row-highlight.export-row-sub td{background-color:#ecfdf5!important}' +
       'tr.export-row-main td{background:#fafbfc}' +
@@ -3294,6 +3633,11 @@
       '.concern-addressed{background:linear-gradient(90deg,#ecfdf5 0%,#fff 100%);border-left:4px solid #34d399;border-radius:0 8px 8px 0;padding:8px 10px;margin:6px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}' +
       'a.auto-link{color:#2563eb;text-decoration:underline;text-underline-offset:2px;word-break:break-all}' +
       'a.auto-link:hover{color:#1d4ed8}' +
+      '.rich-ul{margin:.35em 0 .5em 1.25em;padding:0;list-style:disc}' +
+      '.rich-ol{margin:.35em 0 .5em 1.25em;padding:0;list-style:decimal}' +
+      '.rich-li{margin:.15em 0}' +
+      '.rich-code{font-family:ui-monospace,Consolas,monospace;font-size:.92em;background:#f1f5f9;padding:.1em .35em;border-radius:4px}' +
+      '.rich-code-block{display:block;margin:.5em 0;padding:10px 12px;background:#0f172a;color:#e2e8f0;border-radius:8px;font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word;overflow-x:auto}' +
       '.export-eta-slip{color:#b91c1c;font-weight:700}' +
       '.export-eta-pullin{color:#047857;font-weight:700}' +
       '.export-eta-neutral{color:#64748b}' +
@@ -3387,14 +3731,16 @@
   }
 
   function buildSummaryExportHtml(meta) {
-    return buildSummaryExportHtmlParts(meta).document;
+    return buildSummaryExportHtmlParts(meta, getExportOptions()).document;
   }
 
   /**
    * Confluence Cloud markdown export: same data as HTML export, vertical layout.
    * Bold for emphasis where needed; Atlassian markdown has no text color.
    */
-  function buildSummaryExportConfluenceMarkdown(meta) {
+  function buildSummaryExportConfluenceMarkdown(meta, opts) {
+    opts = opts || {};
+    var showProgressEntryHours = !!opts.showProgressEntryHours;
     var from = meta.from;
     var to = meta.to;
     var activeTasks = meta.activeTasks || [];
@@ -3552,21 +3898,29 @@
               return mdBoldInner(cfPlainForTable(t));
             }).filter(Boolean).join(' ');
             var eff = (p.effort_consumed_hours != null && p.effort_consumed_hours !== '') ? (String(p.effort_consumed_hours) + ' hrs') : '';
-            var headBits = [String(i + 1) + '.'];
-            if (pillMd) headBits.push(pillMd);
-            if (eff) headBits.push(eff);
-            lines.push('- ' + headBits.join(' '));
-            var paras = textRaw ? textRaw.split(/\r\n|\n|\r/) : [];
-            while (paras.length && !paras[0].trim()) paras.shift();
-            var wroteDesc = false;
-            paras.forEach(function (para) {
-              var lineText = para.trim();
-              if (!lineText) return;
-              lines.push('  ' + linkifyConfluenceCell(lineText));
-              wroteDesc = true;
-            });
-            if (!wroteDesc) {
-              lines.push('  *No note*');
+            if (showProgressEntryHours) {
+              var headBits = [String(i + 1) + '.'];
+              if (pillMd) headBits.push(pillMd);
+              if (eff) headBits.push(eff);
+              lines.push('- ' + headBits.join(' '));
+              var paras = textRaw ? textRaw.split(/\r\n|\n|\r/) : [];
+              while (paras.length && !paras[0].trim()) paras.shift();
+              var wroteDesc = false;
+              paras.forEach(function (para) {
+                var lineText = para.trim();
+                if (!lineText) return;
+                lines.push('  ' + linkifyConfluenceCell(lineText));
+                wroteDesc = true;
+              });
+              if (!wroteDesc) {
+                lines.push('  *No note*');
+              }
+            } else {
+              var bits = [String(i + 1) + '.'];
+              if (pillMd) bits.push(pillMd);
+              if (textRaw) bits.push(linkifyConfluenceCell(cfPlainForTable(textRaw)));
+              else bits.push('*No note*');
+              lines.push('- ' + bits.join(' '));
             }
           });
         }
@@ -3814,6 +4168,272 @@
     return lines.join('\n');
   }
 
+  /** Plain one-line text for daily export (no rich / markdown emphasis). */
+  function dailyExportPlainLine(raw) {
+    return String(raw || '')
+      .replace(/\r\n|\n|\r/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function dailyExportEscapeMdInline(s) {
+    return String(s || '').replace(/\*/g, '\\*');
+  }
+
+  function concernTouchesDay(c, day) {
+    if (!c || !day) return false;
+    if (c.logged_date === day) return true;
+    if (c.addressed_date && c.addressed_date === day) return true;
+    return false;
+  }
+
+  function formatDailyExportDateHeading(ymd) {
+    var d = parseYMD(ymd);
+    if (!d) return ymd;
+    return d.toLocaleDateString('en', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  /**
+   * Per calendar day in range: Progress (tasks with progress that day only) and Concerns (logged or addressed that day).
+   * No effort, ETA, or bandwidth. Returns markdown source and parallel HTML for the Formatted tab.
+   */
+  function buildDailyVersionDocuments(meta) {
+    var from = meta.from;
+    var to = meta.to;
+    function statusRankDaily(s) {
+      if (s === 'Done' || s === 'Completed') return 0;
+      if (s === 'Ongoing') return 1;
+      if (s === 'Open') return 2;
+      return 3;
+    }
+    var tasks = (meta.activeTasks || []).concat(meta.idleTasks || []).slice().sort(function (a, b) {
+      var ra = statusRankDaily(a.status);
+      var rb = statusRankDaily(b.status);
+      if (ra !== rb) return ra - rb;
+      return (a.title || '').localeCompare(b.title || '');
+    });
+
+    var mdParts = [];
+    var htmlParts = [];
+    var noteMd =
+      '*Note: One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns appear if logged or addressed that day. No effort, ETA, or time spent.*';
+    var noteHtml =
+      '<p class="daily-formatted-note"><em>Note:</em> One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns appear if logged or addressed that day. No effort, ETA, or time spent.</p>';
+
+    mdParts.push(noteMd);
+    mdParts.push('');
+    htmlParts.push(noteHtml);
+
+    function collectDay(day) {
+      var progItems = [];
+      tasks.forEach(function (t) {
+        var mainP = sortProgressUpdatesOldestFirst((t.progress_updates || []).filter(function (p) {
+          return p.date_added === day;
+        }));
+        var subs = [];
+        (t.subtasks || []).forEach(function (s) {
+          if (isTruthyFlag(s.exclude_from_summary)) return;
+          var sp = sortProgressUpdatesOldestFirst((s.progress_updates || []).filter(function (p) {
+            return p.date_added === day;
+          }));
+          if (sp.length) {
+            subs.push({
+              title: s.title || '(sub-task)',
+              lines: sp.map(function (p) {
+                return dailyExportPlainLine(p.text);
+              })
+            });
+          }
+        });
+        if (!mainP.length && !subs.length) return;
+        progItems.push({
+          title: t.title || '(no title)',
+          mainLines: mainP.map(function (p) {
+            return dailyExportPlainLine(p.text);
+          }),
+          subs: subs
+        });
+      });
+
+      var concernItems = [];
+      tasks.forEach(function (t) {
+        var mainC = (t.concerns || []).filter(function (c) {
+          return concernTouchesDay(c, day);
+        });
+        var subCs = [];
+        (t.subtasks || []).forEach(function (s) {
+          if (isTruthyFlag(s.exclude_from_summary)) return;
+          var cs = (s.concerns || []).filter(function (c) {
+            return concernTouchesDay(c, day);
+          });
+          if (cs.length) subCs.push({ title: s.title || '(sub-task)', concerns: cs });
+        });
+        if (!mainC.length && !subCs.length) return;
+        concernItems.push({
+          title: t.title || '(no title)',
+          mainConcerns: mainC,
+          subConcerns: subCs
+        });
+      });
+
+      return { progItems: progItems, concernItems: concernItems };
+    }
+
+    function renderProgressMd(items) {
+      var lines = [];
+      var tn = 0;
+      items.forEach(function (item) {
+        tn++;
+        lines.push(tn + '. **' + dailyExportEscapeMdInline(item.title) + '**');
+        var sn = 0;
+        item.mainLines.forEach(function (line) {
+          sn++;
+          lines.push('   ' + sn + '. ' + dailyExportEscapeMdInline(line || '—'));
+        });
+        item.subs.forEach(function (sub) {
+          sn++;
+          lines.push('   ' + sn + '. **' + dailyExportEscapeMdInline(sub.title) + '**');
+          sub.lines.forEach(function (line, i) {
+            lines.push('      ' + String.fromCharCode(97 + i) + '. ' + dailyExportEscapeMdInline(line || '—'));
+          });
+        });
+      });
+      return lines;
+    }
+
+    function renderProgressHtml(items) {
+      if (!items.length) {
+        return '<p class="daily-formatted-muted">No progress logged this day.</p>';
+      }
+      var h = '<ol class="daily-formatted-ol daily-formatted-ol-root">';
+      items.forEach(function (item) {
+        h += '<li><strong>' + escapeHtml(item.title) + '</strong>';
+        h += '<ol class="daily-formatted-ol daily-formatted-ol-nested">';
+        item.mainLines.forEach(function (line) {
+          h += '<li>' + escapeHtml(line || '—') + '</li>';
+        });
+        item.subs.forEach(function (sub) {
+          h += '<li><strong>' + escapeHtml(sub.title) + '</strong>';
+          h += '<ol class="daily-formatted-ol daily-formatted-ol-alpha" type="a">';
+          sub.lines.forEach(function (line) {
+            h += '<li>' + escapeHtml(line || '—') + '</li>';
+          });
+          h += '</ol></li>';
+        });
+        h += '</ol></li>';
+      });
+      h += '</ol>';
+      return h;
+    }
+
+    function renderConcernsMd(items, dayStr) {
+      var lines = [];
+      var cn = 0;
+      items.forEach(function (item) {
+        cn++;
+        lines.push(cn + '. **' + dailyExportEscapeMdInline(item.title) + '**');
+        var n = 0;
+        item.mainConcerns.forEach(function (c) {
+          n++;
+          var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
+          var tail = addressed ? ' *(addressed)*' : '';
+          lines.push('   ' + n + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + tail);
+        });
+        item.subConcerns.forEach(function (sc) {
+          n++;
+          lines.push('   ' + n + '. **' + dailyExportEscapeMdInline(sc.title) + '**');
+          sc.concerns.forEach(function (c, i) {
+            var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
+            var tail = addressed ? ' *(addressed)*' : '';
+            lines.push('      ' + (i + 1) + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + tail);
+          });
+        });
+      });
+      return lines;
+    }
+
+    function renderConcernsHtml(items, dayStr) {
+      if (!items.length) {
+        return '<p class="daily-formatted-muted">None for this day.</p>';
+      }
+      var h = '<ol class="daily-formatted-ol daily-formatted-ol-root">';
+      items.forEach(function (item) {
+        h += '<li><strong>' + escapeHtml(item.title) + '</strong>';
+        h += '<ol class="daily-formatted-ol daily-formatted-ol-nested">';
+        item.mainConcerns.forEach(function (c) {
+          var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
+          h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + (addressed ? ' <em>(addressed)</em>' : '') + '</li>';
+        });
+        item.subConcerns.forEach(function (sc) {
+          h += '<li><strong>' + escapeHtml(sc.title) + '</strong>';
+          h += '<ol class="daily-formatted-ol daily-formatted-ol-nested">';
+          sc.concerns.forEach(function (c) {
+            var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
+            h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + (addressed ? ' <em>(addressed)</em>' : '') + '</li>';
+          });
+          h += '</ol></li>';
+        });
+        h += '</ol></li>';
+      });
+      h += '</ol>';
+      return h;
+    }
+
+    var day = from;
+    var anyDay = false;
+    while (true) {
+      var data = collectDay(day);
+      var hasProg = data.progItems.length > 0;
+      var hasConc = data.concernItems.length > 0;
+      if (hasProg || hasConc) {
+        anyDay = true;
+        var head = formatDailyExportDateHeading(day);
+        mdParts.push('## ' + head);
+        mdParts.push('');
+        mdParts.push('**Progress**');
+        mdParts.push('');
+        if (hasProg) {
+          mdParts.push.apply(mdParts, renderProgressMd(data.progItems));
+        } else {
+          mdParts.push('*No progress logged this day.*');
+        }
+        mdParts.push('');
+        mdParts.push('**Concerns**');
+        mdParts.push('');
+        if (hasConc) {
+          mdParts.push.apply(mdParts, renderConcernsMd(data.concernItems, day));
+        } else {
+          mdParts.push('*None for this day.*');
+        }
+        mdParts.push('');
+        mdParts.push('---');
+        mdParts.push('');
+
+        htmlParts.push('<article class="daily-formatted-day">');
+        htmlParts.push('<h2 class="daily-formatted-h2">' + escapeHtml(head) + '</h2>');
+        htmlParts.push('<h3 class="daily-formatted-h3">Progress</h3>');
+        htmlParts.push(hasProg ? renderProgressHtml(data.progItems) : '<p class="daily-formatted-muted">No progress logged this day.</p>');
+        htmlParts.push('<h3 class="daily-formatted-h3">Concerns</h3>');
+        htmlParts.push(hasConc ? renderConcernsHtml(data.concernItems, day) : '<p class="daily-formatted-muted">None for this day.</p>');
+        htmlParts.push('</article>');
+      }
+      if (day === to) break;
+      day = addDays(day, 1);
+    }
+
+    if (!anyDay) {
+      return {
+        markdown: noteMd + '\n\n*No progress or dated concerns in this range.*',
+        html: '<div class="daily-formatted-root">' + noteHtml + '<p class="daily-formatted-muted">No progress or dated concerns in this range.</p></div>'
+      };
+    }
+
+    return {
+      markdown: mdParts.join('\n'),
+      html: '<div class="daily-formatted-root">' + htmlParts.join('') + '</div>'
+    };
+  }
+
   function renderSummaryExportHtmlCssFields(parts) {
     return (
       '<label class="summary-export-field-label">Full HTML document (inline styles)</label>' +
@@ -3850,14 +4470,35 @@
 
   function exportSummary() {
     if (!state.summaryGenerated || !state.lastSummaryMeta) return;
+    var exOpt = getExportOptions();
+    var exportProgressOpts = { showProgressEntryHours: exOpt.showProgressEntryHours };
     var format = summaryExportFormat ? summaryExportFormat.value : 'htmlcss';
+    if (format === 'daily-version-markdown') {
+      var dailyDoc = buildDailyVersionDocuments(state.lastSummaryMeta);
+      var dailyWrap = document.createElement('div');
+      dailyWrap.className = 'summary-export-daily-tabbed';
+      dailyWrap.innerHTML =
+        '<div class="summary-export-tab-bar" role="tablist" aria-label="Daily export format">' +
+        '<button type="button" class="summary-export-tab is-active" role="tab" aria-selected="true" data-summary-tab="daily-md">Markdown</button>' +
+        '<button type="button" class="summary-export-tab" role="tab" aria-selected="false" data-summary-tab="daily-fmt">Formatted</button>' +
+        '</div>' +
+        '<div class="summary-export-tab-panel is-active" role="tabpanel" data-summary-panel="daily-md">' +
+        '<textarea class="summary-export-text" spellcheck="false">' + escapeHtml(dailyDoc.markdown) + '</textarea></div>' +
+        '<div class="summary-export-tab-panel" role="tabpanel" data-summary-panel="daily-fmt">' +
+        '<p class="daily-formatted-copy-hint muted">Select the content below (or use Ctrl+A while focused) and copy to paste rich text into email, Word, or similar apps.</p>' +
+        '<div class="summary-daily-formatted-body" contenteditable="false" tabindex="0">' + dailyDoc.html + '</div></div>';
+      summaryOutput.innerHTML = '';
+      summaryOutput.appendChild(dailyWrap);
+      wireSummaryExportHtmlTabs(dailyWrap);
+      return;
+    }
     if (format === 'confluence-markdown' || format === 'markdown') {
-      var mdDoc = buildSummaryExportConfluenceMarkdown(state.lastSummaryMeta);
+      var mdDoc = buildSummaryExportConfluenceMarkdown(state.lastSummaryMeta, exportProgressOpts);
       summaryOutput.innerHTML = '<textarea class="summary-export-text" spellcheck="false">' + escapeHtml(mdDoc) + '</textarea>';
       return;
     }
-    var partsFull = buildSummaryExportHtmlParts(state.lastSummaryMeta);
-    var partsBrief = buildSummaryExportHtmlParts(state.lastSummaryMeta, { brief: true });
+    var partsFull = buildSummaryExportHtmlParts(state.lastSummaryMeta, exportProgressOpts);
+    var partsBrief = buildSummaryExportHtmlParts(state.lastSummaryMeta, Object.assign({ brief: true }, exportProgressOpts));
     var wrap = document.createElement('div');
     wrap.className = 'summary-export-htmlcss summary-export-htmlcss-tabbed';
     wrap.innerHTML =
@@ -4124,28 +4765,28 @@
         if (activeConcernsMain.length) {
           card += '<div class="summary-concern-group"><span class="summary-concern-group-label">Active (main task)</span><ul class="summary-list">';
           activeConcernsMain.forEach(function (c) {
-            card += '<li class="summary-concern-open">' + escapeHtml(c.logged_date || '') + ' — ' + linkifyPlainText(c.description || '') + '</li>';
+            card += '<li class="summary-concern-open">' + escapeHtml(c.logged_date || '') + ' — ' + formatRichDescription(c.description || '') + '</li>';
           });
           card += '</ul></div>';
         }
         if (activeConcernsSubs.length) {
           card += '<div class="summary-concern-group"><span class="summary-concern-group-label">Active (sub-tasks)</span><ul class="summary-list">';
           activeConcernsSubs.forEach(function (e) {
-            card += '<li class="summary-concern-open summary-list-task-line">' + summaryProjectPillHtml(e.subtask.project) + escapeHtml(e.subtask.title || '') + (!subtaskHasDedicatedEffort(e.subtask) ? summaryIncludedPillHtml() : '') + ' — ' + escapeHtml(e.concern.logged_date || '') + ': ' + linkifyPlainText(e.concern.description || '') + '</li>';
+            card += '<li class="summary-concern-open summary-list-task-line">' + summaryProjectPillHtml(e.subtask.project) + escapeHtml(e.subtask.title || '') + (!subtaskHasDedicatedEffort(e.subtask) ? summaryIncludedPillHtml() : '') + ' — ' + escapeHtml(e.concern.logged_date || '') + ': ' + formatRichDescription(e.concern.description || '') + '</li>';
           });
           card += '</ul></div>';
         }
         if (addressedConcernsMainInRange.length) {
           card += '<div class="summary-concern-group"><span class="summary-concern-addressed-label">Addressed (main; not a blocker)</span><ul class="summary-list">';
           addressedConcernsMainInRange.forEach(function (c) {
-            card += '<li class="summary-concern-addressed">' + escapeHtml(c.addressed_date || '') + ' — ' + linkifyPlainText(c.description || '') + (c.addressed_comment ? ' <em>' + linkifyPlainText(c.addressed_comment) + '</em>' : '') + '</li>';
+            card += '<li class="summary-concern-addressed">' + escapeHtml(c.addressed_date || '') + ' — ' + formatRichDescription(c.description || '') + (c.addressed_comment ? ' <em>' + formatRichDescription(c.addressed_comment) + '</em>' : '') + '</li>';
           });
           card += '</ul></div>';
         }
         if (addressedConcernsSubsInRange.length) {
           card += '<div class="summary-concern-group"><span class="summary-concern-addressed-label">Addressed (sub-tasks; not blockers)</span><ul class="summary-list">';
           addressedConcernsSubsInRange.forEach(function (e) {
-            card += '<li class="summary-concern-addressed summary-list-task-line">' + summaryProjectPillHtml(e.subtask.project) + escapeHtml(e.subtask.title || '') + (!subtaskHasDedicatedEffort(e.subtask) ? summaryIncludedPillHtml() : '') + ' — ' + escapeHtml(e.concern.addressed_date || '') + ': ' + linkifyPlainText(e.concern.description || '') + (e.concern.addressed_comment ? ' <em>' + linkifyPlainText(e.concern.addressed_comment) + '</em>' : '') + '</li>';
+            card += '<li class="summary-concern-addressed summary-list-task-line">' + summaryProjectPillHtml(e.subtask.project) + escapeHtml(e.subtask.title || '') + (!subtaskHasDedicatedEffort(e.subtask) ? summaryIncludedPillHtml() : '') + ' — ' + escapeHtml(e.concern.addressed_date || '') + ': ' + formatRichDescription(e.concern.description || '') + (e.concern.addressed_comment ? ' <em>' + formatRichDescription(e.concern.addressed_comment) + '</em>' : '') + '</li>';
           });
           card += '</ul></div>';
         }
@@ -4225,6 +4866,90 @@
     else if (state.view === 'summary') renderSummary();
   }
 
+  function loadSidebarModeFromStorage() {
+    try {
+      var raw = localStorage.getItem(SIDEBAR_MODE_STORAGE_KEY);
+      if (raw === 'collapsed' || raw === 'hidden' || raw === 'full') state.sidebarMode = raw;
+    } catch (e) { /* ignore */ }
+  }
+
+  function persistSidebarMode() {
+    try {
+      localStorage.setItem(SIDEBAR_MODE_STORAGE_KEY, state.sidebarMode);
+    } catch (e) { /* ignore */ }
+  }
+
+  function applySidebarLayout() {
+    var modes = ['full', 'collapsed', 'hidden'];
+    modes.forEach(function (m) {
+      document.body.classList.remove('sidebar-mode-' + m);
+    });
+    document.body.classList.add('sidebar-mode-' + state.sidebarMode);
+    var aside = document.querySelector('.sidebar');
+    if (aside) {
+      aside.setAttribute('aria-hidden', state.sidebarMode === 'hidden' ? 'true' : 'false');
+    }
+    var railTgl = document.getElementById('sidebar-rail-toggle');
+    if (railTgl) {
+      var collapsedDock = state.sidebarMode === 'collapsed';
+      railTgl.classList.toggle('sidebar-rail-toggle--expand', collapsedDock);
+      railTgl.setAttribute('title', collapsedDock ? 'Expand sidebar' : 'Minimize to icons');
+      railTgl.setAttribute('aria-label', collapsedDock ? 'Expand sidebar to full width' : 'Minimize sidebar to icons only');
+    }
+    var sbToggle = document.getElementById('top-bar-sidebar-toggle');
+    if (sbToggle) {
+      var hidden = state.sidebarMode === 'hidden';
+      sbToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+      sbToggle.setAttribute('aria-label', hidden ? 'Show sidebar' : 'Hide sidebar');
+      sbToggle.setAttribute('title', hidden ? 'Show sidebar' : 'Hide sidebar');
+    }
+    syncTopBarViewMenu();
+  }
+
+  function setSidebarMode(mode) {
+    if (mode !== 'full' && mode !== 'collapsed' && mode !== 'hidden') return;
+    if (mode === 'hidden') {
+      if (state.sidebarMode !== 'hidden') {
+        state.sidebarRestoreMode = state.sidebarMode === 'collapsed' ? 'collapsed' : 'full';
+      }
+    } else {
+      state.sidebarRestoreMode = mode;
+    }
+    state.sidebarMode = mode;
+    persistSidebarMode();
+    applySidebarLayout();
+  }
+
+  function toggleSidebarHiddenFromTopBar() {
+    if (state.sidebarMode === 'hidden') {
+      setSidebarMode(state.sidebarRestoreMode === 'collapsed' ? 'collapsed' : 'full');
+    } else {
+      setSidebarMode('hidden');
+    }
+  }
+
+  function updateTopBarViewButtonLabel() {
+    var btn = document.getElementById('top-bar-view-btn');
+    if (!btn) return;
+    var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary' };
+    var v = labels[state.view] || state.view || 'List';
+    btn.textContent = 'View · ' + v + ' ▾';
+  }
+
+  function syncTopBarViewMenu() {
+    document.querySelectorAll('.top-bar-view-screen').forEach(function (el) {
+      el.classList.toggle('top-bar-option-active', el.dataset.view === state.view);
+    });
+    document.querySelectorAll('.top-bar-sidebar-opt').forEach(function (el) {
+      var m = el.dataset.sidebarMode;
+      var active = state.sidebarMode === 'hidden'
+        ? m === state.sidebarRestoreMode
+        : m === state.sidebarMode;
+      el.classList.toggle('top-bar-option-active', active);
+    });
+    updateTopBarViewButtonLabel();
+  }
+
   function setView(view) {
     state.view = view;
     document.querySelectorAll('.view-panel').forEach(function (p) {
@@ -4233,6 +4958,7 @@
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === view);
     });
+    syncTopBarViewMenu();
     render();
   }
 
@@ -4285,6 +5011,29 @@
     }
   }
 
+  function syncExportOptionsFormFromStorage() {
+    var cb = $('export-opt-show-progress-hrs');
+    if (cb) cb.checked = getExportOptions().showProgressEntryHours;
+  }
+
+  function openExportOptionsModal() {
+    var modal = $('export-options-modal');
+    if (!modal) return;
+    syncExportOptionsFormFromStorage();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    var cb = $('export-opt-show-progress-hrs');
+    if (cb) cb.focus();
+  }
+
+  function closeExportOptionsModal() {
+    var modal = $('export-options-modal');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function setSummaryDefaultDates() {
     if (!summaryFrom || !summaryTo) return;
     var today = new Date().toISOString().slice(0, 10);
@@ -4296,6 +5045,9 @@
   }
 
   function init() {
+    loadSidebarModeFromStorage();
+    applySidebarLayout();
+
     setFormDefaults();
     setSummaryDefaultDates();
 
@@ -4324,6 +5076,7 @@
       bindCategoryDropdownInWrap(addTaskCatContainer);
     }
     syncAddTaskProjectSelect();
+    bindRichFormatToolbars(document.getElementById('add-new-task-block'));
 
     var mainFilterWrap = document.querySelector('.main-task-filter-wrap');
     var mainFilterBtn = $('main-task-filter-btn');
@@ -4346,6 +5099,8 @@
       document.querySelectorAll('.filter-dropdown-wrap.open').forEach(function (w) {
         w.classList.remove('open');
       });
+      var topBarBtn = document.getElementById('top-bar-view-btn');
+      if (topBarBtn) topBarBtn.setAttribute('aria-expanded', 'false');
       document.querySelectorAll('.category-dropdown-wrap.open').forEach(function (w) {
         w.classList.remove('open');
       });
@@ -4391,6 +5146,50 @@
     document.querySelectorAll('.nav-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { setView(btn.dataset.view); });
     });
+
+    var topBarViewWrap = document.getElementById('top-bar-view-wrap');
+    var topBarViewBtn = document.getElementById('top-bar-view-btn');
+    if (topBarViewBtn && topBarViewWrap) {
+      topBarViewBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = topBarViewWrap.classList.toggle('open');
+        topBarViewBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      topBarViewWrap.querySelectorAll('.top-bar-view-screen').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var v = el.dataset.view;
+          if (v) setView(v);
+          topBarViewWrap.classList.remove('open');
+          topBarViewBtn.setAttribute('aria-expanded', 'false');
+        });
+      });
+      topBarViewWrap.querySelectorAll('.top-bar-sidebar-opt').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var m = el.dataset.sidebarMode;
+          if (m) setSidebarMode(m);
+          topBarViewWrap.classList.remove('open');
+          topBarViewBtn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+
+    var sidebarRailToggle = document.getElementById('sidebar-rail-toggle');
+    if (sidebarRailToggle) {
+      sidebarRailToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (state.sidebarMode === 'full') setSidebarMode('collapsed');
+        else if (state.sidebarMode === 'collapsed') setSidebarMode('full');
+      });
+    }
+    var topBarSidebarToggle = document.getElementById('top-bar-sidebar-toggle');
+    if (topBarSidebarToggle) {
+      topBarSidebarToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        toggleSidebarHiddenFromTopBar();
+      });
+    }
     if (calendarFilter) {
       calendarFilter.addEventListener('change', function () {
         state.calendarFilter = calendarFilter.value;
@@ -4522,6 +5321,22 @@
     if (exportSummaryBtn) {
       exportSummaryBtn.disabled = !state.summaryGenerated;
       exportSummaryBtn.addEventListener('click', exportSummary);
+    }
+
+    var exportOptionsBtn = $('export-options-btn');
+    var exportOptionsModal = $('export-options-modal');
+    if (exportOptionsBtn) exportOptionsBtn.addEventListener('click', openExportOptionsModal);
+    if (exportOptionsModal) {
+      var exBackdrop = exportOptionsModal.querySelector('.modal-backdrop');
+      if (exBackdrop) exBackdrop.addEventListener('click', closeExportOptionsModal);
+      var exDone = $('export-options-done-btn');
+      if (exDone) exDone.addEventListener('click', closeExportOptionsModal);
+      var exCb = $('export-opt-show-progress-hrs');
+      if (exCb) {
+        exCb.addEventListener('change', function () {
+          setExportOptions({ showProgressEntryHours: exCb.checked });
+        });
+      }
     }
 
     var settingsBtn = $('settings-btn');

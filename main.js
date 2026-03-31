@@ -124,7 +124,7 @@ function formatAuthorField(author) {
 
 function showAbout() {
   var pkg = readPackageJson();
-  var version = (pkg && pkg.version) ? String(pkg.version) : '0.1.0';
+  var version = (pkg && pkg.version) ? String(pkg.version) : '0.2.0';
   var description = (pkg && pkg.description) ? String(pkg.description).trim() : '';
   var author = formatAuthorField(pkg && pkg.author) || 'k-sva';
   const win = BrowserWindow.getFocusedWindow() || mainWindow;
@@ -213,7 +213,7 @@ function createWindow() {
 ipcMain.handle('get-app-metadata', async () => {
   const pkg = readPackageJson();
   if (!pkg) {
-    return { version: '0.1.0', author: '', description: '' };
+    return { version: '0.2.0', author: '', description: '' };
   }
   return {
     version: pkg.version != null ? String(pkg.version) : '',

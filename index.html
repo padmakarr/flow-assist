@@ -132,6 +132,24 @@
       </div>
     </div>
 
+    <div id="progress-history-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content progress-history-modal-content" role="dialog" aria-modal="true" aria-labelledby="progress-history-title">
+        <header class="progress-history-modal-header">
+          <h3 id="progress-history-title" class="progress-history-modal-title">Progress history</h3>
+          <button type="button" id="progress-history-close-btn" class="progress-history-modal-close" title="Close" aria-label="Close">&times;</button>
+        </header>
+        <div class="progress-history-modal-toolbar">
+          <label class="progress-log-sort-label muted" for="progress-history-sort">Order</label>
+          <select id="progress-history-sort" class="progress-log-sort-select" title="Sort order">
+            <option value="asc">Oldest first</option>
+            <option value="desc">Newest first</option>
+          </select>
+        </div>
+        <div id="progress-history-modal-scroll" class="progress-history-modal-body"></div>
+      </div>
+    </div>
+
     <header class="app-top-bar">
       <div class="top-bar-start">
         <div class="filter-dropdown-wrap top-bar-view-wrap" id="top-bar-view-wrap">

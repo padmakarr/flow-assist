@@ -563,9 +563,116 @@
     expandedSubtasks: {},
     mainTaskSort: { by: 'date_added', dir: 'asc' },
     subtaskSortByTaskId: {},
+    /** `m:taskId` or `s:taskId:subId` → start index into oldest-first progress array for 5-item window */
+    progressLogWindowStart: {},
+    /** Same keys + `mh:…` for modal → 'asc' | 'desc' display order */
+    progressLogSort: {},
+    /** When open: { taskId, subtaskId } (subtaskId null for main task) */
+    progressHistoryOpen: null,
     summaryGenerated: false,
     lastSummaryMeta: null
   };
+
+  var PROGRESS_LOG_PAGE = 5;
+
+  function progressLogKeyMain(taskId) {
+    return 'm:' + taskId;
+  }
+
+  function progressLogKeySub(taskId, subId) {
+    return 's:' + taskId + ':' + subId;
+  }
+
+  function progressLogKeyModal(taskId, subId) {
+    return subId ? ('mh:' + taskId + ':' + subId) : ('mh:' + taskId);
+  }
+
+  function getProgressLogSort(key) {
+    return state.progressLogSort[key] === 'desc' ? 'desc' : 'asc';
+  }
+
+  function getProgressWindowStart(logKey, n) {
+    var maxStart = Math.max(0, n - PROGRESS_LOG_PAGE);
+    var s = state.progressLogWindowStart[logKey];
+    if (s == null || typeof s !== 'number' || isNaN(s)) {
+      state.progressLogWindowStart[logKey] = maxStart;
+      return maxStart;
+    }
+    if (s > maxStart) {
+      state.progressLogWindowStart[logKey] = maxStart;
+      return maxStart;
+    }
+    return s;
+  }
+
+  /** One progress row (shared by card window, modal, and full history). */
+  function renderProgressItemLi(p, isSubtask) {
+    var d = p.date_added || '';
+    var h = p.effort_consumed_hours != null ? p.effort_consumed_hours + ' hrs' : '';
+    var effortVal = p.effort_consumed_hours != null ? p.effort_consumed_hours : '';
+    var pCats = progressUpdateCategoriesArray(p);
+    var catJoined = pCats.length ? pCats.join(', ') : '';
+    var editClass = isSubtask ? 'btn-edit-cyan btn-edit-subtask-progress' : 'btn-edit-cyan btn-edit-progress';
+    var saveClass = isSubtask ? 'btn-small progress-save-btn subtask-progress-save' : 'btn-small progress-save-btn';
+    return '<li class="progress-item" data-update-id="' + escapeHtml(p.id) + '" data-date-added="' + escapeHtml(d) + '" data-effort="' + escapeHtml(String(effortVal)) + '" data-progress-categories="' + escapeAttr(JSON.stringify(pCats)) + '" data-progress-text="' + escapeAttr(p.text || '') + '">' +
+      '<div class="progress-item-view">' +
+        '<div class="progress-item-head">' +
+          '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoined ? ' · ' + escapeHtml(catJoined) : '') + '</span>' +
+          '<button type="button" class="' + editClass + '" title="Edit">✎</button>' +
+        '</div>' +
+        '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
+      '</div>' +
+      '<div class="progress-item-edit hidden">' +
+        '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
+        '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
+        '<input type="date" class="progress-edit-date">' +
+        '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
+        renderProgressCategoryRowHtml(pCats, 'progress-edit-cat-' + p.id) +
+        '<div class="progress-edit-actions">' +
+          '<button type="button" class="' + saveClass + '">Save</button>' +
+          '<button type="button" class="btn-small progress-delete-btn">Delete</button>' +
+        '</div>' +
+      '</div>' +
+    '</li>';
+  }
+
+  function renderProgressLogSection(updates, logKey, isSubtask, taskId, subtaskId) {
+    var sortedBase = sortProgressUpdatesOldestFirst(updates || []);
+    var n = sortedBase.length;
+    var sortDir = getProgressLogSort(logKey);
+    var winStart = getProgressWindowStart(logKey, n);
+    var slice = sortedBase.slice(winStart, winStart + PROGRESS_LOG_PAGE);
+    var displaySlice = sortDir === 'desc' ? slice.slice().reverse() : slice;
+    var winEnd = Math.min(n, winStart + PROGRESS_LOG_PAGE);
+    var rangeLabel = n === 0 ? 'No entries' : (winStart + 1) + '–' + winEnd + ' of ' + n;
+    var canUp = n > PROGRESS_LOG_PAGE && winStart > 0;
+    var canDown = n > PROGRESS_LOG_PAGE && winStart < n - PROGRESS_LOG_PAGE;
+    var ulClass = isSubtask ? 'progress-list subtask-progress-list' : 'progress-list';
+    var items = displaySlice.map(function (p) {
+      return renderProgressItemLi(p, isSubtask);
+    }).join('');
+    var sortSel =
+      '<label class="progress-log-sort-label muted">Order</label>' +
+      '<select class="progress-log-sort-select" data-progress-log-key="' + escapeHtml(logKey) + '" title="Sort order">' +
+      '<option value="asc"' + (sortDir === 'asc' ? ' selected' : '') + '>Oldest first</option>' +
+      '<option value="desc"' + (sortDir === 'desc' ? ' selected' : '') + '>Newest first</option>' +
+      '</select>';
+    var openAttrs = 'data-task-id="' + escapeHtml(taskId) + '"' + (subtaskId ? ' data-subtask-id="' + escapeHtml(subtaskId) + '"' : '');
+    var navSvgUp = '<svg class="progress-log-nav-icon" width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2.5 6L5 3.5L7.5 6" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    var navSvgDown = '<svg class="progress-log-nav-icon" width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    return '<div class="progress-list-wrap" data-progress-log-key="' + escapeHtml(logKey) + '">' +
+      '<div class="progress-log-controls">' +
+        '<div class="progress-log-nav-group">' +
+          '<button type="button" class="progress-log-nav-btn progress-log-nav-up" data-progress-log-key="' + escapeHtml(logKey) + '" title="Earlier entries" aria-label="Earlier entries"' + (canUp ? '' : ' disabled') + '>' + navSvgUp + '</button>' +
+          '<button type="button" class="progress-log-nav-btn progress-log-nav-down" data-progress-log-key="' + escapeHtml(logKey) + '" title="Newer entries" aria-label="Newer entries"' + (canDown ? '' : ' disabled') + '>' + navSvgDown + '</button>' +
+        '</div>' +
+        '<span class="progress-log-range muted">' + escapeHtml(rangeLabel) + '</span>' +
+        sortSel +
+        '<button type="button" class="btn-small btn-progress-history-open" ' + openAttrs + '>All history</button>' +
+      '</div>' +
+      (n ? '<ul class="' + ulClass + '">' + items + '</ul>' : '') +
+    '</div>';
+  }
 
   function parseYMD(ymd) {
     if (!ymd || typeof ymd !== 'string') return null;
@@ -1693,35 +1800,7 @@
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
-          '<div class="progress-list-wrap">' +
-            (s.progress_updates && s.progress_updates.length ? '<ul class="progress-list subtask-progress-list">' + sortProgressUpdatesOldestFirst(s.progress_updates).map(function (p) {
-              var d = p.date_added || '';
-              var h = p.effort_consumed_hours != null ? p.effort_consumed_hours + ' hrs' : '';
-              var effortVal = p.effort_consumed_hours != null ? p.effort_consumed_hours : '';
-              var pCats = progressUpdateCategoriesArray(p);
-              var catJoined = pCats.length ? pCats.join(', ') : '';
-              return '<li class="progress-item" data-update-id="' + escapeHtml(p.id) + '" data-date-added="' + escapeHtml(d) + '" data-effort="' + escapeHtml(String(effortVal)) + '" data-progress-categories="' + escapeAttr(JSON.stringify(pCats)) + '" data-progress-text="' + escapeAttr(p.text || '') + '">' +
-                '<div class="progress-item-view">' +
-                  '<div class="progress-item-head">' +
-                    '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoined ? ' · ' + escapeHtml(catJoined) : '') + '</span>' +
-                    '<button type="button" class="btn-edit-cyan btn-edit-subtask-progress" title="Edit">✎</button>' +
-                  '</div>' +
-                  '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
-                '</div>' +
-                '<div class="progress-item-edit hidden">' +
-                  '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-                  '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
-                  '<input type="date" class="progress-edit-date">' +
-                  '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
-                  renderProgressCategoryRowHtml(pCats, 'progress-edit-cat-' + p.id) +
-                  '<div class="progress-edit-actions">' +
-                  '<button type="button" class="btn-small progress-save-btn subtask-progress-save">Save</button>' +
-                  '<button type="button" class="btn-small progress-delete-btn">Delete</button>' +
-                  '</div>' +
-                '</div>' +
-              '</li>';
-            }).join('') + '</ul>' : '') +
-          '</div>' +
+          renderProgressLogSection(s.progress_updates, progressLogKeySub(taskId, s.id), true, taskId, s.id) +
           '<div class="progress-add">' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
             '<textarea class="progress-text-in subtask-progress-text auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
@@ -1907,35 +1986,7 @@
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
-          '<div class="progress-list-wrap">' +
-            (task.progress_updates && task.progress_updates.length ? '<ul class="progress-list">' + sortProgressUpdatesOldestFirst(task.progress_updates).map(function (p) {
-              var d = p.date_added || '';
-              var h = p.effort_consumed_hours != null ? p.effort_consumed_hours + ' hrs' : '';
-              var effortVal = p.effort_consumed_hours != null ? p.effort_consumed_hours : '';
-              var pCatsM = progressUpdateCategoriesArray(p);
-              var catJoinedM = pCatsM.length ? pCatsM.join(', ') : '';
-              return '<li class="progress-item" data-update-id="' + escapeHtml(p.id) + '" data-date-added="' + escapeHtml(d) + '" data-effort="' + escapeHtml(String(effortVal)) + '" data-progress-categories="' + escapeAttr(JSON.stringify(pCatsM)) + '" data-progress-text="' + escapeAttr(p.text || '') + '">' +
-                '<div class="progress-item-view">' +
-                  '<div class="progress-item-head">' +
-                    '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoinedM ? ' · ' + escapeHtml(catJoinedM) : '') + '</span>' +
-                    '<button type="button" class="btn-edit-cyan btn-edit-progress" title="Edit">✎</button>' +
-                  '</div>' +
-                  '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
-                '</div>' +
-                '<div class="progress-item-edit hidden">' +
-                  '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-                  '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
-                  '<input type="date" class="progress-edit-date">' +
-                  '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
-                  renderProgressCategoryRowHtml(pCatsM, 'progress-edit-cat-' + p.id) +
-                  '<div class="progress-edit-actions">' +
-                  '<button type="button" class="btn-small progress-save-btn">Save</button>' +
-                  '<button type="button" class="btn-small progress-delete-btn">Delete</button>' +
-                  '</div>' +
-                '</div>' +
-              '</li>';
-            }).join('') + '</ul>' : '') +
-          '</div>' +
+          renderProgressLogSection(task.progress_updates, progressLogKeyMain(task.id), false, task.id, null) +
           '<div class="progress-add">' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
             '<textarea class="progress-text-in auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
@@ -2000,8 +2051,211 @@
     return '<div class="task-card' + (isExpanded ? ' expanded' : '') + '" data-id="' + escapeHtml(task.id) + '">' + barContent + bodyHtml + '</div>';
   }
 
+  function getProgressCountForLogKey(key) {
+    if (!key) return 0;
+    if (key.indexOf('m:') === 0) {
+      var tid = key.slice(2);
+      var t = state.data.tasks.find(function (x) { return x.id === tid; });
+      return t ? (t.progress_updates || []).length : 0;
+    }
+    if (key.indexOf('s:') === 0) {
+      var rest = key.slice(2);
+      var ix = rest.indexOf(':');
+      if (ix < 0) return 0;
+      var tid2 = rest.slice(0, ix);
+      var sid = rest.slice(ix + 1);
+      var t2 = state.data.tasks.find(function (x) { return x.id === tid2; });
+      if (!t2 || !t2.subtasks) return 0;
+      var s = t2.subtasks.find(function (x) { return x.id === sid; });
+      return s ? (s.progress_updates || []).length : 0;
+    }
+    return 0;
+  }
+
+  function progressLogNavApply(key, delta) {
+    var n = getProgressCountForLogKey(key);
+    var maxStart = Math.max(0, n - PROGRESS_LOG_PAGE);
+    var cur = state.progressLogWindowStart[key];
+    if (cur == null || typeof cur !== 'number' || isNaN(cur)) cur = maxStart;
+    var next = Math.max(0, Math.min(maxStart, cur + delta));
+    state.progressLogWindowStart[key] = next;
+    renderList();
+  }
+
+  function closeProgressHistoryModal() {
+    var modal = $('progress-history-modal');
+    if (modal) {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    state.progressHistoryOpen = null;
+  }
+
+  function refreshProgressHistoryModal() {
+    var ctx = state.progressHistoryOpen;
+    if (!ctx) return;
+    var task = state.data.tasks.find(function (x) { return x.id === ctx.taskId; });
+    if (!task) {
+      closeProgressHistoryModal();
+      return;
+    }
+    var updates;
+    var isSub;
+    var titleText;
+    if (ctx.subtaskId) {
+      var sub = (task.subtasks || []).find(function (x) { return x.id === ctx.subtaskId; });
+      if (!sub) {
+        closeProgressHistoryModal();
+        return;
+      }
+      updates = sub.progress_updates;
+      isSub = true;
+      titleText = (task.title || 'Task') + ' — ' + (sub.title || 'Sub-task');
+    } else {
+      updates = task.progress_updates;
+      isSub = false;
+      titleText = task.title || 'Task';
+    }
+    var mhKey = progressLogKeyModal(ctx.taskId, ctx.subtaskId);
+    var sortDir = getProgressLogSort(mhKey);
+    var sortEl = $('progress-history-sort');
+    if (sortEl) sortEl.value = sortDir;
+    var titleEl = $('progress-history-title');
+    if (titleEl) titleEl.textContent = 'Progress history — ' + titleText;
+    var scroll = $('progress-history-modal-scroll');
+    if (!scroll) return;
+    var sortedBase = sortProgressUpdatesOldestFirst(updates || []);
+    var displayList = sortDir === 'desc' ? sortedBase.slice().reverse() : sortedBase;
+    var ulClass = isSub ? 'progress-list subtask-progress-list progress-list-modal-full' : 'progress-list progress-list-modal-full';
+    scroll.innerHTML = displayList.length
+      ? '<ul class="' + ulClass + '">' + displayList.map(function (p) { return renderProgressItemLi(p, isSub); }).join('') + '</ul>'
+      : '<p class="muted">No progress entries yet.</p>';
+    bindRichFormatToolbars(scroll);
+    scroll.querySelectorAll('.category-dropdown-wrap').forEach(function (w) {
+      bindCategoryDropdownInWrap(w);
+    });
+    wireProgressHistoryModalBody(scroll, ctx.taskId, ctx.subtaskId);
+  }
+
+  function openProgressHistoryModal(taskId, subtaskId) {
+    state.progressHistoryOpen = { taskId: taskId, subtaskId: subtaskId || null };
+    var mhKey = progressLogKeyModal(taskId, subtaskId || null);
+    if (state.progressLogSort[mhKey] == null) state.progressLogSort[mhKey] = 'asc';
+    refreshProgressHistoryModal();
+    var modal = $('progress-history-modal');
+    if (modal) {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function wireProgressHistoryModalBody(root, taskId, subtaskId) {
+    var isSub = !!subtaskId;
+    var editSel = isSub ? '.btn-edit-subtask-progress' : '.btn-edit-progress';
+    root.querySelectorAll(editSel).forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var li = btn.closest('.progress-item');
+        var view = li.querySelector('.progress-item-view');
+        var edit = li.querySelector('.progress-item-edit');
+        if (!edit.classList.contains('hidden')) return;
+        var textEl = li.querySelector('.progress-text');
+        var editText = li.querySelector('.progress-edit-text');
+        var rawText = li.getAttribute('data-progress-text');
+        editText.value = rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : '');
+        li.querySelector('.progress-edit-date').value = li.dataset.dateAdded || '';
+        li.querySelector('.progress-edit-effort').value = li.dataset.effort || '';
+        var catWrapEdit = li.querySelector('.progress-item-edit .category-dropdown-wrap');
+        if (catWrapEdit) {
+          var rawCats = li.getAttribute('data-progress-categories');
+          var arrCats = [];
+          try {
+            arrCats = rawCats ? JSON.parse(rawCats) : [];
+            if (!Array.isArray(arrCats)) arrCats = [];
+          } catch (err) { arrCats = []; }
+          setCategoryDropdownSelection(catWrapEdit, arrCats);
+        }
+        view.classList.add('hidden');
+        edit.classList.remove('hidden');
+        autoResizeTextarea(editText);
+      });
+    });
+    root.querySelectorAll('.progress-save-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var li = btn.closest('.progress-item');
+        var edit = li.querySelector('.progress-item-edit');
+        var view = li.querySelector('.progress-item-view');
+        var updateId = li.dataset.updateId;
+        var catWrapSave = li.querySelector('.progress-item-edit .category-dropdown-wrap');
+        if (isSub) {
+          updateSubtaskProgressUpdate(taskId, subtaskId, updateId, {
+            text: li.querySelector('.progress-edit-text').value,
+            date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
+            effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
+            categories: getSelectedCategoriesFromWrap(catWrapSave)
+          });
+        } else {
+          updateProgressUpdate(taskId, updateId, {
+            text: li.querySelector('.progress-edit-text').value,
+            date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
+            effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
+            categories: getSelectedCategoriesFromWrap(catWrapSave)
+          });
+        }
+        edit.classList.add('hidden');
+        view.classList.remove('hidden');
+      });
+    });
+    root.querySelectorAll('.progress-delete-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!confirm('Delete this progress entry?')) return;
+        var li = btn.closest('.progress-item');
+        var updateId = li && li.dataset.updateId;
+        if (!updateId) return;
+        if (isSub) deleteSubtaskProgressUpdate(taskId, subtaskId, updateId);
+        else deleteProgressUpdate(taskId, updateId);
+      });
+    });
+  }
+
   function bindTaskCardEvents(card) {
     var taskId = card.dataset.id;
+
+    card.addEventListener('click', function (e) {
+      var navUp = e.target.closest('.progress-log-nav-up');
+      if (navUp && card.contains(navUp) && !navUp.disabled) {
+        e.stopPropagation();
+        progressLogNavApply(navUp.getAttribute('data-progress-log-key'), -PROGRESS_LOG_PAGE);
+        return;
+      }
+      var navDown = e.target.closest('.progress-log-nav-down');
+      if (navDown && card.contains(navDown) && !navDown.disabled) {
+        e.stopPropagation();
+        progressLogNavApply(navDown.getAttribute('data-progress-log-key'), PROGRESS_LOG_PAGE);
+        return;
+      }
+      var openHist = e.target.closest('.btn-progress-history-open');
+      if (openHist && card.contains(openHist)) {
+        e.stopPropagation();
+        var tid = openHist.getAttribute('data-task-id');
+        var sid = openHist.getAttribute('data-subtask-id');
+        if (tid) openProgressHistoryModal(tid, sid || null);
+      }
+    });
+
+    card.addEventListener('change', function (e) {
+      var sel = e.target.closest('.progress-log-sort-select');
+      if (!sel || !card.contains(sel) || sel.id === 'progress-history-sort') return;
+      e.stopPropagation();
+      var k = sel.getAttribute('data-progress-log-key');
+      if (k) {
+        state.progressLogSort[k] = sel.value === 'desc' ? 'desc' : 'asc';
+        renderList();
+      }
+    });
+
     var taskBar = card.querySelector('.task-bar');
     if (taskBar) {
       taskBar.addEventListener('click', function (e) {
@@ -4187,6 +4441,46 @@
     return false;
   }
 
+  /** True if the concern is still open at end of `day` (logged on or before, not addressed until after `day`). */
+  function concernIsOpenAsOfDay(c, day) {
+    if (!c || !day) return false;
+    var logged = c.logged_date || '';
+    if (!logged || logged > day) return false;
+    if (c.status === 'Addressed') {
+      var ad = c.addressed_date || '';
+      if (!ad) return false;
+      return ad > day;
+    }
+    return true;
+  }
+
+  function mergeConcernsDeduped(primary, secondary) {
+    var seen = {};
+    var out = [];
+    function keyOf(c) {
+      return c && c.id ? String(c.id) : ((c.logged_date || '') + '\0' + (c.description || ''));
+    }
+    function pushList(arr) {
+      (arr || []).forEach(function (c) {
+        var k = keyOf(c);
+        if (seen[k]) return;
+        seen[k] = true;
+        out.push(c);
+      });
+    }
+    pushList(primary);
+    pushList(secondary);
+    return out;
+  }
+
+  /** Suffix for daily export: addressed today, or ongoing (open before, still affecting progress). */
+  function dailyConcernSuffix(c, dayStr) {
+    if (c.status === 'Addressed' && c.addressed_date === dayStr) return ' *(addressed)*';
+    if (c.logged_date === dayStr) return '';
+    if (concernIsOpenAsOfDay(c, dayStr)) return ' *(ongoing)*';
+    return '';
+  }
+
   function formatDailyExportDateHeading(ymd) {
     var d = parseYMD(ymd);
     if (!d) return ymd;
@@ -4194,7 +4488,8 @@
   }
 
   /**
-   * Per calendar day in range: Progress (tasks with progress that day only) and Concerns (logged or addressed that day).
+   * Per calendar day in range: Progress (tasks with progress that day only) and Concerns (logged or addressed that day,
+   * plus any still-open concerns logged on or before that day — marked *(ongoing)*).
    * No effort, ETA, or bandwidth. Returns markdown source and parallel HTML for the Formatted tab.
    */
   function buildDailyVersionDocuments(meta) {
@@ -4216,9 +4511,9 @@
     var mdParts = [];
     var htmlParts = [];
     var noteMd =
-      '*Note: One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns appear if logged or addressed that day. No effort, ETA, or time spent.*';
+      '*Note: One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns include entries logged or addressed that day, and any still-open (un-addressed) concerns logged on or before that day — those are marked *(ongoing)* because they still affect progress. No effort, ETA, or time spent.*';
     var noteHtml =
-      '<p class="daily-formatted-note"><em>Note:</em> One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns appear if logged or addressed that day. No effort, ETA, or time spent.</p>';
+      '<p class="daily-formatted-note"><em>Note:</em> One section per calendar day in your From–To range. Progress lists only tasks with entries on that day. Concerns include entries logged or addressed that day, and any still-open concerns logged on or before that day (marked <em>(ongoing)</em> — still affecting progress). No effort, ETA, or time spent.</p>';
 
     mdParts.push(noteMd);
     mdParts.push('');
@@ -4257,15 +4552,23 @@
 
       var concernItems = [];
       tasks.forEach(function (t) {
-        var mainC = (t.concerns || []).filter(function (c) {
+        var mainTouched = (t.concerns || []).filter(function (c) {
           return concernTouchesDay(c, day);
         });
+        var mainOngoing = (t.concerns || []).filter(function (c) {
+          return concernIsOpenAsOfDay(c, day);
+        });
+        var mainC = mergeConcernsDeduped(mainTouched, mainOngoing);
         var subCs = [];
         (t.subtasks || []).forEach(function (s) {
           if (isTruthyFlag(s.exclude_from_summary)) return;
-          var cs = (s.concerns || []).filter(function (c) {
+          var subTouched = (s.concerns || []).filter(function (c) {
             return concernTouchesDay(c, day);
           });
+          var subOngoing = (s.concerns || []).filter(function (c) {
+            return concernIsOpenAsOfDay(c, day);
+          });
+          var cs = mergeConcernsDeduped(subTouched, subOngoing);
           if (cs.length) subCs.push({ title: s.title || '(sub-task)', concerns: cs });
         });
         if (!mainC.length && !subCs.length) return;
@@ -4335,17 +4638,13 @@
         var n = 0;
         item.mainConcerns.forEach(function (c) {
           n++;
-          var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
-          var tail = addressed ? ' *(addressed)*' : '';
-          lines.push('   ' + n + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + tail);
+          lines.push('   ' + n + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + dailyConcernSuffix(c, dayStr));
         });
         item.subConcerns.forEach(function (sc) {
           n++;
           lines.push('   ' + n + '. **' + dailyExportEscapeMdInline(sc.title) + '**');
           sc.concerns.forEach(function (c, i) {
-            var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
-            var tail = addressed ? ' *(addressed)*' : '';
-            lines.push('      ' + (i + 1) + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + tail);
+            lines.push('      ' + (i + 1) + '. ' + dailyExportEscapeMdInline(dailyExportPlainLine(c.description)) + dailyConcernSuffix(c, dayStr));
           });
         });
       });
@@ -4361,15 +4660,19 @@
         h += '<li><strong>' + escapeHtml(item.title) + '</strong>';
         h += '<ol class="daily-formatted-ol daily-formatted-ol-nested">';
         item.mainConcerns.forEach(function (c) {
-          var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
-          h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + (addressed ? ' <em>(addressed)</em>' : '') + '</li>';
+          var suf = '';
+          if (c.status === 'Addressed' && c.addressed_date === dayStr) suf = ' <em>(addressed)</em>';
+          else if (c.logged_date !== dayStr && concernIsOpenAsOfDay(c, dayStr)) suf = ' <em>(ongoing)</em>';
+          h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + suf + '</li>';
         });
         item.subConcerns.forEach(function (sc) {
           h += '<li><strong>' + escapeHtml(sc.title) + '</strong>';
           h += '<ol class="daily-formatted-ol daily-formatted-ol-nested">';
           sc.concerns.forEach(function (c) {
-            var addressed = c.addressed_date === dayStr && (c.status === 'Addressed');
-            h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + (addressed ? ' <em>(addressed)</em>' : '') + '</li>';
+            var suf = '';
+            if (c.status === 'Addressed' && c.addressed_date === dayStr) suf = ' <em>(addressed)</em>';
+            else if (c.logged_date !== dayStr && concernIsOpenAsOfDay(c, dayStr)) suf = ' <em>(ongoing)</em>';
+            h += '<li>' + escapeHtml(dailyExportPlainLine(c.description)) + suf + '</li>';
           });
           h += '</ol></li>';
         });
@@ -4423,8 +4726,8 @@
 
     if (!anyDay) {
       return {
-        markdown: noteMd + '\n\n*No progress or dated concerns in this range.*',
-        html: '<div class="daily-formatted-root">' + noteHtml + '<p class="daily-formatted-muted">No progress or dated concerns in this range.</p></div>'
+        markdown: noteMd + '\n\n*No progress or concerns to show in this range (no per-day progress and no open or day-relevant concerns for included tasks).*',
+        html: '<div class="daily-formatted-root">' + noteHtml + '<p class="daily-formatted-muted">No progress or concerns to show in this range.</p></div>'
       };
     }
 
@@ -4864,6 +5167,7 @@
     if (state.view === 'list') renderList();
     else if (state.view === 'calendar') renderCalendar();
     else if (state.view === 'summary') renderSummary();
+    if (state.progressHistoryOpen) refreshProgressHistoryModal();
   }
 
   function loadSidebarModeFromStorage() {
@@ -5337,6 +5641,24 @@
           setExportOptions({ showProgressEntryHours: exCb.checked });
         });
       }
+    }
+
+    var progressHistoryModal = $('progress-history-modal');
+    if (progressHistoryModal) {
+      var phBackdrop = progressHistoryModal.querySelector('.modal-backdrop');
+      if (phBackdrop) phBackdrop.addEventListener('click', closeProgressHistoryModal);
+      var phClose = $('progress-history-close-btn');
+      if (phClose) phClose.addEventListener('click', closeProgressHistoryModal);
+    }
+    var progressHistorySort = $('progress-history-sort');
+    if (progressHistorySort) {
+      progressHistorySort.addEventListener('change', function () {
+        var ctx = state.progressHistoryOpen;
+        if (!ctx) return;
+        var mhKey = progressLogKeyModal(ctx.taskId, ctx.subtaskId);
+        state.progressLogSort[mhKey] = progressHistorySort.value === 'desc' ? 'desc' : 'asc';
+        refreshProgressHistoryModal();
+      });
     }
 
     var settingsBtn = $('settings-btn');

@@ -263,17 +263,21 @@
       bugNums = [].concat(o.bug_number);
     }
     if (!Array.isArray(bugNums)) bugNums = [];
-    return {
+    var assigned_date = o.assigned_date || today;
+    var statusVal = o.status || 'Open';
+    var done_date = o.done_date || '';
+    var status_changes = Array.isArray(o.status_changes) ? o.status_changes.slice() : [];
+    var t = {
       id: o.id || generateId(),
       title: o.title || 'Untitled',
       description: o.description ?? '',
       priority: Math.min(10, Math.max(1, (o.priority != null ? o.priority : 1))),
       tags: Array.isArray(o.tags) ? o.tags : (o.tags ? [o.tags] : ['#default']),
-      assigned_date: o.assigned_date || today,
+      assigned_date: assigned_date,
       eta: o.eta ?? '',
       effort_required_hours: o.effort_required_hours ?? 1,
       bug_numbers: bugNums,
-      status: o.status || 'Open',
+      status: statusVal,
       difficulty: normalizeTaskDifficulty(o.difficulty),
       created_at: o.created_at || now.toISOString(),
       progress_updates: o.progress_updates || [],
@@ -283,10 +287,24 @@
       subtasks: o.subtasks || [],
       categories: Array.isArray(o.categories) ? o.categories.slice() : [],
       project: (o.project != null && String(o.project).trim()) ? String(o.project).trim() : '',
-      done_date: o.done_date || '',
+      done_date: done_date,
+      status_changes: status_changes,
       exclude_from_summary: !!o.exclude_from_summary,
       exclude_from_export: !!o.exclude_from_export
     };
+    if (!t.status_changes.length) {
+      t.status_changes.push({ id: generateId(), status: 'Open', date: assigned_date });
+      var sn = normalizeStatusForHistory(statusVal);
+      if (sn === 'Ongoing') {
+        t.status_changes.push({ id: generateId(), status: 'Ongoing', date: assigned_date });
+      } else if (sn === 'Done') {
+        t.status_changes.push({ id: generateId(), status: 'Ongoing', date: assigned_date });
+        t.status_changes.push({ id: generateId(), status: 'Done', date: done_date || assigned_date });
+      } else if (sn === 'Dropped') {
+        t.status_changes.push({ id: generateId(), status: 'Dropped', date: assigned_date });
+      }
+    }
+    return t;
   }
 
   function normalizeTask(t) {
@@ -316,6 +334,7 @@
     t.difficulty = normalizeTaskDifficulty(t.difficulty);
     t.exclude_from_summary = !!t.exclude_from_summary;
     t.exclude_from_export = !!t.exclude_from_export;
+    migrateTaskStatusChangesIfNeeded(t);
     t.subtasks.forEach(function (s) {
       if (!s.priority && s.priority !== 0) s.priority = 1;
       if (!s.description) s.description = '';
@@ -340,6 +359,7 @@
         }
         delete p.category;
       });
+      migrateSubtaskStatusChangesIfNeeded(s);
     });
     return t;
   }
@@ -363,6 +383,215 @@
     return 0;
   }
 
+  /** Canonical values for status history: Open | Ongoing | Done | Dropped */
+  function normalizeStatusForHistory(st) {
+    if (st == null || st === '') return 'Open';
+    if (st === 'Completed') return 'Done';
+    if (st === 'Closed') return 'Dropped';
+    return st;
+  }
+
+  function sortedStatusChanges(changes) {
+    if (!changes || !changes.length) return [];
+    return changes.slice().sort(function (a, b) {
+      var da = (a.date && String(a.date).trim()) || '';
+      var db = (b.date && String(b.date).trim()) || '';
+      var c = compareDateStr(da, db);
+      if (c !== 0) return c;
+      return String(a.id || '').localeCompare(String(b.id || ''));
+    });
+  }
+
+  function syncTaskFromStatusChanges(task) {
+    if (!Array.isArray(task.status_changes)) task.status_changes = [];
+    var list = sortedStatusChanges(task.status_changes);
+    if (!list.length) {
+      task.status = 'Open';
+      task.done_date = '';
+      return;
+    }
+    var last = list[list.length - 1];
+    var lastNorm = normalizeStatusForHistory(last.status);
+    task.status = lastNorm === 'Done' ? 'Done' : (lastNorm === 'Dropped' ? 'Dropped' : lastNorm);
+    if (lastNorm === 'Done') {
+      task.done_date = (last.date && String(last.date).trim()) || '';
+    } else {
+      task.done_date = '';
+    }
+  }
+
+  function syncSubtaskFromStatusChanges(s) {
+    if (!Array.isArray(s.status_changes)) s.status_changes = [];
+    var list = sortedStatusChanges(s.status_changes);
+    if (!list.length) {
+      s.status = 'Open';
+      s.done_date = '';
+      return;
+    }
+    var last = list[list.length - 1];
+    var lastNorm = normalizeStatusForHistory(last.status);
+    s.status = lastNorm === 'Done' ? 'Done' : (lastNorm === 'Dropped' ? 'Dropped' : lastNorm);
+    if (lastNorm === 'Done') {
+      s.done_date = (last.date && String(last.date).trim()) || '';
+    } else {
+      s.done_date = '';
+    }
+  }
+
+  function migrateTaskStatusChangesIfNeeded(task) {
+    if (!Array.isArray(task.status_changes)) task.status_changes = [];
+    if (task.status_changes.length > 0) return;
+    var openD = task.assigned_date || (task.created_at && String(task.created_at).slice(0, 10)) || new Date().toISOString().slice(0, 10);
+    task.status_changes.push({ id: generateId(), status: 'Open', date: openD });
+    var st = normalizeStatusForHistory(task.status);
+    if (st === 'Ongoing') {
+      task.status_changes.push({ id: generateId(), status: 'Ongoing', date: openD });
+    } else if (st === 'Done') {
+      var doneD = (task.done_date && String(task.done_date).trim()) || openD;
+      task.status_changes.push({ id: generateId(), status: 'Ongoing', date: openD });
+      task.status_changes.push({ id: generateId(), status: 'Done', date: doneD });
+    } else if (st === 'Dropped') {
+      task.status_changes.push({ id: generateId(), status: 'Dropped', date: openD });
+    }
+  }
+
+  function migrateSubtaskStatusChangesIfNeeded(s) {
+    if (!Array.isArray(s.status_changes)) s.status_changes = [];
+    if (s.status_changes.length > 0) return;
+    var openD = s.assigned_date || new Date().toISOString().slice(0, 10);
+    s.status_changes.push({ id: generateId(), status: 'Open', date: openD });
+    var st = normalizeStatusForHistory(s.status);
+    if (st === 'Ongoing') {
+      s.status_changes.push({ id: generateId(), status: 'Ongoing', date: openD });
+    } else if (st === 'Done') {
+      var doneD = (s.done_date && String(s.done_date).trim()) || openD;
+      s.status_changes.push({ id: generateId(), status: 'Ongoing', date: openD });
+      s.status_changes.push({ id: generateId(), status: 'Done', date: doneD });
+    } else if (st === 'Dropped') {
+      s.status_changes.push({ id: generateId(), status: 'Dropped', date: openD });
+    }
+  }
+
+  /**
+   * Resolve the effective status of a task/sub-task as seen from within a date range.
+   * Returns { statusAtStart, statusAtEnd, transitions[] }.
+   * transitions = array of { from, to, date } where date is within [rangeFrom, rangeTo].
+   */
+  function resolveStatusInRange(taskLike, rangeFrom, rangeTo) {
+    migrateTaskStatusChangesIfNeeded(taskLike);
+    var sorted = sortedStatusChanges(taskLike.status_changes || []);
+    var statusAtStart = 'Open';
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].date && sorted[i].date <= rangeFrom) {
+        statusAtStart = normalizeStatusForHistory(sorted[i].status);
+      }
+    }
+    var statusAtEnd = statusAtStart;
+    var transitions = [];
+    var prev = statusAtStart;
+    for (var j = 0; j < sorted.length; j++) {
+      var d = sorted[j].date || '';
+      var s = normalizeStatusForHistory(sorted[j].status);
+      if (d > rangeFrom && d <= rangeTo) {
+        if (s !== prev) {
+          transitions.push({ from: prev, to: s, date: d });
+          prev = s;
+        }
+      } else if (d > rangeTo) {
+        break;
+      }
+    }
+    statusAtEnd = prev;
+    return { statusAtStart: statusAtStart, statusAtEnd: statusAtEnd, transitions: transitions };
+  }
+
+  function resolveSubtaskStatusInRange(s, rangeFrom, rangeTo) {
+    migrateSubtaskStatusChangesIfNeeded(s);
+    var sorted = sortedStatusChanges(s.status_changes || []);
+    var statusAtStart = 'Open';
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].date && sorted[i].date <= rangeFrom) {
+        statusAtStart = normalizeStatusForHistory(sorted[i].status);
+      }
+    }
+    var statusAtEnd = statusAtStart;
+    var transitions = [];
+    var prev = statusAtStart;
+    for (var j = 0; j < sorted.length; j++) {
+      var d = sorted[j].date || '';
+      var st = normalizeStatusForHistory(sorted[j].status);
+      if (d > rangeFrom && d <= rangeTo) {
+        if (st !== prev) {
+          transitions.push({ from: prev, to: st, date: d });
+          prev = st;
+        }
+      } else if (d > rangeTo) {
+        break;
+      }
+    }
+    statusAtEnd = prev;
+    return { statusAtStart: statusAtStart, statusAtEnd: statusAtEnd, transitions: transitions };
+  }
+
+  /** Date when the task/subtask first entered 'Open' (i.e. was created/assigned). */
+  function taskOpenDate(taskLike) {
+    var changes = sortedStatusChanges(taskLike.status_changes || []);
+    for (var i = 0; i < changes.length; i++) {
+      if (normalizeStatusForHistory(changes[i].status) === 'Open') {
+        return changes[i].date || '';
+      }
+    }
+    return taskLike.assigned_date || taskLike.created_at && String(taskLike.created_at).slice(0, 10) || '';
+  }
+
+  /** Was task/sub-task fully Done or Dropped before a date? (all status changes resolved before rangeFrom) */
+  function wasCompletedOrDroppedBefore(taskLike, rangeFrom) {
+    var sorted = sortedStatusChanges(taskLike.status_changes || []);
+    if (!sorted.length) return false;
+    var lastBeforeRange = null;
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].date && sorted[i].date < rangeFrom) {
+        lastBeforeRange = normalizeStatusForHistory(sorted[i].status);
+      }
+    }
+    return lastBeforeRange === 'Done' || lastBeforeRange === 'Dropped';
+  }
+
+  /** Was the task/subtask opened (first Open status) at or before rangeTo? */
+  function wasOpenedByEndOfRange(taskLike, rangeTo) {
+    var d = taskOpenDate(taskLike);
+    return d && d <= rangeTo;
+  }
+
+  /** Filter concerns for range-aware export: skip addressed before range start; keep open + addressed-in-range. */
+  function filterConcernsForRange(concerns, rangeFrom, rangeTo) {
+    return (concerns || []).filter(function (c) {
+      if (c.status === 'Addressed') {
+        if (c.addressed_date && c.addressed_date < rangeFrom) return false;
+        return true;
+      }
+      return true;
+    });
+  }
+
+  /** Is this concern addressed within the range? */
+  function isConcernAddressedInRange(c, rangeFrom, rangeTo) {
+    return c.status === 'Addressed' && c.addressed_date && c.addressed_date >= rangeFrom && c.addressed_date <= rangeTo;
+  }
+
+  /** Build a status badge or transition chain HTML for export. */
+  function rangeStatusBadgeHtml(resolved, statusBadgeFn) {
+    if (!resolved.transitions.length) {
+      return statusBadgeFn(resolved.statusAtEnd);
+    }
+    var parts = [statusBadgeFn(resolved.statusAtStart)];
+    resolved.transitions.forEach(function (tr) {
+      parts.push('<span class="export-status-arrow"> → </span>');
+      parts.push(statusBadgeFn(tr.to));
+    });
+    return '<span class="export-status-transition">' + parts.join('') + '</span>';
+  }
+
   /** Progress log: oldest → newest by date_added; undated entries last; same-day ties by id. */
   function sortProgressUpdatesOldestFirst(updates) {
     if (!updates || !updates.length) return [];
@@ -382,7 +611,7 @@
     var open = 0, ongoing = 0, done = 0, dropped = 0;
     (subtasks || []).forEach(function (s) {
       if (s.status === 'Dropped' || s.status === 'Closed') dropped++;
-      else if (s.status === 'Done') done++;
+      else if (s.status === 'Done' || s.status === 'Completed') done++;
       else if (s.status === 'Ongoing') ongoing++;
       else open++;
     });
@@ -1040,10 +1269,20 @@
   function updateTask(id, updates) {
     var task = state.data.tasks.find(function (t) { return t.id === id; });
     if (!task) return Promise.resolve();
-    if (updates.status === 'Done' && task.status !== 'Done' && task.status !== 'Completed') {
-      if (!task.done_date) task.done_date = new Date().toISOString().slice(0, 10);
+    migrateTaskStatusChangesIfNeeded(task);
+    if (updates.status !== undefined) {
+      var prevNorm = normalizeStatusForHistory(task.status);
+      var nextNorm = normalizeStatusForHistory(updates.status);
+      if (nextNorm !== prevNorm) {
+        var today = new Date().toISOString().slice(0, 10);
+        task.status_changes.push({ id: generateId(), status: nextNorm, date: today });
+        syncTaskFromStatusChanges(task);
+      } else {
+        task.status = nextNorm === 'Done' ? 'Done' : (nextNorm === 'Dropped' ? 'Dropped' : nextNorm);
+      }
     }
     Object.keys(updates).forEach(function (k) {
+      if (k === 'status') return;
       if (k === 'categories') task.categories = Array.isArray(updates.categories) ? updates.categories.slice() : [];
       else if (k === 'difficulty') task.difficulty = normalizeTaskDifficulty(updates.difficulty);
       else task[k] = updates[k];
@@ -1083,10 +1322,43 @@
     return save().then(function () { render(); });
   }
 
-  function updateDoneDate(taskId, newDate) {
+  function updateTaskStatusChangeDate(taskId, changeId, newDate) {
     var task = state.data.tasks.find(function (t) { return t.id === taskId; });
-    if (!task) return Promise.resolve();
-    task.done_date = newDate || '';
+    if (!task || !Array.isArray(task.status_changes)) return Promise.resolve();
+    var c = task.status_changes.find(function (x) { return x.id === changeId; });
+    if (!c) return Promise.resolve();
+    c.date = (newDate != null && String(newDate).trim()) || new Date().toISOString().slice(0, 10);
+    syncTaskFromStatusChanges(task);
+    return save().then(function () { render(); });
+  }
+
+  function deleteTaskStatusChange(taskId, changeId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !Array.isArray(task.status_changes)) return Promise.resolve();
+    task.status_changes = task.status_changes.filter(function (x) { return x.id !== changeId; });
+    syncTaskFromStatusChanges(task);
+    return save().then(function () { render(); });
+  }
+
+  function updateSubtaskStatusChangeDate(taskId, subtaskId, changeId, newDate) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.subtasks) return Promise.resolve();
+    var s = task.subtasks.find(function (x) { return x.id === subtaskId; });
+    if (!s || !Array.isArray(s.status_changes)) return Promise.resolve();
+    var c = s.status_changes.find(function (x) { return x.id === changeId; });
+    if (!c) return Promise.resolve();
+    c.date = (newDate != null && String(newDate).trim()) || new Date().toISOString().slice(0, 10);
+    syncSubtaskFromStatusChanges(s);
+    return save().then(function () { render(); });
+  }
+
+  function deleteSubtaskStatusChange(taskId, subtaskId, changeId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.subtasks) return Promise.resolve();
+    var s = task.subtasks.find(function (x) { return x.id === subtaskId; });
+    if (!s || !Array.isArray(s.status_changes)) return Promise.resolve();
+    s.status_changes = s.status_changes.filter(function (x) { return x.id !== changeId; });
+    syncSubtaskFromStatusChanges(s);
     return save().then(function () { render(); });
   }
 
@@ -1132,15 +1404,28 @@
     if (!task) return Promise.resolve();
     if (!task.subtasks) task.subtasks = [];
     var today = new Date().toISOString().slice(0, 10);
+    var subAssigned = payload.assigned_date != null ? payload.assigned_date : today;
+    var subStatus = payload.status || 'Open';
+    var sc = [{ id: generateId(), status: 'Open', date: subAssigned }];
+    var sn = normalizeStatusForHistory(subStatus);
+    if (sn === 'Ongoing') {
+      sc.push({ id: generateId(), status: 'Ongoing', date: subAssigned });
+    } else if (sn === 'Done') {
+      sc.push({ id: generateId(), status: 'Ongoing', date: subAssigned });
+      sc.push({ id: generateId(), status: 'Done', date: subAssigned });
+    } else if (sn === 'Dropped') {
+      sc.push({ id: generateId(), status: 'Dropped', date: subAssigned });
+    }
     task.subtasks.push({
       id: generateId(),
       title: payload.title || 'Untitled',
       description: payload.description || '',
       priority: Math.min(10, Math.max(1, (payload.priority != null ? payload.priority : 1))),
-      assigned_date: payload.assigned_date != null ? payload.assigned_date : today,
+      assigned_date: subAssigned,
       effort_required_hours: payload.effort_required_hours != null ? payload.effort_required_hours : 0,
-      status: payload.status || 'Open',
-      done_date: '',
+      status: sn === 'Done' ? 'Done' : (sn === 'Dropped' ? 'Dropped' : sn),
+      done_date: sn === 'Done' ? subAssigned : '',
+      status_changes: sc,
       difficulty: normalizeTaskDifficulty(payload.difficulty),
       progress_updates: payload.progress_updates || [],
       categories: Array.isArray(payload.categories) ? payload.categories.slice() : [],
@@ -1158,11 +1443,15 @@
     if (!s) return Promise.resolve();
     if (updates.title !== undefined) s.title = updates.title;
     if (updates.status !== undefined) {
-      var prevSt = s.status;
-      s.status = updates.status;
-      if ((updates.status === 'Done' || updates.status === 'Completed') &&
-          prevSt !== 'Done' && prevSt !== 'Completed') {
-        if (!s.done_date) s.done_date = new Date().toISOString().slice(0, 10);
+      migrateSubtaskStatusChangesIfNeeded(s);
+      var prevNorm = normalizeStatusForHistory(s.status);
+      var nextNorm = normalizeStatusForHistory(updates.status);
+      if (nextNorm !== prevNorm) {
+        var todayS = new Date().toISOString().slice(0, 10);
+        s.status_changes.push({ id: generateId(), status: nextNorm, date: todayS });
+        syncSubtaskFromStatusChanges(s);
+      } else {
+        s.status = nextNorm === 'Done' ? 'Done' : (nextNorm === 'Dropped' ? 'Dropped' : nextNorm);
       }
     }
     if (updates.description !== undefined) s.description = updates.description;
@@ -1280,6 +1569,44 @@
     c.addressed_date = payload.addressed_date || new Date().toISOString().slice(0, 10);
     c.addressed_comment = payload.addressed_comment || '';
     c.status = 'Addressed';
+    return save().then(function () { render(); });
+  }
+
+  function deleteConcern(taskId, concernId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !Array.isArray(task.concerns)) return Promise.resolve();
+    task.concerns = task.concerns.filter(function (x) { return x.id !== concernId; });
+    return save().then(function () { render(); });
+  }
+
+  function deleteSubtaskConcern(taskId, subtaskId, concernId) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.subtasks) return Promise.resolve();
+    var s = task.subtasks.find(function (x) { return x.id === subtaskId; });
+    if (!s || !Array.isArray(s.concerns)) return Promise.resolve();
+    s.concerns = s.concerns.filter(function (x) { return x.id !== concernId; });
+    return save().then(function () { render(); });
+  }
+
+  function updateConcernLoggedDate(taskId, concernId, loggedDate) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !Array.isArray(task.concerns)) return Promise.resolve();
+    var c = task.concerns.find(function (x) { return x.id === concernId; });
+    if (!c) return Promise.resolve();
+    var d = loggedDate != null ? String(loggedDate).trim() : '';
+    c.logged_date = d || new Date().toISOString().slice(0, 10);
+    return save().then(function () { render(); });
+  }
+
+  function updateSubtaskConcernLoggedDate(taskId, subtaskId, concernId, loggedDate) {
+    var task = state.data.tasks.find(function (t) { return t.id === taskId; });
+    if (!task || !task.subtasks) return Promise.resolve();
+    var s = task.subtasks.find(function (x) { return x.id === subtaskId; });
+    if (!s || !Array.isArray(s.concerns)) return Promise.resolve();
+    var c = s.concerns.find(function (x) { return x.id === concernId; });
+    if (!c) return Promise.resolve();
+    var d = loggedDate != null ? String(loggedDate).trim() : '';
+    c.logged_date = d || new Date().toISOString().slice(0, 10);
     return save().then(function () { render(); });
   }
 
@@ -1670,24 +1997,83 @@
     return '<span class="bar-concerns-pill" role="text" aria-label="' + n + ' concern(s)">' + n + '</span>';
   }
 
+  function renderStatusChangeRows(changes) {
+    var sorted = sortedStatusChanges(changes || []);
+    return sorted.map(function (ch) {
+      var lab = normalizeStatusForHistory(ch.status);
+      var d = ch.date || '';
+      var pillClass = 'status-change-pill status-change-pill-' + lab.toLowerCase();
+      return '<li class="status-change-item" data-status-change-id="' + escapeHtml(ch.id) + '">' +
+        '<span class="' + pillClass + '">' + escapeHtml(lab) + '</span>' +
+        '<input type="date" class="status-change-date-in" value="' + escapeHtml(d) + '">' +
+        '<button type="button" class="btn-small status-change-save-date-btn">Save</button>' +
+        '<button type="button" class="btn-icon status-change-delete-btn" title="Delete this status change">×</button>' +
+      '</li>';
+    }).join('');
+  }
+
+  function renderTaskStatusChangesSection(task) {
+    var statusDisp = normalizeStatusForHistory(task.status);
+    var rows = renderStatusChangeRows(task.status_changes);
+    return '<div class="task-update-status-changes-block task-toggleable-block task-block-collapsed">' +
+      '<h4 class="task-update-title">Update Status Changes</h4>' +
+      '<p class="task-status-changes-desc muted">When the task entered each status (chronological). New transitions come from the status buttons. Edit dates so <strong>Generate Summary</strong> uses the correct completion day. Delete mistaken rows.</p>' +
+      '<p class="task-update-current">Current status: <strong>' + escapeHtml(statusDisp) + '</strong>. Completion date (summary): <strong' + (!task.done_date ? ' class="default-value"' : '') + '>' + escapeHtml(task.done_date || '—') + '</strong></p>' +
+      '<ul class="status-change-list">' + (rows || '') + '</ul>' +
+    '</div>';
+  }
+
+  function renderSubtaskStatusChangesSection(s) {
+    var statusDisp = normalizeStatusForHistory(s.status);
+    var rows = renderStatusChangeRows(s.status_changes);
+    return '<div class="task-update-status-changes-block subtask-status-changes-block task-toggleable-block task-block-collapsed">' +
+      '<h4 class="task-update-title">Update Status Changes</h4>' +
+      '<p class="task-status-changes-desc muted">Sub-task status history; same rules as the main task.</p>' +
+      '<p class="task-update-current">Current status: <strong>' + escapeHtml(statusDisp) + '</strong>. Completion date (summary): <strong' + (!s.done_date ? ' class="default-value"' : '') + '>' + escapeHtml(s.done_date || '—') + '</strong></p>' +
+      '<ul class="status-change-list">' + (rows || '') + '</ul>' +
+    '</div>';
+  }
+
   function renderConcernsBlock(concerns) {
     var today = new Date().toISOString().slice(0, 10);
     var openCount = concerns ? concerns.filter(function (c) { return c.status !== 'Addressed'; }).length : 0;
     var list = (concerns && concerns.length) ? concerns.map(function (c) {
       var isAddressed = c.status === 'Addressed';
       var statusBadge = '<span class="concern-status-badge ' + (isAddressed ? 'concern-addressed' : 'concern-open') + '">' + (isAddressed ? 'Addressed' : 'Open') + '</span>';
+      var loggedYmd = c.logged_date || '';
       var addressedInfo = isAddressed
         ? '<div class="concern-addressed-info">' +
-            '<span class="concern-addressed-label">Addressed: ' + escapeHtml(c.addressed_date || '') + '</span>' +
+            '<span class="concern-addressed-label">Addressed on ' + escapeHtml(c.addressed_date || '') + '</span>' +
             (c.addressed_comment ? '<div class="concern-addressed-comment">' + formatRichDescription(c.addressed_comment) + '</div>' : '') +
           '</div>'
         : '';
-      return '<li class="concern-item' + (isAddressed ? ' concern-item-addressed' : '') + '" data-concern-id="' + escapeHtml(c.id) + '">' +
+      var markAddressedBtn = !isAddressed
+        ? '<button type="button" class="concern-action-btn concern-action-resolve btn-concern-update-toggle" title="Mark as addressed">' +
+            '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>' +
+            '<span>Resolve</span></button>'
+        : '';
+      return '<li class="concern-item' + (isAddressed ? ' concern-item-addressed' : '') + '" data-concern-id="' + escapeHtml(c.id) + '" data-logged-date="' + escapeAttr(loggedYmd) + '">' +
         '<div class="concern-item-view">' +
-          '<div class="concern-item-header">' +
-            statusBadge +
-            '<span class="concern-logged-date">' + escapeHtml(c.logged_date || '') + '</span>' +
-            (!isAddressed ? '<button type="button" class="btn-edit-cyan btn-concern-update-toggle" title="Update concern">✎</button>' : '') +
+          '<div class="concern-item-topbar">' +
+            '<div class="concern-item-topbar-left">' +
+              statusBadge +
+              '<span class="concern-logged-label">Logged <span class="concern-logged-date">' + escapeHtml(loggedYmd) + '</span></span>' +
+            '</div>' +
+            '<div class="concern-item-topbar-right">' +
+              '<button type="button" class="concern-action-btn concern-action-date concern-change-logged-date-btn" title="Change logged date">' +
+                '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="11" rx="2"/><line x1="2" y1="7" x2="14" y2="7"/><line x1="5" y1="1" x2="5" y2="4"/><line x1="11" y1="1" x2="11" y2="4"/></svg>' +
+                '<span>Date</span></button>' +
+              markAddressedBtn +
+              '<button type="button" class="concern-action-btn concern-action-delete concern-delete-btn" title="Delete concern">' +
+                '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 4 14 12 14 13 5"/><line x1="1.5" y1="5" x2="14.5" y2="5"/><path d="M6 5V3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5V5"/></svg>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="concern-logged-date-edit hidden">' +
+            '<span class="concern-logged-date-edit-label">Logged date</span>' +
+            '<input type="date" class="concern-logged-date-field" value="' + escapeHtml(loggedYmd) + '">' +
+            '<button type="button" class="btn-small concern-save-logged-date-btn">Save</button>' +
+            '<button type="button" class="btn-link concern-cancel-logged-date-btn">Cancel</button>' +
           '</div>' +
           '<div class="concern-description">' + formatRichDescription(c.description || '') + '</div>' +
           addressedInfo +
@@ -1751,7 +2137,7 @@
         '<div class="status-buttons status-buttons-sub" data-status-target="subtask">' +
           '<button type="button" class="status-btn' + (s.status === 'Open' ? ' active' : '') + '" data-status="Open">Open</button>' +
           '<button type="button" class="status-btn' + (s.status === 'Ongoing' ? ' active' : '') + '" data-status="Ongoing">Ongoing</button>' +
-          '<button type="button" class="status-btn' + (s.status === 'Done' ? ' active' : '') + '" data-status="Done">Done</button>' +
+          '<button type="button" class="status-btn' + ((s.status === 'Done' || s.status === 'Completed') ? ' active' : '') + '" data-status="Done">Done</button>' +
           '<button type="button" class="status-btn' + ((s.status === 'Dropped' || s.status === 'Closed') ? ' active' : '') + '" data-status="Dropped">Dropped</button>' +
         '</div>' +
         '<button type="button" class="btn-icon subtask-delete" title="Delete">×</button>' +
@@ -1768,8 +2154,10 @@
         '</div>' +
         '<div class="subtask-update-toggles">' +
           '<button type="button" class="btn-update-toggle btn-subtask-update-details">Update Details</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-subtask-status-changes">Update Status Changes</button>' +
           '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle">Concerns</button>' +
         '</div>' +
+        renderSubtaskStatusChangesSection(s) +
         renderConcernsBlock(s.concerns || []) +
         '<div class="subtask-details-block task-toggleable-block task-block-collapsed">' +
           '<h4 class="task-details-title">Sub-task details</h4>' +
@@ -1896,7 +2284,7 @@
           '<button type="button" class="btn-update-toggle btn-update-details">Update Task Details</button>' +
           '<button type="button" class="btn-update-toggle btn-update-eta">Update ETA</button>' +
           '<button type="button" class="btn-update-toggle btn-update-effort">Update Effort</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-done-date">Update Done Date</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-status-changes">Update Status Changes</button>' +
           '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle">Concerns</button>' +
         '</div>' +
         '<div class="task-details-block task-toggleable-block task-block-collapsed">' +
@@ -1967,14 +2355,7 @@
             return '<p class="task-update-count">Effort changed ' + updates.length + ' time(s)</p><p class="task-update-chain task-update-history-effort">' + parts.join('') + (dates ? ' <span class="task-update-date">(' + escapeHtml(dates) + ')</span>' : '') + '</p>';
           })() : '') +
         '</div>' +
-        '<div class="task-update-done-date-block task-toggleable-block task-block-collapsed">' +
-          '<h4 class="task-update-title">Date Of Completion</h4>' +
-          '<p class="task-update-current">Date Of Completion: <strong' + (!task.done_date ? ' class="default-value"' : '') + '>' + escapeHtml(task.done_date || '—') + '</strong></p>' +
-          '<div class="task-update-row">' +
-            '<input type="date" class="task-update-done-date-in" value="' + today + '">' +
-            '<button type="button" class="btn-small update-done-date-btn">Update Done Date</button>' +
-          '</div>' +
-        '</div>' +
+        renderTaskStatusChangesSection(task) +
         renderConcernsBlock(task.concerns || []) +
         '<div class="task-description-block">' +
           '<span class="block-subtitle">Description</span>' +
@@ -2298,15 +2679,15 @@
       var detailsBlock = card.querySelector('.task-details-block');
       var etaBlock = card.querySelector('.task-update-eta-block');
       var effortBlock = card.querySelector('.task-update-effort-block');
-      var doneDateBlock = card.querySelector('.task-update-done-date-block');
+      var statusChangesBlock = card.querySelector(':scope > .task-body > .task-update-status-changes-block');
       var concernsBlock = card.querySelector(':scope > .task-body > .task-concerns-block');
-      [detailsBlock, etaBlock, effortBlock, doneDateBlock, concernsBlock].forEach(function (b) {
+      [detailsBlock, etaBlock, effortBlock, statusChangesBlock, concernsBlock].forEach(function (b) {
         if (b && b !== exceptBlock) {
           b.classList.add('task-block-collapsed');
           if (b === detailsBlock) { var btn = card.querySelector('.btn-update-details'); if (btn) btn.classList.remove('active'); }
           if (b === etaBlock) { var btn = card.querySelector('.btn-update-eta'); if (btn) btn.classList.remove('active'); }
           if (b === effortBlock) { var btn = card.querySelector('.btn-update-effort'); if (btn) btn.classList.remove('active'); }
-          if (b === doneDateBlock) { var btn = card.querySelector('.btn-update-done-date'); if (btn) btn.classList.remove('active'); }
+          if (b === statusChangesBlock) { var btn = card.querySelector('.btn-update-status-changes'); if (btn) btn.classList.remove('active'); }
           if (b === concernsBlock) { var btn = card.querySelector('.btn-add-concern-toggle'); if (btn) btn.classList.remove('active'); }
         }
       });
@@ -2347,10 +2728,10 @@
         }
       });
     });
-    card.querySelectorAll('.btn-update-done-date').forEach(function (btn) {
+    card.querySelectorAll('.btn-update-status-changes').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        var block = card.querySelector('.task-update-done-date-block');
+        var block = card.querySelector(':scope > .task-body > .task-update-status-changes-block');
         if (block) {
           var opening = block.classList.contains('task-block-collapsed');
           if (opening) closeOtherTaskUpdateBlocks(block);
@@ -2444,13 +2825,24 @@
       });
     });
 
-    card.querySelectorAll('.update-done-date-btn').forEach(function (btn) {
+    card.querySelectorAll(':scope > .task-body > .task-update-status-changes-block .status-change-save-date-btn').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        var inEl = card.querySelector('.task-update-done-date-in');
-        var val = inEl ? inEl.value.trim() : '';
-        updateDoneDate(taskId, val);
-        if (inEl) inEl.value = '';
+        var li = btn.closest('.status-change-item');
+        var changeId = li && li.dataset.statusChangeId;
+        if (!changeId) return;
+        var dateIn = li.querySelector('.status-change-date-in');
+        updateTaskStatusChangeDate(taskId, changeId, dateIn ? dateIn.value : '');
+      });
+    });
+    card.querySelectorAll(':scope > .task-body > .task-update-status-changes-block .status-change-delete-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!confirm('Delete this status change? Current status and completion date will be recalculated from the remaining history.')) return;
+        var li = btn.closest('.status-change-item');
+        var changeId = li && li.dataset.statusChangeId;
+        if (!changeId) return;
+        deleteTaskStatusChange(taskId, changeId);
       });
     });
 
@@ -2618,6 +3010,36 @@
           }
         });
       });
+      subCard.querySelectorAll('.btn-update-subtask-status-changes').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var block = subCard.querySelector('.subtask-status-changes-block');
+          if (block) {
+            block.classList.toggle('task-block-collapsed');
+            btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
+          }
+        });
+      });
+      subCard.querySelectorAll('.subtask-status-changes-block .status-change-save-date-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var li = btn.closest('.status-change-item');
+          var changeId = li && li.dataset.statusChangeId;
+          if (!changeId) return;
+          var dateIn = li.querySelector('.status-change-date-in');
+          updateSubtaskStatusChangeDate(subTaskId, subId, changeId, dateIn ? dateIn.value : '');
+        });
+      });
+      subCard.querySelectorAll('.subtask-status-changes-block .status-change-delete-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!confirm('Delete this status change? Current status and completion date will be recalculated from the remaining history.')) return;
+          var li = btn.closest('.status-change-item');
+          var changeId = li && li.dataset.statusChangeId;
+          if (!changeId) return;
+          deleteSubtaskStatusChange(subTaskId, subId, changeId);
+        });
+      });
       subCard.querySelectorAll('.save-subtask-details-btn').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
@@ -2782,6 +3204,55 @@
           });
         });
       });
+
+      subCard.querySelectorAll('.task-concerns-block .concern-change-logged-date-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var li = btn.closest('.concern-item');
+          if (!li) return;
+          var v = li.querySelector('.concern-logged-date-view');
+          var ed = li.querySelector('.concern-logged-date-edit');
+          if (v) v.classList.add('hidden');
+          if (ed) ed.classList.remove('hidden');
+          var field = li.querySelector('.concern-logged-date-field');
+          if (field) field.focus();
+        });
+      });
+      subCard.querySelectorAll('.task-concerns-block .concern-cancel-logged-date-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var li = btn.closest('.concern-item');
+          if (!li) return;
+          var orig = li.getAttribute('data-logged-date') || '';
+          var field = li.querySelector('.concern-logged-date-field');
+          if (field) field.value = orig;
+          var v = li.querySelector('.concern-logged-date-view');
+          var ed = li.querySelector('.concern-logged-date-edit');
+          if (v) v.classList.remove('hidden');
+          if (ed) ed.classList.add('hidden');
+        });
+      });
+      subCard.querySelectorAll('.task-concerns-block .concern-save-logged-date-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var li = btn.closest('.concern-item');
+          var concernId = li && li.dataset.concernId;
+          if (!concernId) return;
+          var field = li.querySelector('.concern-logged-date-field');
+          var val = field ? field.value : '';
+          updateSubtaskConcernLoggedDate(subTaskId, subId, concernId, val);
+        });
+      });
+      subCard.querySelectorAll('.task-concerns-block .concern-delete-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (!confirm('Delete this concern?')) return;
+          var li = btn.closest('.concern-item');
+          var concernId = li && li.dataset.concernId;
+          if (!concernId) return;
+          deleteSubtaskConcern(subTaskId, subId, concernId);
+        });
+      });
     });
 
     card.querySelectorAll(':scope > .task-body > .task-concerns-block .log-concern-btn').forEach(function (btn) {
@@ -2825,6 +3296,55 @@
           addressed_date: dateIn ? (dateIn.value || new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10),
           addressed_comment: comment
         });
+      });
+    });
+
+    card.querySelectorAll(':scope > .task-body > .task-concerns-block .concern-change-logged-date-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var li = btn.closest('.concern-item');
+        if (!li) return;
+        var v = li.querySelector('.concern-logged-date-view');
+        var ed = li.querySelector('.concern-logged-date-edit');
+        if (v) v.classList.add('hidden');
+        if (ed) ed.classList.remove('hidden');
+        var field = li.querySelector('.concern-logged-date-field');
+        if (field) field.focus();
+      });
+    });
+    card.querySelectorAll(':scope > .task-body > .task-concerns-block .concern-cancel-logged-date-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var li = btn.closest('.concern-item');
+        if (!li) return;
+        var orig = li.getAttribute('data-logged-date') || '';
+        var field = li.querySelector('.concern-logged-date-field');
+        if (field) field.value = orig;
+        var v = li.querySelector('.concern-logged-date-view');
+        var ed = li.querySelector('.concern-logged-date-edit');
+        if (v) v.classList.remove('hidden');
+        if (ed) ed.classList.add('hidden');
+      });
+    });
+    card.querySelectorAll(':scope > .task-body > .task-concerns-block .concern-save-logged-date-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var li = btn.closest('.concern-item');
+        var concernId = li && li.dataset.concernId;
+        if (!concernId) return;
+        var field = li.querySelector('.concern-logged-date-field');
+        var val = field ? field.value : '';
+        updateConcernLoggedDate(taskId, concernId, val);
+      });
+    });
+    card.querySelectorAll(':scope > .task-body > .task-concerns-block .concern-delete-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!confirm('Delete this concern?')) return;
+        var li = btn.closest('.concern-item');
+        var concernId = li && li.dataset.concernId;
+        if (!concernId) return;
+        deleteConcern(taskId, concernId);
       });
     });
 
@@ -3144,12 +3664,14 @@
   }
 
   /** Tasks / sub-tasks omitted from summary export (HTML file); excludes export flags and summary-only exclusions. */
-  function tasksForExportWorkTable(taskList, from) {
+  function tasksForExportWorkTable(taskList, from, to) {
     return (taskList || []).map(function (t) {
       if (isTruthyFlag(t.exclude_from_export)) return null;
       var subs = (t.subtasks || []).filter(function (s) {
         if (isTruthyFlag(s.exclude_from_summary) || isTruthyFlag(s.exclude_from_export)) return false;
-        return includeSubtaskInSummaryByDate(s, from);
+        if (!wasOpenedByEndOfRange(s, to || from)) return false;
+        if (wasCompletedOrDroppedBefore(s, from)) return false;
+        return true;
       });
       return Object.assign({}, t, { subtasks: subs });
     }).filter(Boolean);
@@ -3163,8 +3685,8 @@
     var to = meta.to;
     var activeTasks = meta.activeTasks || [];
     var idleTasks = meta.idleTasks || [];
-    var exportActiveTasks = tasksForExportWorkTable(activeTasks, from);
-    var exportIdleTasks = tasksForExportWorkTable(idleTasks, from);
+    var exportActiveTasks = tasksForExportWorkTable(activeTasks, from, to);
+    var exportIdleTasks = tasksForExportWorkTable(idleTasks, from, to);
     var exportSettings = getSettings();
     var exportHpd = parseFloat(exportSettings.workingHoursPerDay);
     if (isNaN(exportHpd) || exportHpd <= 0) exportHpd = 8;
@@ -3177,6 +3699,7 @@
       if (v === 'done' || v === 'completed') return 'done';
       if (v === 'ongoing') return 'ongoing';
       if (v === 'open') return 'open';
+      if (v === 'dropped') return 'dropped';
       return 'other';
     }
     function statusBadge(s) {
@@ -3281,11 +3804,12 @@
       return formatRichDescription(String(desc).trim());
     }
     function exportProgressConcernsHtml(concerns) {
+      var filtered = filterConcernsForRange(concerns, from, to);
       var out = [];
-      (concerns || []).forEach(function (c) {
-        var st = c.status || 'Open';
-        var cls = st === 'Addressed' ? 'concern-addressed' : 'concern-open';
-        out.push('<div class="' + cls + '">' + formatRichDescription(c.description || '') + (c.addressed_comment ? ' (' + formatRichDescription(c.addressed_comment) + ')' : '') + '</div>');
+      filtered.forEach(function (c) {
+        var addressedInRange = isConcernAddressedInRange(c, from, to);
+        var cls = addressedInRange ? 'concern-addressed' : 'concern-open';
+        out.push('<div class="' + cls + '">' + formatRichDescription(c.description || '') + (addressedInRange && c.addressed_comment ? ' (' + formatRichDescription(c.addressed_comment) + ')' : '') + '</div>');
       });
       return out.length ? out.join('') : '<span class="muted">None</span>';
     }
@@ -3407,10 +3931,24 @@
       }, 0);
     }
 
+    function exportRangeStatusBadge(taskLike, isSub) {
+      var res = isSub ? resolveSubtaskStatusInRange(taskLike, from, to) : resolveStatusInRange(taskLike, from, to);
+      return rangeStatusBadgeHtml(res, statusBadge);
+    }
+
+    function exportFilteredSubtasks(subsAll) {
+      return subsAll.filter(function (s) {
+        if (isTruthyFlag(s.exclude_from_summary) || isTruthyFlag(s.exclude_from_export)) return false;
+        if (!wasOpenedByEndOfRange(s, to)) return false;
+        if (wasCompletedOrDroppedBefore(s, from)) return false;
+        return true;
+      });
+    }
+
     function appendWorkSummaryExportRows(rows, tasks, omitNewEffort) {
       tasks.forEach(function (t) {
         var subsAll = t.subtasks || [];
-        var subs = subsAll.filter(function (s) { return includeSubtaskInSummaryByDate(s, from); });
+        var subs = exportFilteredSubtasks(subsAll);
         var includedSubs = subs.filter(function (s) { return !subtaskHasDedicatedEffort(s); });
         var dedicatedSubs = subs.filter(function (s) { return subtaskHasDedicatedEffort(s); });
 
@@ -3446,7 +3984,7 @@
             mainEffortCells +
             '<td class="export-td-eta export-td-eta-planned">' + plannedEtaCell + '</td>' +
             '<td class="export-td-eta export-td-eta-current">' + buildEtaCurrentHtml(t) + '</td>' +
-            '<td class="export-td-status">' + statusBadge(t.status || 'Open') + '</td>' +
+            '<td class="export-td-status">' + exportRangeStatusBadge(t, false) + '</td>' +
             '<td class="export-td-progress">' + progressCellHtml(mainProgress, t.concerns || [], omitNewEffort) + '</td>' +
             (brief ? '' : ('<td class="export-td-details">' + taskDetailsHtml(t.description) + '</td>')) +
           '</tr>'
@@ -3469,7 +4007,7 @@
               newSubTd +
               '<td class="export-td-eta export-td-eta-planned">' + plannedCellS + '</td>' +
               '<td class="export-td-eta export-td-eta-current">' + buildEtaCurrentHtml(s) + '</td>' +
-              '<td class="export-td-status">' + statusBadge(s.status || 'Open') + '</td>' +
+              '<td class="export-td-status">' + exportRangeStatusBadge(s, true) + '</td>' +
               '<td class="export-td-progress">' + progressCellHtml(subUpdates, s.concerns || [], omitNewEffort) + '</td>' +
               (brief ? '' : ('<td class="export-td-details">' + taskDetailsHtml(s.description) + '</td>')) +
             '</tr>'
@@ -3500,7 +4038,7 @@
               remDedicatedTd +
               '<td class="export-td-eta export-td-eta-planned">' + plannedCellS + '</td>' +
               '<td class="export-td-eta export-td-eta-current">' + buildEtaCurrentHtml(s) + '</td>' +
-              '<td class="export-td-status">' + statusBadge(s.status || 'Open') + '</td>' +
+              '<td class="export-td-status">' + exportRangeStatusBadge(s, true) + '</td>' +
               '<td class="export-td-progress">' + progressCellHtml(subUpdates, s.concerns || [], omitNewEffort) + '</td>' +
               (brief ? '' : ('<td class="export-td-details">' + taskDetailsHtml(s.description) + '</td>')) +
             '</tr>'
@@ -3881,7 +4419,10 @@
       '.status-btn.done{background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);border-color:#6ee7b7;color:#065f46}' +
       '.status-btn.ongoing{background:linear-gradient(180deg,#fffbeb 0%,#fef3c7 100%);border-color:#fcd34d;color:#92400e}' +
       '.status-btn.open{background:linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%);border-color:#93c5fd;color:#1e40af}' +
+      '.status-btn.dropped{background:linear-gradient(180deg,#f8f8f8 0%,#e5e7eb 100%);border-color:#9ca3af;color:#4b5563}' +
       '.status-btn.other{background:#f1f5f9;border-color:#cbd5e1;color:#475569}' +
+      '.export-status-transition{display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap}' +
+      '.export-status-arrow{font-weight:700;color:#888}' +
       '.negative{color:#b91c1c;font-weight:700}.muted{color:#64748b}' +
       '.concern-open{background:linear-gradient(90deg,#fff1f2 0%,#fff 100%);border-left:4px solid #f87171;border-radius:0 8px 8px 0;padding:8px 10px;margin:6px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}' +
       '.concern-addressed{background:linear-gradient(90deg,#ecfdf5 0%,#fff 100%);border-left:4px solid #34d399;border-radius:0 8px 8px 0;padding:8px 10px;margin:6px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}' +
@@ -3999,8 +4540,8 @@
     var to = meta.to;
     var activeTasks = meta.activeTasks || [];
     var idleTasks = meta.idleTasks || [];
-    var exportActiveTasks = tasksForExportWorkTable(activeTasks, from);
-    var exportIdleTasks = tasksForExportWorkTable(idleTasks, from);
+    var exportActiveTasks = tasksForExportWorkTable(activeTasks, from, to);
+    var exportIdleTasks = tasksForExportWorkTable(idleTasks, from, to);
     var exportSettings = getSettings();
     var exportHpd = parseFloat(exportSettings.workingHoursPerDay);
     if (isNaN(exportHpd) || exportHpd <= 0) exportHpd = 8;
@@ -4065,6 +4606,16 @@
     function statusBadgeConfluence(raw) {
       var label = (raw == null || raw === '' ? 'Open' : String(raw)).trim();
       return mdBoldInner(label);
+    }
+    function cfRangeStatusLabel(taskLike, isSub) {
+      var res = isSub ? resolveSubtaskStatusInRange(taskLike, from, to) : resolveStatusInRange(taskLike, from, to);
+      if (!res.transitions.length) return statusBadgeConfluence(res.statusAtEnd);
+      var parts = [statusBadgeConfluence(res.statusAtStart)];
+      res.transitions.forEach(function (tr) {
+        parts.push(' → ');
+        parts.push(statusBadgeConfluence(tr.to));
+      });
+      return parts.join('');
     }
     function formatEffortExportNum(n) {
       var x = Number(n);
@@ -4181,14 +4732,15 @@
         lines.push('');
       }
       lines.push('**Concerns**');
-      if (!concerns || !concerns.length) {
+      var filteredConcerns = filterConcernsForRange(concerns, from, to);
+      if (!filteredConcerns.length) {
         lines.push('- *None*');
       } else {
-        concerns.forEach(function (c) {
-          var st = c.status || 'Open';
-          var prefix = st === 'Addressed' ? '*(Addressed)* ' : '*(Open)* ';
+        filteredConcerns.forEach(function (c) {
+          var addressedInRange = isConcernAddressedInRange(c, from, to);
+          var prefix = addressedInRange ? '*(Addressed)* ' : '*(Open)* ';
           var line = prefix + linkifyConfluenceCell(c.description || '');
-          if (c.addressed_comment) line += ' — ' + linkifyConfluenceCell(c.addressed_comment);
+          if (addressedInRange && c.addressed_comment) line += ' — ' + linkifyConfluenceCell(c.addressed_comment);
           lines.push('- ' + line);
         });
       }
@@ -4310,7 +4862,7 @@
         }
 
         var subsAll = t.subtasks || [];
-        var subs = subsAll.filter(function (s) { return includeSubtaskInSummaryByDate(s, from); });
+        var subs = subsAll;
         var includedSubs = subs.filter(function (s) { return !subtaskHasDedicatedEffort(s); });
         var dedicatedSubs = subs.filter(function (s) { return subtaskHasDedicatedEffort(s); });
 
@@ -4335,7 +4887,7 @@
 
         out.push('### ' + mainNum + '. ' + taskTitle);
         out.push('');
-        out.push('*Project:* ' + projectLabel + ' · *Status:* ' + statusBadgeConfluence(t.status || 'Open'));
+        out.push('*Project:* ' + projectLabel + ' · *Status:* ' + cfRangeStatusLabel(t, false));
         out.push('');
 
         pushEffortEtaSection(out, plannedMd, cumMd, newMainStr, remCellMain, omitNewEffort, plannedEtaCell, buildEtaCurrentMd(t));
@@ -4349,7 +4901,7 @@
           var plannedCellS = plannedRawS ? formatDateDMYPlain(plannedRawS) : '—';
           out.push('#### ' + nextSubLabel() + ' Sub-task (included): ' + confluenceTitleWithProject(s.project, s.title || '(no title)'));
           out.push('');
-          out.push('*Status:* ' + statusBadgeConfluence(s.status || 'Open'));
+          out.push('*Status:* ' + cfRangeStatusLabel(s, true));
           out.push('');
           pushEffortEtaIncludedSubSection(out, omitNewEffort, subEffort, plannedCellS, buildEtaCurrentMd(s));
           pushProgressConcernsVertical(out, subUpdates, s.concerns || [], omitNewEffort);
@@ -4369,7 +4921,7 @@
 
           out.push('#### ' + nextSubLabel() + ' Sub-task: ' + confluenceTitleWithProject(s.project, s.title || '(no title)'));
           out.push('');
-          out.push('*Status:* ' + statusBadgeConfluence(s.status || 'Open'));
+          out.push('*Status:* ' + cfRangeStatusLabel(s, true));
           out.push('');
           pushEffortEtaSection(out, buildPlannedEffortMd(s), String(cumulativeOutsideSub), String(subEffort), remCellSub, omitNewEffort, plannedCellS, buildEtaCurrentMd(s));
           pushProgressConcernsVertical(out, subUpdates, s.concerns || [], omitNewEffort);
@@ -4855,7 +5407,16 @@
       return false;
     }
 
-    var sortedTasks = tasks.slice().sort(function (a, b) {
+    function taskOpenedByRangeEnd(t) { return wasOpenedByEndOfRange(t, to); }
+    function taskDoneOrDroppedBeforeRange(t) { return wasCompletedOrDroppedBefore(t, from); }
+
+    var eligibleTasks = tasks.filter(function (t) {
+      if (!taskOpenedByRangeEnd(t)) return false;
+      if (taskDoneOrDroppedBeforeRange(t)) return false;
+      return true;
+    });
+
+    var sortedTasks = eligibleTasks.slice().sort(function (a, b) {
       var ra = statusRank(a.status);
       var rb = statusRank(b.status);
       if (ra !== rb) return ra - rb;
@@ -4865,17 +5426,18 @@
     var activeTasks = sortedTasks.filter(hasProgressInRange);
     var idleTasks = sortedTasks.filter(function (t) {
       if (hasProgressInRange(t)) return false;
-      if (t.status === 'Done' || t.status === 'Completed') {
-        return t.done_date && inRange(t.done_date);
-      }
+      var res = resolveStatusInRange(t, from, to);
+      if (res.statusAtEnd === 'Done' || res.statusAtEnd === 'Dropped') return false;
       return true;
     });
 
     var openOngoingMain = activeTasks.filter(function (t) {
-      return t.status === 'Open' || t.status === 'Ongoing';
+      var res = resolveStatusInRange(t, from, to);
+      return res.statusAtEnd === 'Open' || res.statusAtEnd === 'Ongoing';
     });
     var completedInRange = activeTasks.filter(function (t) {
-      return (t.status === 'Done' || t.status === 'Completed') && inRange(t.done_date);
+      var res = resolveStatusInRange(t, from, to);
+      return res.statusAtEnd === 'Done' || res.statusAtEnd === 'Dropped';
     });
 
     var rangeLabel = escapeHtml(from) + ' to ' + escapeHtml(to);
@@ -4901,22 +5463,43 @@
         '</div>' +
       '</section>';
 
+    function summaryRangeStatusHtml(resolved) {
+      if (!resolved.transitions.length) {
+        var label = resolved.statusAtEnd;
+        return '<span class="task-status-pill ' + statusClass(label) + '">' + escapeHtml(label) + '</span>';
+      }
+      var parts = ['<span class="task-status-pill ' + statusClass(resolved.statusAtStart) + '">' + escapeHtml(resolved.statusAtStart) + '</span>'];
+      resolved.transitions.forEach(function (tr) {
+        parts.push(' <span class="summary-status-arrow">→</span> ');
+        parts.push('<span class="task-status-pill ' + statusClass(tr.to) + '">' + escapeHtml(tr.to) + '</span>');
+      });
+      return parts.join('');
+    }
+
+    function rangeFilteredSubtasks(subs) {
+      return subs.filter(function (s) {
+        if (isTruthyFlag(s.exclude_from_summary)) return false;
+        if (!wasOpenedByEndOfRange(s, to)) return false;
+        if (wasCompletedOrDroppedBefore(s, from)) return false;
+        return true;
+      });
+    }
+
     // ---- Cumulative Summary (styled, only tasks with progress in range)
     var cumulativeTableRows = activeTasks.map(function (t) {
-      var subs = (t.subtasks || []).filter(function (s) { return includeSubtaskInSummaryFull(s, from); });
-      var subDone = subs.filter(function (s) { return s.status === 'Done' || s.status === 'Completed'; }).length;
-      var subOngoing = subs.filter(function (s) { return s.status === 'Ongoing'; }).length;
-      var subOpen = subs.filter(function (s) { return s.status === 'Open'; }).length;
+      var subs = rangeFilteredSubtasks(t.subtasks || []);
+      var subDone = subs.filter(function (s) { var r = resolveSubtaskStatusInRange(s, from, to); return r.statusAtEnd === 'Done'; }).length;
+      var subOngoing = subs.filter(function (s) { var r = resolveSubtaskStatusInRange(s, from, to); return r.statusAtEnd === 'Ongoing'; }).length;
+      var subOpen = subs.filter(function (s) { var r = resolveSubtaskStatusInRange(s, from, to); return r.statusAtEnd === 'Open'; }).length;
       var mainSpent = taskEffortSpentMainAttributed(t);
       var subSpent = taskEffortSpentSubOnlyTask(t);
       var effortCell =
         '<div class="summary-effort-split"><span class="summary-effort-split-label">Main</span> ' + escapeHtml(formatHoursAndDays(mainSpent)) + '</div>' +
         '<div class="summary-effort-split"><span class="summary-effort-split-label">Sub</span> ' + escapeHtml(formatHoursAndDays(subSpent)) + '</div>';
-      var statusLabel = t.status || 'Open';
-      var pillClass = statusClass(statusLabel);
+      var resolved = resolveStatusInRange(t, from, to);
       var newEffortInRange = taskEffortInRangeMainAttributed(t, from, to) + taskEffortInRangeSubDedicated(t, from, to);
       var rowClass = newEffortInRange > 0 ? ' class="summary-has-new-effort"' : '';
-      return '<tr' + rowClass + '><td><span class="task-status-pill ' + pillClass + '">' + escapeHtml(statusLabel) + '</span></td>' +
+      return '<tr' + rowClass + '><td>' + summaryRangeStatusHtml(resolved) + '</td>' +
         '<td class="summary-cumulative-task-cell"><div class="summary-cell-flex">' + summaryProjectPillHtml(t.project) + escapeHtml(t.title || '(no title)') + '</div></td>' +
         '<td>' + subDone + ' / ' + subOngoing + ' / ' + subOpen + '</td>' +
         '<td>' + effortCell + '</td></tr>';
@@ -4941,7 +5524,7 @@
     // ---- Detailed Summary (cards only for tasks with progress in range)
     var detailedCards = [];
     activeTasks.forEach(function (t, idx) {
-      var subs = (t.subtasks || []).filter(function (s) { return includeSubtaskInSummaryFull(s, from); });
+      var subs = rangeFilteredSubtasks(t.subtasks || []);
       var mainProgressInRange = sortProgressUpdatesOldestFirst((t.progress_updates || []).filter(function (p) { return inRange(p.date_added); }));
       var subProgressBySub = subs.map(function (s) {
         var updates = sortProgressUpdatesOldestFirst((s.progress_updates || []).filter(function (p) { return inRange(p.date_added); }));
@@ -4950,18 +5533,19 @@
       var hasSubProgress = subProgressBySub.some(function (x) { return x.updates.length; });
       var etaUpdatesInRange = (t.eta_updates || []).filter(function (u) { return inRange(u.date_recorded); });
       var effortUpdatesInRange = (t.effort_updates || []).filter(function (u) { return inRange(u.date_recorded); });
-      var activeConcernsMain = (t.concerns || []).filter(function (c) { return c.status !== 'Addressed'; });
-      var addressedConcernsMainInRange = (t.concerns || []).filter(function (c) {
-        return c.status === 'Addressed' && inRange(c.addressed_date);
-      });
+
+      var rangeConcernsMain = filterConcernsForRange(t.concerns, from, to);
+      var activeConcernsMain = rangeConcernsMain.filter(function (c) { return !isConcernAddressedInRange(c, from, to); });
+      var addressedConcernsMainInRange = rangeConcernsMain.filter(function (c) { return isConcernAddressedInRange(c, from, to); });
       var activeConcernsSubs = [];
       var addressedConcernsSubsInRange = [];
       subs.forEach(function (s) {
-        (s.concerns || []).forEach(function (c) {
-          if (c.status !== 'Addressed') {
-            activeConcernsSubs.push({ subtask: s, concern: c });
-          } else if (inRange(c.addressed_date)) {
+        var rc = filterConcernsForRange(s.concerns, from, to);
+        rc.forEach(function (c) {
+          if (isConcernAddressedInRange(c, from, to)) {
             addressedConcernsSubsInRange.push({ subtask: s, concern: c });
+          } else {
+            activeConcernsSubs.push({ subtask: s, concern: c });
           }
         });
       });
@@ -4977,11 +5561,10 @@
       var remainingMainClass = remainingMainOnly < 0 ? 'summary-remaining-negative' : '';
       var subsNoProgress = subs.filter(function (s, i) { return !subProgressBySub[i].updates.length; });
 
-      var pillClass = statusClass(t.status || 'Open');
-      /* Full-card tint only when main-track work in range (main + included subs); not sub-tasks with own planned effort only. */
+      var resolved = resolveStatusInRange(t, from, to);
       var cardHighlightClass = mainAttrInRange > 0 ? ' summary-has-new-effort' : '';
       var card = '<div class="summary-task-card' + cardHighlightClass + '">' +
-        '<h5 class="summary-task-title">' + summaryProjectPillHtml(t.project) + '<span class="summary-task-title-main">' + escapeHtml(t.title || '(no title)') + '</span> <span class="task-status-pill ' + pillClass + '">' + escapeHtml(t.status || 'Open') + '</span></h5>' +
+        '<h5 class="summary-task-title">' + summaryProjectPillHtml(t.project) + '<span class="summary-task-title-main">' + escapeHtml(t.title || '(no title)') + '</span> ' + summaryRangeStatusHtml(resolved) + '</h5>' +
         '<div class="summary-meta-grid">' +
           '<span class="summary-meta"><span class="summary-meta-label">Project</span><span class="summary-meta-value">' +
           ((t.project != null && String(t.project).trim()) ? escapeHtml(String(t.project).trim()) : '—') +
@@ -5054,10 +5637,10 @@
           var cumulativeOutsideSub = subtaskEffortOutsideRange(s, from, to);
           var remS = reqS - spentS;
           var remSClass = remS < 0 ? 'summary-remaining-negative' : '';
-          var spClass = statusClass(s.status || 'Open');
+          var subResolved = resolveSubtaskStatusInRange(s, from, to);
           var subRowTint = subUpdatesInRange.length > 0 && newSubInRange > 0;
           var subRowClass = subRowTint ? ' class="summary-has-new-effort"' : '';
-          card += '<tr' + subRowClass + '><td class="summary-cumulative-task-cell"><div class="summary-cell-flex">' + summaryProjectPillHtml(s.project) + '<span>' + escapeHtml(s.title || '(no title)') + '</span>' + (!subtaskHasDedicatedEffort(s) ? summaryIncludedPillHtml() : '') + '</div></td><td><span class="task-status-pill ' + spClass + '">' + escapeHtml(s.status || 'Open') + '</span></td><td>' + escapeHtml(etaS) + '</td>' +
+          card += '<tr' + subRowClass + '><td class="summary-cumulative-task-cell"><div class="summary-cell-flex">' + summaryProjectPillHtml(s.project) + '<span>' + escapeHtml(s.title || '(no title)') + '</span>' + (!subtaskHasDedicatedEffort(s) ? summaryIncludedPillHtml() : '') + '</div></td><td>' + summaryRangeStatusHtml(subResolved) + '</td><td>' + escapeHtml(etaS) + '</td>' +
             '<td>' + reqS + ' hrs</td><td>' + cumulativeOutsideSub + ' hrs</td><td>' + newSubInRange + ' hrs</td><td><span class="' + remSClass + '">' + remS + ' hrs</span></td></tr>';
         });
         card += '</tbody></table></div>';
@@ -5120,14 +5703,13 @@
         '<div class="summary-cards">' + detailedCards.join('') + '</div>' +
       '</section>';
 
-    // ---- Tasks with No Progress (excludes Done/Completed unless completed in range)
+    // ---- Tasks with No Progress (only tasks opened during/before range, not done/dropped before)
     var idleHtml = '';
     if (idleTasks.length) {
       var idleRows = idleTasks.map(function (t) {
-        var subs = t.subtasks || [];
-        var statusLabel = t.status || 'Open';
-        var pillClass = statusClass(statusLabel);
-        return '<tr><td><span class="task-status-pill ' + pillClass + '">' + escapeHtml(statusLabel) + '</span></td>' +
+        var subs = rangeFilteredSubtasks(t.subtasks || []);
+        var idleResolved = resolveStatusInRange(t, from, to);
+        return '<tr><td>' + summaryRangeStatusHtml(idleResolved) + '</td>' +
           '<td class="summary-cumulative-task-cell"><div class="summary-cell-flex">' + summaryProjectPillHtml(t.project) + escapeHtml(t.title || '(no title)') + '</div></td>' +
           '<td>' + subs.length + '</td></tr>';
       }).join('');

@@ -1117,6 +1117,57 @@ textarea.auto-resize {
   margin-top: 8px;
 }
 
+.task-bar-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.bar-highlight {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(139, 148, 158, 0.15);
+  color: #c9d1d9;
+  border: 1px solid rgba(139, 148, 158, 0.2);
+}
+
+.bar-highlight.hl-overdue {
+  background: rgba(248, 81, 73, 0.18);
+  color: #ff7b72;
+  border-color: rgba(248, 81, 73, 0.35);
+}
+
+.bar-highlight.hl-urgent {
+  background: rgba(210, 153, 34, 0.18);
+  color: #e3b341;
+  border-color: rgba(210, 153, 34, 0.35);
+}
+
+.bar-highlight.hl-done {
+  background: rgba(63, 185, 80, 0.12);
+  color: #56d364;
+  border-color: rgba(63, 185, 80, 0.25);
+  font-weight: 600;
+}
+
+.bar-highlight .hl-dim {
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.bar-highlight-sep {
+  color: #484f58;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
 .meta-chip {
   display: inline-flex;
   align-items: center;
@@ -3183,6 +3234,7 @@ a.auto-link:hover {
   border-radius: 8px;
   padding: 20px;
   min-height: 120px;
+  flex-shrink: 0;
 }
 
 .summary-export-htmlcss {
@@ -3350,12 +3402,46 @@ a.auto-link:hover {
   margin: 4px 0 2px;
 }
 
+.summary-export-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
 .summary-export-field-label {
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
   color: #8b949e;
-  margin-bottom: 2px;
+}
+
+.btn-copy-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #21262d;
+  color: #c9d1d9;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.btn-copy-code:hover {
+  background: #30363d;
+  border-color: #484f58;
+  color: #e6edf3;
+}
+
+.btn-copy-code.btn-copy-success {
+  background: rgba(63, 185, 80, 0.15);
+  border-color: #238636;
+  color: #3fb950;
 }
 
 .summary-export-separated-heading {
@@ -3373,7 +3459,8 @@ a.auto-link:hover {
 
 .summary-export-text {
   width: 100%;
-  min-height: 560px;
+  height: 420px;
+  max-height: 420px;
   background: #0d1117;
   border: 1px solid #30363d;
   color: #c9d1d9;
@@ -3383,10 +3470,12 @@ a.auto-link:hover {
   font-size: 12px;
   line-height: 1.4;
   resize: vertical;
+  overflow-y: auto;
 }
 
 .summary-export-text-split {
-  min-height: 220px;
+  height: 200px;
+  max-height: 200px;
 }
 
 .summary-report {

@@ -386,6 +386,24 @@
     return Math.round((hours / 8) * 10) / 10;
   }
 
+  function daysUntilDeadline(etaStr) {
+    if (!etaStr) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var parts = etaStr.split('-');
+    if (parts.length !== 3) return null;
+    var eta = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    if (isNaN(eta.getTime())) return null;
+    return Math.round((eta - today) / 86400000);
+  }
+
+  function formatDeadlineLabel(days) {
+    if (days === null) return null;
+    if (days < 0) return Math.abs(days) + 'd overdue';
+    if (days === 0) return 'Due today';
+    return days + 'd left';
+  }
+
   function compareDateStr(a, b) {
     if (!a || !b) return 0;
     if (a > b) return 1;
@@ -2199,6 +2217,28 @@
       '<span class="meta-chip meta-chip-effort"><span class="meta-label">Effort</span><span class="meta-value">' + escapeHtml(subEffortReq) + '</span></span>'
     ].join('');
 
+    var noEffortSub = isTruthyFlag(s.no_effort_needed);
+    var subStatusStr = (s.status === 'Closed' ? 'Dropped' : (s.status === 'Completed' ? 'Done' : s.status)) || 'Open';
+    var subDeadlineDays = daysUntilDeadline(s.eta);
+    var subDeadlineLabel = formatDeadlineLabel(subDeadlineDays);
+    var subDeadlineCls = subDeadlineDays !== null ? (subDeadlineDays < 0 ? ' hl-overdue' : (subDeadlineDays <= 3 ? ' hl-urgent' : '')) : '';
+    var subPlannedHrs = getLatestPlannedEffortHours(s);
+    var subSpentHrs = subtaskEffortSpent(s);
+    var subRemHrs = subPlannedHrs - subSpentHrs;
+    var subEffortRemStr = noEffortSub ? '—' : (subRemHrs.toFixed(1).replace(/\.0$/, '') + ' / ' + subPlannedHrs.toFixed(1).replace(/\.0$/, '') + ' hrs');
+    var subEffortRemCls = (!noEffortSub && subRemHrs < 0) ? ' hl-overdue' : '';
+
+    var subHighlightsRow = '<div class="task-bar-highlights">';
+    if (subStatusStr !== 'Done' && subStatusStr !== 'Dropped') {
+      subHighlightsRow +=
+        '<span class="bar-highlight' + subDeadlineCls + '">' + (subDeadlineLabel != null ? escapeHtml(subDeadlineLabel) : '<span class="hl-dim">No ETA</span>') + '</span>' +
+        '<span class="bar-highlight-sep">·</span>' +
+        '<span class="bar-highlight' + subEffortRemCls + '">Remaining: ' + escapeHtml(subEffortRemStr) + '</span>';
+    } else {
+      subHighlightsRow += '<span class="bar-highlight hl-done">' + escapeHtml(subStatusStr) + '</span>';
+    }
+    subHighlightsRow += '</div>';
+
     var subBar = '<div class="subtask-bar" style="background-color:' + escapeHtml(subPriorityColor) + ';color:#fff" data-task-id="' + escapeHtml(taskId) + '" data-subtask-id="' + escapeHtml(s.id) + '">' +
       '<div class="subtask-bar-left">' +
         '<div class="subtask-bar-title-row">' +
@@ -2207,6 +2247,7 @@
           renderConcernCountPill(s.concerns) +
         '</div>' +
         '<div class="subtask-bar-meta">' + subMetaChips + '</div>' +
+        subHighlightsRow +
       '</div>' +
       '<div class="subtask-bar-right">' +
         '<div class="status-buttons status-buttons-sub" data-status-target="subtask">' +
@@ -2315,6 +2356,27 @@
       '<span class="meta-chip"><span class="meta-label">Bugs</span><span class="meta-value' + (!bugStr ? ' default-value' : '') + '">' + escapeHtml(bugStr || '—') + '</span></span>'
     ].join('');
 
+    var noEffortTask = isTruthyFlag(task.no_effort_needed);
+    var deadlineDays = daysUntilDeadline(task.eta);
+    var deadlineLabel = formatDeadlineLabel(deadlineDays);
+    var deadlineCls = deadlineDays !== null ? (deadlineDays < 0 ? ' hl-overdue' : (deadlineDays <= 3 ? ' hl-urgent' : '')) : '';
+    var plannedHrs = getLatestPlannedEffortHours(task);
+    var spentTotal = taskEffortSpent(task);
+    var remHrs = plannedHrs - spentTotal;
+    var effortRemStr = noEffortTask ? '—' : (remHrs.toFixed(1).replace(/\.0$/, '') + ' / ' + plannedHrs.toFixed(1).replace(/\.0$/, '') + ' hrs');
+    var effortRemCls = (!noEffortTask && remHrs < 0) ? ' hl-overdue' : '';
+
+    var highlightsRow = '<div class="task-bar-highlights">';
+    if (statusStr !== 'Done' && statusStr !== 'Dropped') {
+      highlightsRow +=
+        '<span class="bar-highlight' + deadlineCls + '">' + (deadlineLabel != null ? escapeHtml(deadlineLabel) : '<span class="hl-dim">No ETA</span>') + '</span>' +
+        '<span class="bar-highlight-sep">·</span>' +
+        '<span class="bar-highlight' + effortRemCls + '">Remaining: ' + escapeHtml(effortRemStr) + '</span>';
+    } else {
+      highlightsRow += '<span class="bar-highlight hl-done">' + escapeHtml(statusStr) + '</span>';
+    }
+    highlightsRow += '</div>';
+
     var subtaskBlock = '';
     if (counts.total > 0) {
       subtaskBlock = '<div class="task-bar-subtasks">' +
@@ -2336,6 +2398,7 @@
           renderConcernCountPill(task.concerns) +
         '</div>' +
         '<div class="task-bar-meta">' + metaChips + '</div>' +
+        highlightsRow +
         subtaskBlock +
       '</div>' +
       '</div>';
@@ -5392,14 +5455,23 @@
       '<div class="summary-export-open-browser-row">' +
       '<button type="button" class="btn-secondary summary-open-in-browser-btn">Open In Browser</button>' +
       '</div>' +
-      '<label class="summary-export-field-label">Full HTML document (inline styles)</label>' +
+      '<div class="summary-export-field-header">' +
+        '<label class="summary-export-field-label">Full HTML document (inline styles)</label>' +
+        '<button type="button" class="btn-copy-code" data-copy-target="combined" title="Copy to clipboard">⧉ Copy</button>' +
+      '</div>' +
       '<textarea class="summary-export-text summary-export-text-combined" spellcheck="false">' + escapeHtml(parts.document) + '</textarea>' +
       '<h4 class="summary-export-separated-heading">HTML–CSS separated</h4>' +
       '<p class="summary-export-separated-note muted">For Confluence Mosaic and similar renderers: paste HTML into the HTML macro and styles into a separate stylesheet.</p>' +
-      '<label class="summary-export-field-label">HTML only (body content)</label>' +
-      '<textarea class="summary-export-text summary-export-text-split" spellcheck="false">' + escapeHtml(parts.htmlOnly) + '</textarea>' +
-      '<label class="summary-export-field-label">CSS only</label>' +
-      '<textarea class="summary-export-text summary-export-text-split" spellcheck="false">' + escapeHtml(parts.cssOnly) + '</textarea>'
+      '<div class="summary-export-field-header">' +
+        '<label class="summary-export-field-label">HTML only (body content)</label>' +
+        '<button type="button" class="btn-copy-code" data-copy-target="html" title="Copy to clipboard">⧉ Copy</button>' +
+      '</div>' +
+      '<textarea class="summary-export-text summary-export-text-split" data-copy-id="html" spellcheck="false">' + escapeHtml(parts.htmlOnly) + '</textarea>' +
+      '<div class="summary-export-field-header">' +
+        '<label class="summary-export-field-label">CSS only</label>' +
+        '<button type="button" class="btn-copy-code" data-copy-target="css" title="Copy to clipboard">⧉ Copy</button>' +
+      '</div>' +
+      '<textarea class="summary-export-text summary-export-text-split" data-copy-id="css" spellcheck="false">' + escapeHtml(parts.cssOnly) + '</textarea>'
     );
   }
 
@@ -5450,6 +5522,33 @@
     if (briefBtn) briefBtn.addEventListener('click', function () { openDoc(docBrief); });
   }
 
+  function wireCopyCodeButtons(container) {
+    if (!container) return;
+    container.querySelectorAll('.btn-copy-code').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = btn.getAttribute('data-copy-target');
+        var panel = btn.closest('.summary-export-tab-panel');
+        if (!panel) return;
+        var textarea;
+        if (target === 'combined') {
+          textarea = panel.querySelector('.summary-export-text-combined');
+        } else {
+          textarea = panel.querySelector('[data-copy-id="' + target + '"]');
+        }
+        if (!textarea) return;
+        navigator.clipboard.writeText(textarea.value).then(function () {
+          var orig = btn.textContent;
+          btn.textContent = '✓ Copied';
+          btn.classList.add('btn-copy-success');
+          setTimeout(function () {
+            btn.textContent = orig;
+            btn.classList.remove('btn-copy-success');
+          }, 1500);
+        });
+      });
+    });
+  }
+
   function exportSummary() {
     if (!state.summaryGenerated || !state.lastSummaryMeta) return;
     var exOpt = getExportOptions();
@@ -5494,6 +5593,7 @@
     summaryOutput.appendChild(wrap);
     wireSummaryExportHtmlTabs(wrap);
     wireSummaryOpenInBrowser(wrap, partsFull.document, partsBrief.document);
+    wireCopyCodeButtons(wrap);
   }
 
   function generateSummary() {

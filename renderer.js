@@ -297,7 +297,8 @@
       done_date: done_date,
       status_changes: status_changes,
       exclude_from_summary: !!o.exclude_from_summary,
-      exclude_from_export: !!o.exclude_from_export
+      exclude_from_export: !!o.exclude_from_export,
+      no_effort_needed: !!o.no_effort_needed
     };
     if (!t.status_changes.length) {
       t.status_changes.push({ id: generateId(), status: 'Open', date: assigned_date });
@@ -341,6 +342,7 @@
     t.difficulty = normalizeTaskDifficulty(t.difficulty);
     t.exclude_from_summary = !!t.exclude_from_summary;
     t.exclude_from_export = !!t.exclude_from_export;
+    t.no_effort_needed = !!t.no_effort_needed;
     migrateTaskStatusChangesIfNeeded(t);
     t.subtasks.forEach(function (s) {
       if (!s.priority && s.priority !== 0) s.priority = 1;
@@ -354,6 +356,7 @@
       s.project = (s.project != null && String(s.project).trim()) ? String(s.project).trim() : '';
       s.exclude_from_summary = !!s.exclude_from_summary;
       s.exclude_from_export = !!s.exclude_from_export;
+      s.no_effort_needed = !!s.no_effort_needed;
       (s.progress_updates || []).forEach(function (p) {
         if (!Array.isArray(p.categories)) p.categories = [];
         if (p.category != null && String(p.category).trim() !== '') {
@@ -2183,7 +2186,8 @@
     var baseColor = getPriorityColor(s.priority, settings);
     var subPriorityColor = darkenColor(baseColor, 0.72);
     var subAssignedStr = s.assigned_date || null;
-    var subEffortReq = s.effort_required_hours != null && s.effort_required_hours !== '' ? (s.effort_required_hours + ' hrs') : '0 hrs';
+    var subEffortReq = isTruthyFlag(s.no_effort_needed) ? '—' :
+      (s.effort_required_hours != null && s.effort_required_hours !== '' ? (s.effort_required_hours + ' hrs') : '0 hrs');
     var subCats = (s.categories || []).length ? (s.categories || []).map(function (c) {
       return '<span class="meta-chip meta-chip-category">' + escapeHtml(c) + '</span>';
     }).join('') : '';
@@ -2222,6 +2226,7 @@
         '<div class="subtask-summary-export-flags">' +
           '<label class="flag-check"><input type="checkbox" class="subtask-exclude-summary"' + (isTruthyFlag(s.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
           '<label class="flag-check"><input type="checkbox" class="subtask-exclude-export"' + (isTruthyFlag(s.exclude_from_export) ? ' checked' : '') + '> Exclude from export</label>' +
+          '<label class="flag-check"><input type="checkbox" class="subtask-no-effort-needed"' + (isTruthyFlag(s.no_effort_needed) ? ' checked' : '') + '> No Effort Needed</label>' +
         '</div>' +
         '<div class="subtask-update-toggles">' +
           '<button type="button" class="btn-update-toggle btn-subtask-update-details">Update Details</button>' +
@@ -2281,7 +2286,8 @@
     var priorityColor = getPriorityColor(task.priority, settings);
     var isExpanded = state.expandedTasks[task.id];
     var effortDays = hoursToDays(task.effort_required_hours);
-    var effortStr = task.effort_required_hours != null && task.effort_required_hours !== '' ? (task.effort_required_hours + ' hrs' + (effortDays ? ' (' + effortDays + ' d)' : '')) : null;
+    var effortStr = isTruthyFlag(task.no_effort_needed) ? '—' :
+      (task.effort_required_hours != null && task.effort_required_hours !== '' ? (task.effort_required_hours + ' hrs' + (effortDays ? ' (' + effortDays + ' d)' : '')) : null);
     var tagsStr = (task.tags && task.tags.length) ? task.tags.join(' ') : null;
     var bugNums = task.bug_numbers || (task.bug_number != null && task.bug_number !== 0 && task.bug_number !== '' ? [].concat(task.bug_number) : []);
     var bugStr = bugNums.length ? bugNums.join(', ') : null;
@@ -2350,6 +2356,7 @@
         '<div class="task-summary-export-flags">' +
           '<label class="flag-check"><input type="checkbox" class="task-exclude-summary"' + (isTruthyFlag(task.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
           '<label class="flag-check"><input type="checkbox" class="task-exclude-export"' + (isTruthyFlag(task.exclude_from_export) ? ' checked' : '') + '> Exclude from export</label>' +
+          '<label class="flag-check"><input type="checkbox" class="task-no-effort-needed"' + (isTruthyFlag(task.no_effort_needed) ? ' checked' : '') + '> No Effort Needed</label>' +
         '</div>' +
         '<div class="task-update-toggles">' +
           '<button type="button" class="btn-update-toggle btn-update-details">Update Task Details</button>' +
@@ -2738,6 +2745,13 @@
         updateTask(taskId, { exclude_from_export: inp.checked });
       });
     });
+    card.querySelectorAll('.task-no-effort-needed').forEach(function (inp) {
+      inp.addEventListener('click', function (e) { e.stopPropagation(); });
+      inp.addEventListener('change', function (e) {
+        e.stopPropagation();
+        updateTask(taskId, { no_effort_needed: inp.checked });
+      });
+    });
 
     card.querySelectorAll('.task-delete').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
@@ -3040,6 +3054,13 @@
         inp.addEventListener('change', function (e) {
           e.stopPropagation();
           updateSubtask(subTaskId, subId, { exclude_from_export: inp.checked });
+        });
+      });
+      subCard.querySelectorAll('.subtask-no-effort-needed').forEach(function (inp) {
+        inp.addEventListener('click', function (e) { e.stopPropagation(); });
+        inp.addEventListener('change', function (e) {
+          e.stopPropagation();
+          updateSubtask(subTaskId, subId, { no_effort_needed: inp.checked });
         });
       });
 
@@ -4023,6 +4044,7 @@
         var includedSubs = subs.filter(function (s) { return !subtaskHasDedicatedEffort(s); });
         var dedicatedSubs = subs.filter(function (s) { return subtaskHasDedicatedEffort(s); });
 
+        var noEffortMain = isTruthyFlag(t.no_effort_needed);
         var mainProgress = sortProgressUpdatesOldestFirst((t.progress_updates || []).filter(function (p) { return inRange(p.date_added); }));
         var mainRangeEffort = taskEffortInRangeMainAttributed(t, from, to);
         var cumulativeOutsideRange = taskEffortOutsideRangeMainAttributed(t, from, to);
@@ -4042,10 +4064,10 @@
         var mergeAttr = mergeBlockRows > 1 ? ' rowspan="' + mergeBlockRows + '"' : '';
         var mergeNum = includedSubs.length > 0 ? 'export-td-num export-td-merge' : 'export-td-num';
 
-        var plannedTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-planned">' + buildPlannedEffortHtml(t) + '</td>';
+        var plannedTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-planned">' + (noEffortMain ? '—' : buildPlannedEffortHtml(t)) + '</td>';
         var cumTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-cumulative">' + cumulativeOutsideRange + '</td>';
         var newMainTd = '<td class="export-td-num export-td-eff-new">' + mainRangeEffort + '</td>';
-        var remTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-remaining' + (remainingMainOnly < 0 ? ' negative' : '') + '">' + remainingMainOnly + '</td>';
+        var remTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-remaining' + (remainingMainOnly < 0 ? ' negative' : '') + '">' + (noEffortMain ? '—' : remainingMainOnly) + '</td>';
         var mainEffortCells = plannedTd + cumTd + (omitNewEffort ? '' : newMainTd) + (brief ? '' : remTd);
 
         rows.push(
@@ -4086,6 +4108,7 @@
         });
 
         dedicatedSubs.forEach(function (s) {
+          var noEffortSub = isTruthyFlag(s.no_effort_needed);
           var subUpdates = sortProgressUpdatesOldestFirst((s.progress_updates || []).filter(function (p) { return inRange(p.date_added); }));
           var subEffort = subUpdates.reduce(function (sum, p) { return sum + progressEffortHours(p); }, 0);
           var reqS = getLatestPlannedEffortHours(s);
@@ -4097,13 +4120,13 @@
           var highlightSub = !omitNewEffort && subEffort > 0.001;
           var subRowClass = 'export-row-sub' + (highlightSub ? ' export-row-highlight' : '');
           var dedicatedNewTd = omitNewEffort ? '' : ('<td class="export-td-num export-td-eff-new">' + subEffort + '</td>');
-          var remDedicatedTd = brief ? '' : ('<td class="export-td-num export-td-eff-remaining' + (remS < 0 ? ' negative' : '') + '">' + remS + '</td>');
+          var remDedicatedTd = brief ? '' : ('<td class="export-td-num export-td-eff-remaining' + (remS < 0 ? ' negative' : '') + '">' + (noEffortSub ? '—' : remS) + '</td>');
           rows.push(
             '<tr class="' + subRowClass + '">' +
               '<td class="export-td-task"><div class="export-sub-task-row">' +
               escapeHtml(s.title || '(no title)') +
               '</div></td>' +
-              '<td class="export-td-num export-td-eff-planned">' + buildPlannedEffortHtml(s) + '</td>' +
+              '<td class="export-td-num export-td-eff-planned">' + (noEffortSub ? '—' : buildPlannedEffortHtml(s)) + '</td>' +
               '<td class="export-td-num export-td-eff-cumulative">' + cumulativeOutsideSub + '</td>' +
               dedicatedNewTd +
               remDedicatedTd +
@@ -4932,6 +4955,7 @@
           return String(mainNum) + '.' + String(subNum);
         }
 
+        var noEffortMain = isTruthyFlag(t.no_effort_needed);
         var subsAll = t.subtasks || [];
         var subs = subsAll;
         var includedSubs = subs.filter(function (s) { return !subtaskHasDedicatedEffort(s); });
@@ -4948,13 +4972,14 @@
 
         var projectLabel = linkifyConfluenceCell(t.project || 'Miscellaneous');
         var taskTitle = confluenceTitleWithProject(t.project, t.title || '(no title)');
-        var plannedMd = buildPlannedEffortMd(t);
+        var plannedMd = noEffortMain ? '—' : buildPlannedEffortMd(t);
         var cumMd = String(cumulativeOutsideRange);
         var newMainStr = String(mainRangeEffort);
         var remMd = String(remainingMainOnly);
-        var remCellMain = remainingMainOnly < 0
-          ? mdBoldInner(remMd + ' (over plan)')
-          : mdTableCell(remMd);
+        var remCellMain = noEffortMain ? '—' :
+          (remainingMainOnly < 0
+            ? mdBoldInner(remMd + ' (over plan)')
+            : mdTableCell(remMd));
 
         out.push('### ' + mainNum + '. ' + taskTitle);
         out.push('');
@@ -4980,6 +5005,7 @@
         });
 
         dedicatedSubs.forEach(function (s) {
+          var noEffortSub = isTruthyFlag(s.no_effort_needed);
           var subUpdates = sortProgressUpdatesOldestFirst((s.progress_updates || []).filter(function (p) { return inRange(p.date_added); }));
           var subEffort = subUpdates.reduce(function (sum, p) { return sum + progressEffortHours(p); }, 0);
           var reqS = getLatestPlannedEffortHours(s);
@@ -4988,13 +5014,14 @@
           var remS = reqS - spentS;
           var plannedRawS = s.assigned_date || s.eta || '';
           var plannedCellS = plannedRawS ? formatDateDMYPlain(plannedRawS) : '—';
-          var remCellSub = remS < 0 ? mdBoldInner(String(remS) + ' (over plan)') : mdTableCell(String(remS));
+          var remCellSub = noEffortSub ? '—' :
+            (remS < 0 ? mdBoldInner(String(remS) + ' (over plan)') : mdTableCell(String(remS)));
 
           out.push('#### ' + nextSubLabel() + ' Sub-task: ' + confluenceTitleWithProject(s.project, s.title || '(no title)'));
           out.push('');
           out.push('*Status:* ' + cfRangeStatusLabel(s, true));
           out.push('');
-          pushEffortEtaSection(out, buildPlannedEffortMd(s), String(cumulativeOutsideSub), String(subEffort), remCellSub, omitNewEffort, plannedCellS, buildEtaCurrentMd(s));
+          pushEffortEtaSection(out, noEffortSub ? '—' : buildPlannedEffortMd(s), String(cumulativeOutsideSub), String(subEffort), remCellSub, omitNewEffort, plannedCellS, buildEtaCurrentMd(s));
           pushProgressConcernsVertical(out, subUpdates, s.concerns || [], omitNewEffort);
           pushTaskDetailsVertical(out, s.description);
         });
@@ -5652,6 +5679,7 @@
       });
 
       var etaLabel = t.eta || '—';
+      var noEffortMain = isTruthyFlag(t.no_effort_needed);
       var latestPlannedMain = getLatestPlannedEffortHours(t);
       var effortReq = latestPlannedMain;
       var mainAttrInRange = taskEffortInRangeMainAttributed(t, from, to);
@@ -5671,10 +5699,10 @@
           ((t.project != null && String(t.project).trim()) ? escapeHtml(String(t.project).trim()) : '—') +
           '</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">ETA</span><span class="summary-meta-value">' + escapeHtml(etaLabel) + '</span></span>' +
-          '<span class="summary-meta"><span class="summary-meta-label">Total Planned Effort</span><span class="summary-meta-value">' + effortReq + ' hrs</span></span>' +
+          '<span class="summary-meta"><span class="summary-meta-label">Total Planned Effort</span><span class="summary-meta-value">' + (noEffortMain ? '—' : effortReq + ' hrs') + '</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">Cumulative Effort</span><span class="summary-meta-value">' + cumulativeOutsideMain + ' hrs</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">New Effort Spent</span><span class="summary-meta-value">' + mainAttrInRange + ' hrs</span></span>' +
-          '<span class="summary-meta"><span class="summary-meta-label">Total Remaining Effort</span><span class="summary-meta-value ' + remainingMainClass + '">' + remainingMainOnly + ' hrs</span></span>' +
+          '<span class="summary-meta"><span class="summary-meta-label">Total Remaining Effort</span><span class="summary-meta-value ' + remainingMainClass + '">' + (noEffortMain ? '—' : remainingMainOnly + ' hrs') + '</span></span>' +
         '</div>';
 
       var mainProgressNewEffortHrs = mainProgressInRange.reduce(function (sum, p) {
@@ -5729,6 +5757,7 @@
           '</tr></thead><tbody>';
         subs.forEach(function (s) {
           var etaS = s.eta || '—';
+          var noEffortSub = isTruthyFlag(s.no_effort_needed);
           var reqS = getLatestPlannedEffortHours(s);
           var spentS = subtaskEffortSpent(s);
           var subUpdatesInRange = (s.progress_updates || []).filter(function (p) { return inRange(p.date_added); });
@@ -5742,7 +5771,7 @@
           var subRowTint = subUpdatesInRange.length > 0 && newSubInRange > 0;
           var subRowClass = subRowTint ? ' class="summary-has-new-effort"' : '';
           card += '<tr' + subRowClass + '><td class="summary-cumulative-task-cell"><div class="summary-cell-flex">' + summaryProjectPillHtml(s.project) + '<span>' + escapeHtml(s.title || '(no title)') + '</span>' + (!subtaskHasDedicatedEffort(s) ? summaryIncludedPillHtml() : '') + '</div></td><td>' + summaryRangeStatusHtml(subResolved) + '</td><td>' + escapeHtml(etaS) + '</td>' +
-            '<td>' + reqS + ' hrs</td><td>' + cumulativeOutsideSub + ' hrs</td><td>' + newSubInRange + ' hrs</td><td><span class="' + remSClass + '">' + remS + ' hrs</span></td></tr>';
+            '<td>' + (noEffortSub ? '—' : reqS + ' hrs') + '</td><td>' + cumulativeOutsideSub + ' hrs</td><td>' + newSubInRange + ' hrs</td><td><span class="' + remSClass + '">' + (noEffortSub ? '—' : remS + ' hrs') + '</span></td></tr>';
         });
         card += '</tbody></table></div>';
       }

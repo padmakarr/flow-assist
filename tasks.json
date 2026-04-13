@@ -71,6 +71,20 @@
           "text": "This is the end bitch\n\nlol",
           "date_added": "2026-03-15",
           "effort_consumed_hours": 1
+        },
+        {
+          "id": "ai-1775600101001-pr-today",
+          "text": "Blocked on env; documented workaround in wiki.",
+          "date_added": "2026-04-13",
+          "effort_consumed_hours": 1.5,
+          "categories": []
+        },
+        {
+          "id": "ai-1775600101002-pr-yest",
+          "text": "Reviewed LOL subtasks with team; reprioritized A/B/C.",
+          "date_added": "2026-04-12",
+          "effort_consumed_hours": 0.5,
+          "categories": []
         }
       ],
       "bug_numbers": [],
@@ -93,6 +107,13 @@
               "text": "This is good",
               "date_added": "2026-03-16",
               "effort_consumed_hours": 1
+            },
+            {
+              "id": "ai-1775600102001-st-pr",
+              "text": "Subtask progress logged for regression dry-run.",
+              "date_added": "2026-04-13",
+              "effort_consumed_hours": 2,
+              "categories": []
             }
           ],
           "categories": [],
@@ -233,7 +254,8 @@
       "categories": [],
       "concerns": [],
       "project": "",
-      "difficulty": "Easy"
+      "difficulty": "Easy",
+      "archived": true
     },
     {
       "id": "ai-1773579216894-pl5te0w",
@@ -285,7 +307,22 @@
           "description": "Run and fix MX100 sanity set.",
           "assigned_date": "2026-03-16",
           "effort_required_hours": 20,
-          "progress_updates": [],
+          "progress_updates": [
+            {
+              "id": "ai-1775600103001-mx100",
+              "text": "12/40 cases green; triaging 3 timeouts.",
+              "date_added": "2026-04-13",
+              "effort_consumed_hours": 4,
+              "categories": []
+            },
+            {
+              "id": "ai-1775600103002-mx100",
+              "text": "Nightly log collection scripted.",
+              "date_added": "2026-04-12",
+              "effort_consumed_hours": 2,
+              "categories": []
+            }
+          ],
           "categories": [
             "DV"
           ],
@@ -1576,12 +1613,27 @@
         "#default"
       ],
       "assigned_date": "2026-03-31",
-      "eta": "2026-04-10",
+      "eta": "2026-04-15",
       "effort_required_hours": 16,
       "bug_numbers": [],
       "status": "Open",
       "created_at": "2026-03-16T04:40:07.476Z",
-      "progress_updates": [],
+      "progress_updates": [
+        {
+          "id": "ai-1775600104001-soc",
+          "text": "SoC TB env smoke passed on latest drop.",
+          "date_added": "2026-04-12",
+          "effort_consumed_hours": 3,
+          "categories": []
+        },
+        {
+          "id": "ai-1775600104002-soc",
+          "text": "Filed 2 methodology gaps; owner assigned.",
+          "date_added": "2026-04-13",
+          "effort_consumed_hours": 1,
+          "categories": []
+        }
+      ],
       "eta_updates": [],
       "effort_updates": [],
       "subtasks": [],
@@ -1690,6 +1742,13 @@
           "text": "Sanity cleaed",
           "date_added": "2026-04-01",
           "effort_consumed_hours": 2
+        },
+        {
+          "id": "ai-1775600105001-wed",
+          "text": "Outfit + travel checklist done.",
+          "date_added": "2026-04-13",
+          "effort_consumed_hours": 0.5,
+          "categories": []
         }
       ],
       "eta_updates": [],
@@ -1701,6 +1760,167 @@
       ],
       "project": "Exynos",
       "done_date": ""
+    },
+    {
+      "id": "ai-1775600200001-flowassist-qa",
+      "title": "FlowAssist — list filters & notifications QA",
+      "description": "Verify Today/Yesterday/Archive tabs, bell dropdown, and scroll-to-task from notifications.",
+      "priority": 2,
+      "tags": [
+        "#default",
+        "#tooling"
+      ],
+      "assigned_date": "2026-04-10",
+      "eta": "2026-04-14",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "created_at": "2026-04-10T10:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-1775600200001-p1",
+          "text": "Loaded sample tasks.json; smoke checklist started.",
+          "date_added": "2026-04-12",
+          "effort_consumed_hours": 1,
+          "categories": []
+        },
+        {
+          "id": "ai-1775600200001-p2",
+          "text": "Archive + All Tasks split looks correct; testing bell next.",
+          "date_added": "2026-04-13",
+          "effort_consumed_hours": 2,
+          "categories": []
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "subtasks": [
+        {
+          "id": "ai-1775600200002-s1",
+          "title": "Regression: progress log pagination",
+          "description": "Add 6+ dummy notes and confirm newest visible after add.",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-04-11",
+          "effort_required_hours": 2,
+          "progress_updates": [
+            {
+              "id": "ai-1775600200002-p1",
+              "text": "Subtask note only for today filter coverage.",
+              "date_added": "2026-04-13",
+              "effort_consumed_hours": 0.5,
+              "categories": []
+            }
+          ],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy"
+        }
+      ],
+      "categories": [
+        "Support",
+        "Debug"
+      ],
+      "concerns": [],
+      "project": "",
+      "difficulty": "Easy",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "no_effort_needed": false
+    },
+    {
+      "id": "ai-1775600201001-deadline-test",
+      "title": "Doc review — timing report sign-off",
+      "description": "Dummy task with a tight ETA to exercise notification bell (within a few working days).",
+      "priority": 4,
+      "tags": [
+        "#tapeout"
+      ],
+      "assigned_date": "2026-04-08",
+      "eta": "2026-04-16",
+      "effort_required_hours": 4,
+      "bug_numbers": [],
+      "status": "Open",
+      "created_at": "2026-04-08T14:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-1775600201001-p1",
+          "text": "First draft circulated to PD.",
+          "date_added": "2026-04-11",
+          "effort_consumed_hours": 1,
+          "categories": []
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "subtasks": [
+        {
+          "id": "ai-1775600201002-s1",
+          "title": "Collect corner WNS/TNS table",
+          "description": "",
+          "status": "Open",
+          "priority": 4,
+          "assigned_date": "2026-04-09",
+          "eta": "2026-04-15",
+          "effort_required_hours": 2,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy"
+        }
+      ],
+      "categories": [
+        "Design",
+        "Meeting"
+      ],
+      "concerns": [],
+      "project": "F16",
+      "difficulty": "Easy"
+    },
+    {
+      "id": "ai-1775600202001-done-archive-demo",
+      "title": "Legacy lint waiver cleanup (closed)",
+      "description": "Placeholder completed task for testing Archive checkbox (mark Archive in UI).",
+      "priority": 5,
+      "tags": [
+        "#default"
+      ],
+      "assigned_date": "2026-03-01",
+      "eta": "2026-03-28",
+      "effort_required_hours": 4,
+      "bug_numbers": [],
+      "status": "Done",
+      "created_at": "2026-03-01T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-1775600202001-p1",
+          "text": "Waivers merged; task closed.",
+          "date_added": "2026-03-27",
+          "effort_consumed_hours": 4,
+          "categories": []
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "subtasks": [],
+      "categories": [
+        "Design"
+      ],
+      "concerns": [],
+      "project": "",
+      "difficulty": "Easy",
+      "done_date": "2026-03-28",
+      "archived": false
     }
   ],
   "settings": {

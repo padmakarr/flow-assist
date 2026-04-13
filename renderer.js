@@ -2083,15 +2083,8 @@
       .replace(/&gt;/g, '>');
   }
 
-  var TEXTAREA_MAX_LINES = 16;
   function autoResizeTextarea(ta) {
     if (!ta || ta.tagName !== 'TEXTAREA') return;
-    var lineH = parseFloat(getComputedStyle(ta).lineHeight) || 20;
-    var maxH = Math.round(lineH * TEXTAREA_MAX_LINES) + 16;
-    ta.style.height = 'auto';
-    var scrollH = ta.scrollHeight;
-    ta.style.height = Math.min(scrollH, maxH) + 'px';
-    ta.style.overflowY = scrollH > maxH ? 'auto' : 'hidden';
   }
 
   function renderConcernCountPill(concerns) {

@@ -1129,7 +1129,6 @@ body.sidebar-mode-collapsed .nav-btn-icon {
 .add-task-label .task-description-input {
   min-height: 52px;
   padding: 10px;
-  resize: none;
 }
 
 
@@ -1157,7 +1156,6 @@ body.sidebar-mode-collapsed .nav-btn-icon {
   padding: 10px;
   border-radius: 6px;
   margin-bottom: 12px;
-  resize: none;
   min-height: 52px;
   font-family: inherit;
   outline: none;
@@ -1166,8 +1164,10 @@ body.sidebar-mode-collapsed .nav-btn-icon {
 textarea.auto-resize {
   resize: none;
   min-height: 2.5em;
-  overflow-y: hidden;
-  transition: height 0.1s ease;
+  max-height: 22em;
+  line-height: 1.5;
+  overflow-y: auto;
+  field-sizing: content;
 }
 
 .input-row {
@@ -1327,42 +1327,47 @@ textarea.auto-resize {
 .bar-highlight {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  gap: 4px;
+  padding: 3px 11px;
   border-radius: 20px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  background: rgba(139, 148, 158, 0.15);
-  color: #c9d1d9;
-  border: 1px solid rgba(139, 148, 158, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(2px);
 }
 
 .bar-highlight.hl-overdue {
-  background: rgba(248, 81, 73, 0.18);
-  color: #ff7b72;
-  border-color: rgba(248, 81, 73, 0.35);
+  background: #b91c1c;
+  color: #fff;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4);
 }
 
 .bar-highlight.hl-urgent {
-  background: rgba(210, 153, 34, 0.18);
-  color: #e3b341;
-  border-color: rgba(210, 153, 34, 0.35);
+  background: #92400e;
+  color: #fde68a;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.35);
 }
 
 .bar-highlight.hl-done {
-  background: rgba(63, 185, 80, 0.12);
-  color: #56d364;
-  border-color: rgba(63, 185, 80, 0.25);
-  font-weight: 600;
+  background: #166534;
+  color: #bbf7d0;
+  border-color: #22c55e;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3);
 }
 
 .bar-highlight .hl-dim {
-  color: #8b949e;
+  color: rgba(255, 255, 255, 0.45);
   font-weight: 500;
 }
 
 .bar-highlight-sep {
-  color: #484f58;
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 400;
   font-size: 0.8rem;
 }
@@ -2235,10 +2240,8 @@ select.task-project-select,
   padding: 8px;
   border-radius: 4px;
   font-family: inherit;
-  resize: none;
   min-height: 2.5em;
   margin-bottom: 6px;
-  overflow-y: auto;
 }
 
 .task-description-edit.hidden {
@@ -2487,8 +2490,6 @@ select.task-project-select,
 .progress-item-edit .progress-edit-text {
   flex: 1 1 100%;
   min-height: 2.5em;
-  resize: none;
-  overflow-y: auto;
   font-family: inherit;
 }
 
@@ -2685,8 +2686,6 @@ a.auto-link:hover {
   border-radius: 4px;
   font-size: 0.9rem;
   font-family: inherit;
-  resize: none;
-  overflow-y: auto;
 }
 
 .progress-effort-in {
@@ -4466,8 +4465,6 @@ a.auto-link:hover {
   border-radius: 4px;
   font-size: 0.9rem;
   font-family: inherit;
-  resize: none;
-  overflow-y: auto;
 }
 
 .task-body input[type="date"],

@@ -187,26 +187,30 @@ function createAppMenu() {
 }
 
 function createWindow() {
+  const isDebug = process.argv.includes('--flowassist-debug');
+  const additionalArguments = isDebug ? ['--flowassist-debug'] : [];
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      additionalArguments: additionalArguments
     }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  const debugMode = process.argv.includes('--flowassist-debug');
-  mainWindow.webContents.on('did-finish-load', function () {
-    if (debugMode) {
-      mainWindow.webContents.executeJavaScript('window.__FLOWASSIST_DEBUG__ = true');
-    }
-  });
-  if (debugMode) {
+  if (isDebug) {
     mainWindow.webContents.openDevTools();
+    mainWindow.webContents.on('console-message', function (event) {
+      var message = event.message;
+      if (typeof message === 'string' && message.startsWith('[DBG]')) {
+        console.log(message);
+      }
+    });
   }
 }
 
@@ -354,6 +358,26 @@ ipcMain.handle('profile-save-as', async (event, data) => {
     return { success: true, path: outPath, canceled: false };
   } catch (err) {
     return { success: false, message: err.message || String(err), canceled: false };
+  }
+});
+
+ipcMain.handle('open-html-in-browser', async (event, payload) => {
+  const html = payload && typeof payload.html === 'string' ? payload.html : '';
+  if (!html) {
+    return { success: false, message: 'No HTML content.' };
+  }
+  try {
+    const fileName =
+      'flowassist-summary-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.html';
+    const filePath = path.join(app.getPath('temp'), fileName);
+    fs.writeFileSync(filePath, html, 'utf8');
+    const openErr = await shell.openPath(filePath);
+    if (openErr) {
+      return { success: false, message: openErr };
+    }
+    return { success: true, path: filePath };
+  } catch (err) {
+    return { success: false, message: err.message || String(err) };
   }
 });
 

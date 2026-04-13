@@ -1,6 +1,13 @@
 (function () {
   'use strict';
 
+  if (window.taskAPI && window.taskAPI.debugMode) {
+    window.__FLOWASSIST_DEBUG__ = true;
+    console.log('[DBG] Debug mode activated via preload. taskAPI.debugMode =', window.taskAPI.debugMode);
+  } else {
+    console.log('[DBG] taskAPI present:', !!(window.taskAPI), '| debugMode flag:', window.taskAPI && window.taskAPI.debugMode);
+  }
+
   var DEFAULT_PRIORITY_COLORS = {
     '1': '#2e4a6e', '2': '#2e4a6e', '3': '#2e4a6e', '4': '#2e4a6e',
     '5': '#7a5c2e', '6': '#7a5c2e', '7': '#7a5c2e', '8': '#7a5c2e',
@@ -391,15 +398,72 @@
     return st;
   }
 
+  /** Logical rank: Open=0, Ongoing=1, Done=2, Dropped=3. */
+  function statusChangeRank(st) {
+    var n = normalizeStatusForHistory(st);
+    if (n === 'Open') return 0;
+    if (n === 'Ongoing') return 1;
+    if (n === 'Done') return 2;
+    if (n === 'Dropped') return 3;
+    return 4;
+  }
+
   function sortedStatusChanges(changes) {
     if (!changes || !changes.length) return [];
-    return changes.slice().sort(function (a, b) {
+    var list = changes.slice().sort(function (a, b) {
       var da = (a.date && String(a.date).trim()) || '';
       var db = (b.date && String(b.date).trim()) || '';
       var c = compareDateStr(da, db);
       if (c !== 0) return c;
+      var ra = statusChangeRank(a.status);
+      var rb = statusChangeRank(b.status);
+      if (ra !== rb) return ra - rb;
       return String(a.id || '').localeCompare(String(b.id || ''));
     });
+    for (var i = 1; i < list.length; i++) {
+      var prevRank = statusChangeRank(list[i - 1].status);
+      var curRank = statusChangeRank(list[i].status);
+      var prevDate = (list[i - 1].date && String(list[i - 1].date).trim()) || '';
+      var curDate = (list[i].date && String(list[i].date).trim()) || '';
+      if (curRank > prevRank && curDate && prevDate && curDate < prevDate) {
+        list[i].date = prevDate;
+      }
+    }
+    return list;
+  }
+
+  /**
+   * Mutate dates in-place so that logical order is respected:
+   *   Open(0) ≤ Ongoing(1) ≤ Done(2) ≤ Dropped(3)
+   * If a higher-rank entry has a date earlier than a lower-rank entry,
+   * pull it forward; if a lower-rank entry has a date later than the
+   * next higher-rank entry, push it back.  Two passes (forward + backward)
+   * guarantee full consistency.
+   */
+  function enforceStatusChangeDateOrder(changes) {
+    if (!changes || changes.length < 2) return;
+    changes.sort(function (a, b) {
+      var ra = statusChangeRank(a.status);
+      var rb = statusChangeRank(b.status);
+      if (ra !== rb) return ra - rb;
+      var da = (a.date && String(a.date).trim()) || '';
+      var db = (b.date && String(b.date).trim()) || '';
+      return compareDateStr(da, db);
+    });
+    for (var i = 1; i < changes.length; i++) {
+      var prev = (changes[i - 1].date && String(changes[i - 1].date).trim()) || '';
+      var cur = (changes[i].date && String(changes[i].date).trim()) || '';
+      if (cur && prev && cur < prev) {
+        changes[i].date = prev;
+      }
+    }
+    for (var j = changes.length - 2; j >= 0; j--) {
+      var next = (changes[j + 1].date && String(changes[j + 1].date).trim()) || '';
+      var cj = (changes[j].date && String(changes[j].date).trim()) || '';
+      if (cj && next && cj > next) {
+        changes[j].date = next;
+      }
+    }
   }
 
   function syncTaskFromStatusChanges(task) {
@@ -780,6 +844,7 @@
 
   var state = {
     data: { settings: DEFAULT_SETTINGS, tasks: [] },
+    profilePath: null,
     view: 'list',
     sidebarMode: 'full',
     /** Docked width before hide; used when showing sidebar again from the top-bar toggle. */
@@ -1214,12 +1279,14 @@
   }
 
   function updateDocumentTitleFromPath(fullPath) {
+    state.profilePath = fullPath || null;
+    var debugSuffix = window.__FLOWASSIST_DEBUG__ ? ' (DEBUG)' : '';
     if (!fullPath) {
-      document.title = 'FlowAssist';
+      document.title = 'FlowAssist' + debugSuffix;
       return;
     }
     var base = String(fullPath).replace(/^.*[/\\]/, '');
-    document.title = 'FlowAssist — ' + base;
+    document.title = 'FlowAssist — ' + base + debugSuffix;
   }
 
   function showProfileError(title, message, detail) {
@@ -1276,6 +1343,7 @@
       if (nextNorm !== prevNorm) {
         var today = new Date().toISOString().slice(0, 10);
         task.status_changes.push({ id: generateId(), status: nextNorm, date: today });
+        enforceStatusChangeDateOrder(task.status_changes);
         syncTaskFromStatusChanges(task);
       } else {
         task.status = nextNorm === 'Done' ? 'Done' : (nextNorm === 'Dropped' ? 'Dropped' : nextNorm);
@@ -1328,6 +1396,7 @@
     var c = task.status_changes.find(function (x) { return x.id === changeId; });
     if (!c) return Promise.resolve();
     c.date = (newDate != null && String(newDate).trim()) || new Date().toISOString().slice(0, 10);
+    enforceStatusChangeDateOrder(task.status_changes);
     syncTaskFromStatusChanges(task);
     return save().then(function () { render(); });
   }
@@ -1348,6 +1417,7 @@
     var c = s.status_changes.find(function (x) { return x.id === changeId; });
     if (!c) return Promise.resolve();
     c.date = (newDate != null && String(newDate).trim()) || new Date().toISOString().slice(0, 10);
+    enforceStatusChangeDateOrder(s.status_changes);
     syncSubtaskFromStatusChanges(s);
     return save().then(function () { render(); });
   }
@@ -1449,6 +1519,7 @@
       if (nextNorm !== prevNorm) {
         var todayS = new Date().toISOString().slice(0, 10);
         s.status_changes.push({ id: generateId(), status: nextNorm, date: todayS });
+        enforceStatusChangeDateOrder(s.status_changes);
         syncSubtaskFromStatusChanges(s);
       } else {
         s.status = nextNorm === 'Done' ? 'Done' : (nextNorm === 'Dropped' ? 'Dropped' : nextNorm);
@@ -5291,6 +5362,9 @@
 
   function renderSummaryExportHtmlCssFields(parts) {
     return (
+      '<div class="summary-export-open-browser-row">' +
+      '<button type="button" class="btn-secondary summary-open-in-browser-btn">Open In Browser</button>' +
+      '</div>' +
       '<label class="summary-export-field-label">Full HTML document (inline styles)</label>' +
       '<textarea class="summary-export-text summary-export-text-combined" spellcheck="false">' + escapeHtml(parts.document) + '</textarea>' +
       '<h4 class="summary-export-separated-heading">HTML–CSS separated</h4>' +
@@ -5321,6 +5395,32 @@
         p.classList.toggle('is-active', show);
       });
     });
+  }
+
+  function wireSummaryOpenInBrowser(wrap, docFull, docBrief) {
+    if (!wrap) return;
+    var fullBtn = wrap.querySelector('[data-summary-panel="full"] .summary-open-in-browser-btn');
+    var briefBtn = wrap.querySelector('[data-summary-panel="brief"] .summary-open-in-browser-btn');
+    function openDoc(html) {
+      if (!window.taskAPI || typeof window.taskAPI.openHtmlInBrowser !== 'function') {
+        showProfileError(
+          'Open in browser',
+          'This action is only available in the FlowAssist desktop app.',
+          ''
+        );
+        return;
+      }
+      window.taskAPI.openHtmlInBrowser(html).then(function (res) {
+        if (res && res.success) return;
+        showProfileError(
+          'Could not open in browser',
+          (res && res.message) ? String(res.message) : 'Unknown error.',
+          ''
+        );
+      });
+    }
+    if (fullBtn) fullBtn.addEventListener('click', function () { openDoc(docFull); });
+    if (briefBtn) briefBtn.addEventListener('click', function () { openDoc(docBrief); });
   }
 
   function exportSummary() {
@@ -5366,6 +5466,7 @@
     summaryOutput.innerHTML = '';
     summaryOutput.appendChild(wrap);
     wireSummaryExportHtmlTabs(wrap);
+    wireSummaryOpenInBrowser(wrap, partsFull.document, partsBrief.document);
   }
 
   function generateSummary() {
@@ -5861,6 +5962,9 @@
     if (taskProjEl) taskProjEl.innerHTML = renderProjectSelectInnerHtml('');
   }
 
+  var DEBUG_SUMMARY_FROM_KEY = 'fa_debug_summary_from';
+  var DEBUG_SUMMARY_TO_KEY = 'fa_debug_summary_to';
+
   function prefillDebugForm() {
     taskTitle.value = 'Debug: Sample task';
     taskDescription.value = 'Edit or add and click Add Task.';
@@ -5928,6 +6032,14 @@
     var prevWeekSunday = addDays(prevWeekMonday, 6);
     summaryFrom.value = prevWeekMonday;
     summaryTo.value = prevWeekSunday;
+    if (window.__FLOWASSIST_DEBUG__) {
+      var savedFrom = localStorage.getItem(DEBUG_SUMMARY_FROM_KEY);
+      var savedTo = localStorage.getItem(DEBUG_SUMMARY_TO_KEY);
+      console.log('[DBG] setSummaryDefaultDates: localStorage from="' + savedFrom + '" to="' + savedTo + '"');
+      if (savedFrom) summaryFrom.value = savedFrom;
+      if (savedTo) summaryTo.value = savedTo;
+      console.log('[DBG] setSummaryDefaultDates: final input from="' + summaryFrom.value + '" to="' + summaryTo.value + '"');
+    }
   }
 
   function init() {
@@ -6203,6 +6315,23 @@
       });
     }
 
+    if (summaryFrom) {
+      summaryFrom.addEventListener('change', function () {
+        if (window.__FLOWASSIST_DEBUG__) {
+          localStorage.setItem(DEBUG_SUMMARY_FROM_KEY, summaryFrom.value);
+          console.log('[DBG] summaryFrom changed → saved to localStorage: "' + summaryFrom.value + '"');
+        }
+      });
+    }
+    if (summaryTo) {
+      summaryTo.addEventListener('change', function () {
+        if (window.__FLOWASSIST_DEBUG__) {
+          localStorage.setItem(DEBUG_SUMMARY_TO_KEY, summaryTo.value);
+          console.log('[DBG] summaryTo changed → saved to localStorage: "' + summaryTo.value + '"');
+        }
+      });
+    }
+
     if (generateSummaryBtn) generateSummaryBtn.addEventListener('click', generateSummary);
     if (exportSummaryBtn) {
       exportSummaryBtn.disabled = !state.summaryGenerated;
@@ -6337,7 +6466,17 @@
 
     load().then(function () {
       syncAddTaskProjectSelect();
-      if (window.__FLOWASSIST_DEBUG__) prefillDebugForm();
+      if (window.__FLOWASSIST_DEBUG__) {
+        prefillDebugForm();
+        updateDocumentTitleFromPath(state.profilePath);
+        var topBarStart = document.querySelector('.top-bar-start');
+        if (topBarStart && !topBarStart.querySelector('.debug-mode-badge')) {
+          var badge = document.createElement('span');
+          badge.className = 'debug-mode-badge';
+          badge.textContent = 'DEBUG';
+          topBarStart.appendChild(badge);
+        }
+      }
     });
   }
 

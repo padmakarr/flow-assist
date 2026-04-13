@@ -298,7 +298,8 @@
       status_changes: status_changes,
       exclude_from_summary: !!o.exclude_from_summary,
       exclude_from_export: !!o.exclude_from_export,
-      no_effort_needed: !!o.no_effort_needed
+      no_effort_needed: !!o.no_effort_needed,
+      archived: !!o.archived
     };
     if (!t.status_changes.length) {
       t.status_changes.push({ id: generateId(), status: 'Open', date: assigned_date });
@@ -343,6 +344,7 @@
     t.exclude_from_summary = !!t.exclude_from_summary;
     t.exclude_from_export = !!t.exclude_from_export;
     t.no_effort_needed = !!t.no_effort_needed;
+    t.archived = !!t.archived;
     migrateTaskStatusChangesIfNeeded(t);
     t.subtasks.forEach(function (s) {
       if (!s.priority && s.priority !== 0) s.priority = 1;
@@ -885,7 +887,8 @@
     /** When open: { taskId, subtaskId } (subtaskId null for main task) */
     progressHistoryOpen: null,
     summaryGenerated: false,
-    lastSummaryMeta: null
+    lastSummaryMeta: null,
+    listFilter: 'all'
   };
 
   var PROGRESS_LOG_PAGE = 5;
@@ -1369,6 +1372,7 @@
       } else {
         task.status = nextNorm === 'Done' ? 'Done' : (nextNorm === 'Dropped' ? 'Dropped' : nextNorm);
       }
+      if (nextNorm !== 'Done' && nextNorm !== 'Dropped') task.archived = false;
     }
     Object.keys(updates).forEach(function (k) {
       if (k === 'status') return;
@@ -1465,6 +1469,7 @@
       categories: Array.isArray(payload.categories) ? payload.categories.slice() : []
     });
     task.progress_updates = sortProgressUpdatesOldestFirst(task.progress_updates);
+    delete state.progressLogWindowStart[progressLogKeyMain(taskId)];
     return save().then(function () { render(); });
   }
 
@@ -1572,6 +1577,7 @@
       categories: Array.isArray(payload.categories) ? payload.categories.slice() : []
     });
     s.progress_updates = sortProgressUpdatesOldestFirst(s.progress_updates);
+    delete state.progressLogWindowStart[progressLogKeySub(taskId, subtaskId)];
     return save().then(function () { render(); });
   }
 
@@ -2077,10 +2083,15 @@
       .replace(/&gt;/g, '>');
   }
 
+  var TEXTAREA_MAX_LINES = 16;
   function autoResizeTextarea(ta) {
     if (!ta || ta.tagName !== 'TEXTAREA') return;
+    var lineH = parseFloat(getComputedStyle(ta).lineHeight) || 20;
+    var maxH = Math.round(lineH * TEXTAREA_MAX_LINES) + 16;
     ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 400) + 'px';
+    var scrollH = ta.scrollHeight;
+    ta.style.height = Math.min(scrollH, maxH) + 'px';
+    ta.style.overflowY = scrollH > maxH ? 'auto' : 'hidden';
   }
 
   function renderConcernCountPill(concerns) {
@@ -2420,6 +2431,7 @@
           '<label class="flag-check"><input type="checkbox" class="task-exclude-summary"' + (isTruthyFlag(task.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
           '<label class="flag-check"><input type="checkbox" class="task-exclude-export"' + (isTruthyFlag(task.exclude_from_export) ? ' checked' : '') + '> Exclude from export</label>' +
           '<label class="flag-check"><input type="checkbox" class="task-no-effort-needed"' + (isTruthyFlag(task.no_effort_needed) ? ' checked' : '') + '> No Effort Needed</label>' +
+          (isTaskCompleted(task) ? '<label class="flag-check flag-check-archive"><input type="checkbox" class="task-archive-check"' + (task.archived ? ' checked' : '') + '> Archive</label>' : '') +
         '</div>' +
         '<div class="task-update-toggles">' +
           '<button type="button" class="btn-update-toggle btn-update-details">Update Task Details</button>' +
@@ -2813,6 +2825,13 @@
       inp.addEventListener('change', function (e) {
         e.stopPropagation();
         updateTask(taskId, { no_effort_needed: inp.checked });
+      });
+    });
+    card.querySelectorAll('.task-archive-check').forEach(function (inp) {
+      inp.addEventListener('click', function (e) { e.stopPropagation(); });
+      inp.addEventListener('change', function (e) {
+        e.stopPropagation();
+        updateTask(taskId, { archived: inp.checked });
       });
     });
 
@@ -3589,23 +3608,77 @@
     return s === 'Done' || s === 'Completed' || s === 'Dropped' || s === 'Closed';
   }
 
+  function taskHasProgressOnDate(task, dateStr) {
+    var found = (task.progress_updates || []).some(function (p) { return p.date_added === dateStr; });
+    if (found) return true;
+    return (task.subtasks || []).some(function (s) {
+      return (s.progress_updates || []).some(function (p) { return p.date_added === dateStr; });
+    });
+  }
+
+  function getYesterdayStr() {
+    var d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
   function renderList() {
     var tasks = getTasks();
-    var active = tasks.filter(function (t) { return !isTaskCompleted(t); });
-    var completed = tasks.filter(function (t) { return isTaskCompleted(t); });
-    var sortedActive = sortMainTasks(active);
-    var sortedCompleted = sortMainTasks(completed);
+    var filter = state.listFilter || 'all';
+    var addSection = document.querySelector('.add-new-task-section');
+    var completedSection = document.querySelector('.completed-tasks-section');
+    var separators = document.querySelectorAll('#view-list > .add-task-separator');
+    var headingRow = document.querySelector('.main-tasks-heading-row');
+    var headingEl = document.querySelector('.main-tasks-heading');
 
-    taskListEl.innerHTML = sortedActive.length
-      ? sortedActive.map(renderTaskCard).join('')
-      : '<p class="empty-state">No tasks yet. Add one above.</p>';
-    taskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+    document.querySelectorAll('.list-view-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-list-filter') === filter);
+    });
 
-    if (completedTaskListEl) {
-      completedTaskListEl.innerHTML = sortedCompleted.length
-        ? sortedCompleted.map(renderTaskCard).join('')
-        : '<p class="empty-state">No done tasks.</p>';
-      completedTaskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+    if (filter === 'today' || filter === 'yesterday') {
+      var targetDate = filter === 'today' ? new Date().toISOString().slice(0, 10) : getYesterdayStr();
+      var label = filter === 'today' ? 'Today' : 'Yesterday';
+      var matched = sortMainTasks(tasks.filter(function (t) { return taskHasProgressOnDate(t, targetDate); }));
+      if (headingEl) headingEl.textContent = label + '\'s Progress (' + matched.length + ')';
+      taskListEl.innerHTML = matched.length
+        ? matched.map(renderTaskCard).join('')
+        : '<p class="empty-state">No progress entries for ' + label.toLowerCase() + '.</p>';
+      taskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+      if (addSection) addSection.style.display = 'none';
+      if (completedSection) completedSection.style.display = 'none';
+      separators.forEach(function (s) { s.style.display = 'none'; });
+      if (headingRow) headingRow.style.display = '';
+    } else if (filter === 'archive') {
+      var archived = sortMainTasks(tasks.filter(function (t) { return !!t.archived; }));
+      if (headingEl) headingEl.textContent = 'Archived Tasks (' + archived.length + ')';
+      taskListEl.innerHTML = archived.length
+        ? archived.map(renderTaskCard).join('')
+        : '<p class="empty-state">No archived tasks.</p>';
+      taskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+      if (addSection) addSection.style.display = 'none';
+      if (completedSection) completedSection.style.display = 'none';
+      separators.forEach(function (s) { s.style.display = 'none'; });
+      if (headingRow) headingRow.style.display = '';
+    } else {
+      var active = tasks.filter(function (t) { return !isTaskCompleted(t) && !t.archived; });
+      var completed = tasks.filter(function (t) { return isTaskCompleted(t) && !t.archived; });
+      var sortedActive = sortMainTasks(active);
+      var sortedCompleted = sortMainTasks(completed);
+      if (headingEl) headingEl.textContent = 'Main Tasks List';
+      taskListEl.innerHTML = sortedActive.length
+        ? sortedActive.map(renderTaskCard).join('')
+        : '<p class="empty-state">No tasks yet. Add one above.</p>';
+      taskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+      if (completedTaskListEl) {
+        completedTaskListEl.innerHTML = sortedCompleted.length
+          ? sortedCompleted.map(renderTaskCard).join('')
+          : '<p class="empty-state">No done tasks.</p>';
+        completedTaskListEl.querySelectorAll('.task-card').forEach(bindTaskCardEvents);
+      }
+      if (addSection) addSection.style.display = '';
+      if (completedSection) completedSection.style.display = '';
+      separators.forEach(function (s) { s.style.display = ''; });
+      if (headingRow) headingRow.style.display = '';
     }
   }
 
@@ -5975,11 +6048,128 @@
     if (exportSummaryBtn) exportSummaryBtn.disabled = false;
   }
 
+  function workingDaysUntil(etaStr, settings) {
+    if (!etaStr) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var parts = etaStr.split('-');
+    if (parts.length !== 3) return null;
+    var eta = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    if (isNaN(eta.getTime())) return null;
+    var offSet = {};
+    ((settings && settings.dayOffs) || []).forEach(function (o) {
+      if (o && o.date && (o.type === 'full' || o.type === 'Full')) offSet[o.date] = true;
+    });
+    var sign = eta >= today ? 1 : -1;
+    var start = sign === 1 ? today : eta;
+    var end = sign === 1 ? eta : today;
+    var count = 0;
+    var d = new Date(start);
+    while (d < end) {
+      d.setDate(d.getDate() + 1);
+      var dow = d.getDay();
+      if (dow === 0 || dow === 6) continue;
+      var ymd = d.toISOString().slice(0, 10);
+      if (offSet[ymd]) continue;
+      count++;
+    }
+    return sign * count;
+  }
+
+  function buildNotifications() {
+    var settings = getSettings();
+    var tasks = getTasks().map(normalizeTask);
+    var items = [];
+    tasks.forEach(function (t) {
+      var statusMain = (t.status === 'Closed' ? 'Dropped' : (t.status === 'Completed' ? 'Done' : t.status)) || 'Open';
+      if (statusMain === 'Done' || statusMain === 'Dropped') return;
+      var wd = workingDaysUntil(t.eta, settings);
+      if (wd !== null && wd <= 3) {
+        items.push({ type: 'deadline', title: t.title, eta: t.eta, workingDays: wd, isSubtask: false, parentTitle: null, taskId: t.id, subtaskId: null });
+      }
+      (t.subtasks || []).forEach(function (s) {
+        var statusSub = (s.status === 'Closed' ? 'Dropped' : (s.status === 'Completed' ? 'Done' : s.status)) || 'Open';
+        if (statusSub === 'Done' || statusSub === 'Dropped') return;
+        var wdS = workingDaysUntil(s.eta, settings);
+        if (wdS !== null && wdS <= 3) {
+          items.push({ type: 'deadline', title: s.title, eta: s.eta, workingDays: wdS, isSubtask: true, parentTitle: t.title, taskId: t.id, subtaskId: s.id });
+        }
+      });
+    });
+    items.sort(function (a, b) { return a.workingDays - b.workingDays; });
+    return items;
+  }
+
+  function navigateToTask(taskId, subtaskId) {
+    state.expandedTasks[taskId] = true;
+    if (subtaskId) {
+      state.expandedSubtasks[taskId + ':' + subtaskId] = true;
+    }
+    state.listFilter = 'all';
+    setView('list');
+    requestAnimationFrame(function () {
+      var el;
+      if (subtaskId) {
+        el = document.querySelector('.subtask-card[data-task-id="' + taskId + '"][data-subtask-id="' + subtaskId + '"]');
+      }
+      if (!el) {
+        el = document.querySelector('.task-card[data-id="' + taskId + '"]');
+      }
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  function refreshNotifications() {
+    var badge = document.getElementById('notif-badge');
+    var list = document.getElementById('notif-list');
+    var empty = document.getElementById('notif-empty');
+    if (!badge || !list || !empty) return;
+    var items = buildNotifications();
+    badge.textContent = String(items.length);
+    badge.hidden = items.length === 0;
+    if (!items.length) {
+      list.innerHTML = '';
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    list.innerHTML = items.map(function (it) {
+      var urgencyCls = it.workingDays < 0 ? 'notif-overdue' : (it.workingDays === 0 ? 'notif-today' : 'notif-soon');
+      var daysLabel;
+      if (it.workingDays < 0) daysLabel = Math.abs(it.workingDays) + ' working day' + (Math.abs(it.workingDays) !== 1 ? 's' : '') + ' overdue';
+      else if (it.workingDays === 0) daysLabel = 'Due today';
+      else daysLabel = it.workingDays + ' working day' + (it.workingDays !== 1 ? 's' : '') + ' left';
+      var typePill = it.isSubtask
+        ? '<span class="notif-type-pill notif-type-sub">Sub-Task</span>'
+        : '<span class="notif-type-pill notif-type-main">Main Task</span>';
+      var titleHtml = escapeHtml(it.title || '(no title)');
+      if (it.isSubtask) titleHtml = '<span class="notif-parent">' + escapeHtml(it.parentTitle || '') + '</span> → ' + titleHtml;
+      var dataAttrs = 'data-notif-task-id="' + escapeHtml(it.taskId) + '"' +
+        (it.subtaskId ? ' data-notif-subtask-id="' + escapeHtml(it.subtaskId) + '"' : '');
+      return '<li class="notif-item ' + urgencyCls + '" ' + dataAttrs + ' style="cursor:pointer">' +
+        '<div class="notif-item-title">' + typePill + titleHtml + '</div>' +
+        '<div class="notif-item-detail">' + escapeHtml(daysLabel) + ' · ETA ' + escapeHtml(it.eta || '—') + '</div>' +
+        '</li>';
+    }).join('');
+    list.querySelectorAll('.notif-item[data-notif-task-id]').forEach(function (li) {
+      li.addEventListener('click', function () {
+        var tId = li.getAttribute('data-notif-task-id');
+        var sId = li.getAttribute('data-notif-subtask-id') || null;
+        var dropdown = document.getElementById('notif-dropdown');
+        var bellBtn = document.getElementById('notif-bell-btn');
+        if (dropdown) dropdown.hidden = true;
+        if (bellBtn) bellBtn.setAttribute('aria-expanded', 'false');
+        navigateToTask(tId, sId);
+      });
+    });
+  }
+
   function render() {
     if (state.view === 'list') renderList();
     else if (state.view === 'calendar') renderCalendar();
     else if (state.view === 'summary') renderSummary();
     if (state.progressHistoryOpen) refreshProgressHistoryModal();
+    refreshNotifications();
   }
 
   function loadSidebarModeFromStorage() {
@@ -6206,6 +6396,16 @@
     bindRichFormatToolbars(document.getElementById('add-new-task-block'));
 
     var mainFilterWrap = document.querySelector('.main-task-filter-wrap');
+    var listViewTabBar = $('list-view-tab-bar');
+    if (listViewTabBar) {
+      listViewTabBar.querySelectorAll('.list-view-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          state.listFilter = tab.getAttribute('data-list-filter') || 'all';
+          renderList();
+        });
+      });
+    }
+
     var mainFilterBtn = $('main-task-filter-btn');
     var mainFilterMenu = $('main-task-filter-menu');
     if (mainFilterBtn && mainFilterWrap && mainFilterMenu) {
@@ -6315,6 +6515,25 @@
       topBarSidebarToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleSidebarHiddenFromTopBar();
+      });
+    }
+
+    var notifBellBtn = document.getElementById('notif-bell-btn');
+    var notifDropdown = document.getElementById('notif-dropdown');
+    var notifWrap = document.getElementById('notif-wrap');
+    if (notifBellBtn && notifDropdown && notifWrap) {
+      notifBellBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = !notifDropdown.hidden;
+        notifDropdown.hidden = open;
+        notifBellBtn.setAttribute('aria-expanded', open ? 'false' : 'true');
+        if (!open) refreshNotifications();
+      });
+      document.addEventListener('click', function (e) {
+        if (!notifWrap.contains(e.target)) {
+          notifDropdown.hidden = true;
+          notifBellBtn.setAttribute('aria-expanded', 'false');
+        }
       });
     }
     if (calendarFilter) {

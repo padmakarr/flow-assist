@@ -19,12 +19,12 @@
       </button>
     </div>
     <nav class="sidebar-nav">
-      <button type="button" class="nav-btn active" data-view="list"><span class="nav-btn-icon" aria-hidden="true">📋</span><span class="nav-btn-text">List</span></button>
-      <button type="button" class="nav-btn" data-view="calendar"><span class="nav-btn-icon" aria-hidden="true">📅</span><span class="nav-btn-text">Calendar</span></button>
-      <button type="button" class="nav-btn" data-view="summary"><span class="nav-btn-icon" aria-hidden="true">📊</span><span class="nav-btn-text">Summary</span></button>
+      <button type="button" class="nav-btn active" data-view="list"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 3.25a.25.25 0 01.25-.25h3.5a.25.25 0 01.25.25v.5a.25.25 0 01-.25.25h-3.5A.25.25 0 015 3.75v-.5zM5.25 5a.25.25 0 00-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 00.25-.25v-.5a.25.25 0 00-.25-.25h-5.5z"/></svg></span><span class="nav-btn-text">List</span></button>
+      <button type="button" class="nav-btn" data-view="calendar"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 01.75.75V2h5V.75a.75.75 0 011.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0113.25 16H2.75A1.75 1.75 0 011 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 014.75 0zM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25V7.5zm0-3.75V6h11V3.75a.25.25 0 00-.25-.25H2.75a.25.25 0 00-.25.25z"/></svg></span><span class="nav-btn-text">Calendar</span></button>
+      <button type="button" class="nav-btn" data-view="summary"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 010 1.5H.75a.75.75 0 01-.75-.75V1.75a.75.75 0 011.5 0zm14.28 2.53a.75.75 0 00-1.06-1.06L10 7.94 7.53 5.47a.75.75 0 00-1.06 0L3.22 8.72a.75.75 0 001.06 1.06L7 7.06l2.47 2.47a.75.75 0 001.06 0l5.25-5.25z"/></svg></span><span class="nav-btn-text">Summary</span></button>
     </nav>
     <div class="sidebar-settings">
-      <button type="button" id="settings-btn" class="settings-btn" title="Settings"><span class="settings-btn-icon" aria-hidden="true">⚙</span><span class="settings-btn-text">Settings</span></button>
+      <button type="button" id="settings-btn" class="settings-btn" title="Settings"><span class="settings-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M7.429 1.525a3.5 3.5 0 011.142 0 .75.75 0 01.57.504l.345 1.19a5.46 5.46 0 01.986.57l1.19-.346a.75.75 0 01.732.198 3.5 3.5 0 01.571.989.75.75 0 01-.163.756l-.844.845a5.46 5.46 0 010 1.138l.844.845a.75.75 0 01.163.756 3.5 3.5 0 01-.57.99.75.75 0 01-.733.196l-1.19-.345a5.46 5.46 0 01-.986.57l-.345 1.19a.75.75 0 01-.57.503 3.5 3.5 0 01-1.142 0 .75.75 0 01-.57-.504l-.345-1.19a5.46 5.46 0 01-.986-.57l-1.19.346a.75.75 0 01-.732-.198 3.5 3.5 0 01-.571-.989.75.75 0 01.163-.756l.844-.845a5.46 5.46 0 010-1.138l-.844-.845a.75.75 0 01-.163-.756 3.5 3.5 0 01.57-.99.75.75 0 01.733-.196l1.19.345a5.46 5.46 0 01.986-.57l.345-1.19a.75.75 0 01.57-.503zM8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg></span><span class="settings-btn-text">Settings</span></button>
       <p id="app-version-line" class="app-version-line" aria-label="App version and author"></p>
     </div>
   </aside>
@@ -39,6 +39,18 @@
         </header>
 
         <div class="settings-modal-body">
+          <section class="settings-section">
+            <h4>Appearance</h4>
+            <div class="settings-field">
+              <label class="settings-label" for="setting-theme">Theme</label>
+              <span class="settings-hint">Switch between visual themes</span>
+              <select id="setting-theme" class="add-task-input">
+                <option value="classic">Classic</option>
+                <option value="refined">Refined</option>
+              </select>
+            </div>
+          </section>
+
           <section class="settings-section" aria-labelledby="settings-section-general">
             <h4 id="settings-section-general" class="settings-section-heading">General</h4>
 
@@ -137,7 +149,7 @@
       <div class="modal-content progress-history-modal-content" role="dialog" aria-modal="true" aria-labelledby="progress-history-title">
         <header class="progress-history-modal-header">
           <h3 id="progress-history-title" class="progress-history-modal-title">Progress history</h3>
-          <button type="button" id="progress-history-close-btn" class="progress-history-modal-close" title="Close" aria-label="Close">&times;</button>
+          <button type="button" id="progress-history-close-btn" class="progress-history-modal-close" title="Close" aria-label="Close"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>
         </header>
         <div class="progress-history-modal-toolbar">
           <label class="progress-log-sort-label muted" for="progress-history-sort">Order</label>
@@ -156,9 +168,9 @@
           <button type="button" class="filter-dropdown-btn top-bar-view-btn" id="top-bar-view-btn" aria-haspopup="true" aria-expanded="false">View ▾</button>
           <div class="filter-dropdown-menu top-bar-view-menu" id="top-bar-view-menu" role="menu">
             <div class="top-bar-menu-group-label" role="presentation">Screen</div>
-            <button type="button" class="filter-option top-bar-view-screen" data-view="list" role="menuitem">📋 List</button>
-            <button type="button" class="filter-option top-bar-view-screen" data-view="calendar" role="menuitem">📅 Calendar</button>
-            <button type="button" class="filter-option top-bar-view-screen" data-view="summary" role="menuitem">📊 Summary</button>
+            <button type="button" class="filter-option top-bar-view-screen" data-view="list" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 3.25a.25.25 0 01.25-.25h3.5a.25.25 0 01.25.25v.5a.25.25 0 01-.25.25h-3.5A.25.25 0 015 3.75v-.5zM5.25 5a.25.25 0 00-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 00.25-.25v-.5a.25.25 0 00-.25-.25h-5.5z"/></svg> List</button>
+            <button type="button" class="filter-option top-bar-view-screen" data-view="calendar" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 01.75.75V2h5V.75a.75.75 0 011.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0113.25 16H2.75A1.75 1.75 0 011 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 014.75 0zM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25V7.5zm0-3.75V6h11V3.75a.25.25 0 00-.25-.25H2.75a.25.25 0 00-.25.25z"/></svg> Calendar</button>
+            <button type="button" class="filter-option top-bar-view-screen" data-view="summary" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 010 1.5H.75a.75.75 0 01-.75-.75V1.75a.75.75 0 011.5 0zm14.28 2.53a.75.75 0 00-1.06-1.06L10 7.94 7.53 5.47a.75.75 0 00-1.06 0L3.22 8.72a.75.75 0 001.06 1.06L7 7.06l2.47 2.47a.75.75 0 001.06 0l5.25-5.25z"/></svg> Summary</button>
             <hr class="top-bar-menu-sep" role="separator">
             <div class="top-bar-menu-group-label" role="presentation">Sidebar width</div>
             <button type="button" class="filter-option top-bar-sidebar-opt" data-sidebar-mode="full" role="menuitem">Full width</button>
@@ -197,7 +209,7 @@
       <div class="main-tasks-heading-row">
         <h3 class="main-tasks-heading">Main Tasks List</h3>
         <div class="filter-dropdown-wrap main-task-filter-wrap">
-          <button type="button" id="main-task-filter-btn" class="filter-dropdown-btn" title="Sort tasks">&#9662; Sort</button>
+          <button type="button" id="main-task-filter-btn" class="filter-dropdown-btn" title="Sort tasks"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>Sort</button>
           <div id="main-task-filter-menu" class="filter-dropdown-menu">
             <button type="button" class="filter-option" data-sort-by="date_added" data-sort-dir="asc">Date added (oldest first)</button>
             <button type="button" class="filter-option" data-sort-by="date_added" data-sort-dir="desc">Date added (newest first)</button>
@@ -307,9 +319,9 @@
             <button type="button" class="calendar-view-btn active" data-calendar-view="month">Month</button>
           </div>
           <div class="calendar-nav-group">
-            <button type="button" id="calendar-prev-btn" class="calendar-nav-btn" title="Previous">‹</button>
+            <button type="button" id="calendar-prev-btn" class="calendar-nav-btn" title="Previous"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.78 4.22a.75.75 0 010 1.06L7.06 8l2.72 2.72a.75.75 0 11-1.06 1.06L5.47 8.53a.75.75 0 010-1.06l3.25-3.25a.75.75 0 011.06 0z"/></svg></button>
             <span id="calendar-period-label" class="calendar-period-label"></span>
-            <button type="button" id="calendar-next-btn" class="calendar-nav-btn" title="Next">›</button>
+            <button type="button" id="calendar-next-btn" class="calendar-nav-btn" title="Next"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 4.22a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06l-3.25 3.25a.75.75 0 01-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 010-1.06z"/></svg></button>
           </div>
           <div class="calendar-date-group">
             <label for="calendar-goto-date">Go to date</label>

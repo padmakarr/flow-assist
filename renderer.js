@@ -8,11 +8,23 @@
     console.log('[DBG] taskAPI present:', !!(window.taskAPI), '| debugMode flag:', window.taskAPI && window.taskAPI.debugMode);
   }
 
+  try {
+    var savedTheme = localStorage.getItem('flowassist_theme');
+    if (savedTheme) {
+      document.body.classList.remove('theme-classic', 'theme-refined');
+      document.body.classList.add('theme-' + savedTheme);
+    }
+  } catch (e) {}
+
   var DEFAULT_PRIORITY_COLORS = {
     '1': '#2e4a6e', '2': '#2e4a6e', '3': '#2e4a6e', '4': '#2e4a6e',
     '5': '#7a5c2e', '6': '#7a5c2e', '7': '#7a5c2e', '8': '#7a5c2e',
     '9': '#7a3d3d', '10': '#7a3d3d'
   };
+
+  var SVG_ICON_EDIT = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg>';
+  var SVG_ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>';
+  var SVG_ICON_CHEVRON_DOWN = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z"/></svg>';
 
   var DEFAULT_CATEGORIES = ['Design', 'DV', 'Support', 'Debug', 'Meeting', 'Skillup'];
 
@@ -21,7 +33,8 @@
     categories: DEFAULT_CATEGORIES.slice(),
     projects: [],
     workingHoursPerDay: 8,
-    dayOffs: []
+    dayOffs: [],
+    theme: 'classic'
   };
 
   var TASK_DIFFICULTY_LEVELS = ['Very Easy', 'Easy', 'Moderate', 'Hard', 'Very Hard'];
@@ -936,7 +949,7 @@
       '<div class="progress-item-view">' +
         '<div class="progress-item-head">' +
           '<span class="progress-meta">' + escapeHtml(d) + (h ? ' · ' + h : '') + (catJoined ? ' · ' + escapeHtml(catJoined) : '') + '</span>' +
-          '<button type="button" class="' + editClass + '" title="Edit">✎</button>' +
+          '<button type="button" class="' + editClass + '" title="Edit"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg></button>' +
         '</div>' +
         '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
       '</div>' +
@@ -1300,6 +1313,7 @@
         return String(p).trim();
       }).filter(Boolean);
     }
+    if (!state.data.settings.theme) state.data.settings.theme = 'classic';
   }
 
   function updateDocumentTitleFromPath(fullPath) {
@@ -1713,6 +1727,13 @@
     return save().then(function () { render(); });
   }
 
+  function applyTheme(themeName) {
+    var t = themeName || 'classic';
+    document.body.classList.remove('theme-classic', 'theme-refined');
+    document.body.classList.add('theme-' + t);
+    try { localStorage.setItem('flowassist_theme', t); } catch (e) {}
+  }
+
   function saveSettings(newSettings) {
     state.data.settings = newSettings || getSettings();
     return save().then(function () { render(); });
@@ -2103,7 +2124,7 @@
         '<span class="' + pillClass + '">' + escapeHtml(lab) + '</span>' +
         '<input type="date" class="status-change-date-in" value="' + escapeHtml(d) + '">' +
         '<button type="button" class="btn-small status-change-save-date-btn">Save</button>' +
-        '<button type="button" class="btn-icon status-change-delete-btn" title="Delete this status change">×</button>' +
+        '<button type="button" class="btn-icon status-change-delete-btn" title="Delete this status change"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>' +
       '</li>';
     }).join('');
   }
@@ -2260,7 +2281,7 @@
           '<button type="button" class="status-btn' + ((s.status === 'Done' || s.status === 'Completed') ? ' active' : '') + '" data-status="Done">Done</button>' +
           '<button type="button" class="status-btn' + ((s.status === 'Dropped' || s.status === 'Closed') ? ' active' : '') + '" data-status="Dropped">Dropped</button>' +
         '</div>' +
-        '<button type="button" class="btn-icon subtask-delete" title="Delete">×</button>' +
+        '<button type="button" class="btn-icon subtask-delete" title="Delete"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>' +
       '</div>' +
       '</div>';
 
@@ -2305,7 +2326,7 @@
             '<div class="task-description-view">' + (subDesc || '<em class="no-desc">No description</em>') + '</div>' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
             '<textarea class="task-description-edit hidden subtask-desc-edit auto-resize rich-text-target" rows="2" placeholder="Description…">' + escapeHtml(s.description || '') + '</textarea></div>' +
-            '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description">✎</button>' +
+            '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg></button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
@@ -2418,7 +2439,7 @@
             '<button type="button" class="status-btn' + ((task.status === 'Done' || task.status === 'Completed') ? ' active' : '') + '" data-status="Done">Done</button>' +
             '<button type="button" class="status-btn' + ((task.status === 'Dropped' || task.status === 'Closed') ? ' active' : '') + '" data-status="Dropped">Dropped</button>' +
           '</div>' +
-          '<button type="button" class="btn-icon task-delete" title="Delete task">×</button>' +
+          '<button type="button" class="btn-icon task-delete" title="Delete task"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>' +
         '</div>' +
         '<div class="task-summary-export-flags">' +
           '<label class="flag-check"><input type="checkbox" class="task-exclude-summary"' + (isTruthyFlag(task.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
@@ -2509,7 +2530,7 @@
             '<div class="task-description-view">' + (desc || '<em class="no-desc">No description</em>') + '</div>' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
             '<textarea class="task-description-edit hidden auto-resize rich-text-target" rows="3" placeholder="Description…">' + escapeHtml(task.description || '') + '</textarea></div>' +
-            '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description">✎</button>' +
+            '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg></button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
@@ -2527,7 +2548,7 @@
           '<div class="subtasks-heading-row">' +
             '<h4 class="subtasks-title">Sub-tasks</h4>' +
             '<div class="filter-dropdown-wrap subtask-filter-wrap" data-task-id="' + escapeHtml(task.id) + '">' +
-              '<button type="button" class="filter-dropdown-btn" title="Sort sub-tasks">&#9662; Sort</button>' +
+              '<button type="button" class="filter-dropdown-btn" title="Sort sub-tasks">' + SVG_ICON_CHEVRON_DOWN + ' Sort</button>' +
               '<div class="filter-dropdown-menu">' +
                 '<button type="button" class="filter-option" data-sort-by="date_added" data-sort-dir="asc">Date added (oldest first)</button>' +
                 '<button type="button" class="filter-option" data-sort-by="date_added" data-sort-dir="desc">Date added (newest first)</button>' +
@@ -2923,14 +2944,14 @@
         if (descEdit.classList.contains('hidden')) {
           descEdit.classList.remove('hidden');
           descView.classList.add('hidden');
-          toggleDesc.textContent = '✓';
+          toggleDesc.innerHTML = SVG_ICON_CHECK;
           autoResizeTextarea(descEdit);
         } else {
           updateTask(taskId, { description: descEdit.value });
           descEdit.classList.add('hidden');
           descView.classList.remove('hidden');
           descView.innerHTML = descEdit.value ? formatRichDescription(descEdit.value) : '<em class="no-desc">No description</em>';
-          toggleDesc.textContent = '✎';
+          toggleDesc.innerHTML = SVG_ICON_EDIT;
         }
       });
     }
@@ -3155,14 +3176,14 @@
         if (subDescEdit.classList.contains('hidden')) {
           subDescEdit.classList.remove('hidden');
           subDescView.classList.add('hidden');
-          toggleSubDesc.textContent = '✓';
+          toggleSubDesc.innerHTML = SVG_ICON_CHECK;
           autoResizeTextarea(subDescEdit);
         } else {
             updateSubtask(subTaskId, subId, { description: subDescEdit.value });
             subDescEdit.classList.add('hidden');
             subDescView.classList.remove('hidden');
             subDescView.innerHTML = subDescEdit.value ? formatRichDescription(subDescEdit.value) : '<em class="no-desc">No description</em>';
-            toggleSubDesc.textContent = '✎';
+            toggleSubDesc.innerHTML = SVG_ICON_EDIT;
           }
         });
       }
@@ -5603,11 +5624,11 @@
         }
         if (!textarea) return;
         navigator.clipboard.writeText(textarea.value).then(function () {
-          var orig = btn.textContent;
-          btn.textContent = '✓ Copied';
+          var orig = btn.innerHTML;
+          btn.innerHTML = SVG_ICON_CHECK + ' Copied';
           btn.classList.add('btn-copy-success');
           setTimeout(function () {
-            btn.textContent = orig;
+            btn.innerHTML = orig;
             btn.classList.remove('btn-copy-success');
           }, 1500);
         });
@@ -6232,7 +6253,7 @@
     if (!btn) return;
     var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary' };
     var v = labels[state.view] || state.view || 'List';
-    btn.textContent = 'View · ' + v + ' ▾';
+    btn.innerHTML = 'View &middot; ' + v + ' ' + SVG_ICON_CHEVRON_DOWN;
   }
 
   function syncTopBarViewMenu() {
@@ -6298,6 +6319,8 @@
       var w = parseFloat(getSettings().workingHoursPerDay);
       whEl.value = !isNaN(w) && w > 0 ? String(w) : '8';
     }
+    var themeSelect = document.getElementById('setting-theme');
+    if (themeSelect) themeSelect.value = getSettings().theme || 'classic';
     var modal = $('settings-modal');
     if (modal) {
       modal.classList.add('open');
@@ -6732,15 +6755,19 @@
         var whIn = $('setting-working-hours');
         var wh = whIn ? parseFloat(whIn.value) : 8;
         if (isNaN(wh) || wh <= 0) wh = 8;
+        var themeIn = document.getElementById('setting-theme');
+        var theme = themeIn ? themeIn.value : 'classic';
         var base = getSettings();
         saveSettings(Object.assign({}, base, {
           priorityColors: colors,
           categories: categories.length ? categories : getCategoryList(),
           projects: projects,
           workingHoursPerDay: wh,
-          dayOffs: Array.isArray(base.dayOffs) ? base.dayOffs : []
+          dayOffs: Array.isArray(base.dayOffs) ? base.dayOffs : [],
+          theme: theme
         }));
         closeSettingsModal();
+        applyTheme(theme);
         var addCatWrap = $('add-task-category-dropdown');
         if (addCatWrap && addCatWrap.parentNode) {
           addCatWrap.innerHTML = renderCategoryDropdownHtml([], 'add-task-category');
@@ -6806,6 +6833,7 @@
     }
 
     load().then(function () {
+      applyTheme(getSettings().theme);
       syncAddTaskProjectSelect();
       if (window.__FLOWASSIST_DEBUG__) {
         prefillDebugForm();

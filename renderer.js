@@ -936,6 +936,8 @@
     progressHistoryOpen: null,
     /** When non-null, expanded note/todo editor modal is showing this note id. */
     notesModalNoteId: null,
+    /** Session-only filter for Notes board by created date (not persisted). */
+    notesDateFilter: { mode: 'all' },
     summaryGenerated: false,
     lastSummaryMeta: null,
     listFilter: 'all',
@@ -1566,6 +1568,16 @@
     if (kind === 'todo' && checklist.length === 0) {
       checklist.push({ id: generateId(), text: '', done: false });
     }
+    var nowIso = new Date().toISOString();
+    var updatedAt = raw && raw.updatedAt ? String(raw.updatedAt) : nowIso;
+    var createdAt;
+    if (raw && raw.createdAt) {
+      createdAt = String(raw.createdAt);
+    } else if (raw && raw.updatedAt) {
+      createdAt = String(raw.updatedAt);
+    } else {
+      createdAt = nowIso;
+    }
     return {
       id: id,
       kind: kind,
@@ -1573,8 +1585,48 @@
       body: body,
       color: color,
       checklist: checklist,
-      updatedAt: raw && raw.updatedAt ? String(raw.updatedAt) : new Date().toISOString()
+      createdAt: createdAt,
+      updatedAt: updatedAt
     };
+  }
+
+  function getNoteCreatedDateKey(item) {
+    var iso = item && item.createdAt ? String(item.createdAt) : (item && item.updatedAt ? String(item.updatedAt) : '');
+    if (!iso) return '';
+    var d = iso.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    try {
+      var t = new Date(iso);
+      if (!isNaN(t.getTime())) return t.toISOString().slice(0, 10);
+    } catch (e) { /* ignore */ }
+    return '';
+  }
+
+  function formatNoteCreatedPillLabel(item) {
+    var key = getNoteCreatedDateKey(item);
+    if (!key) return '';
+    try {
+      var d = new Date(key + 'T12:00:00');
+      if (isNaN(d.getTime())) return key;
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {
+      return key;
+    }
+  }
+
+  function noteMatchesDateFilter(item, f) {
+    if (!f || f.mode === 'all') return true;
+    var key = getNoteCreatedDateKey(item);
+    if (!key) return false;
+    if (f.mode === 'day') return f.date && key === f.date;
+    if (f.mode === 'month') return f.month && key.slice(0, 7) === f.month;
+    if (f.mode === 'range') {
+      if (f.from && f.to) return key >= f.from && key <= f.to;
+      if (f.from && !f.to) return key >= f.from;
+      if (!f.from && f.to) return key <= f.to;
+      return true;
+    }
+    return true;
   }
 
   function findNoteItemById(noteId) {
@@ -1842,6 +1894,11 @@
         ? '<div class="notes-card-title-display notes-card-title-display--empty">No title</div>'
         : '<div class="notes-card-title-display">' + titleVal + '</div>')
       : '<input type="text" class="notes-card-title"' + (isModal ? ' readonly' : '') + ' placeholder="Title" value="' + titleVal + '" autocomplete="off">';
+    var pillLabel = formatNoteCreatedPillLabel(item);
+    var datePillHtml = pillLabel
+      ? '<span class="notes-card-date-pill" title="Created">' + escapeHtml(pillLabel) + '</span>'
+      : '';
+    var headInner = '<div class="notes-card-head-inner">' + titleBlock + datePillHtml + '</div>';
     if (item.kind === 'todo') {
       var fullList = item.checklist || [];
       var rowSource = compact ? fullList.slice(0, 5) : fullList;
@@ -1849,14 +1906,15 @@
       var rows = rowSource.map(function (row) {
         var done = row.done ? ' checked' : '';
         var t = escapeHtml(row.text || '');
+        var liClass = 'notes-checklist-item' + (row.done ? ' notes-checklist-item--done' : '');
         if (readonlyPreview) {
-          return '<li class="notes-checklist-item" data-item-id="' + escapeHtml(row.id) + '">' +
+          return '<li class="' + liClass + '" data-item-id="' + escapeHtml(row.id) + '">' +
             '<div class="notes-checklist-row notes-checklist-row--readonly">' +
             '<input type="checkbox" class="notes-todo-done"' + done + ' title="Done">' +
             '<span class="notes-todo-text-display">' + t + '</span>' +
             '</div></li>';
         }
-        return '<li class="notes-checklist-item" data-item-id="' + escapeHtml(row.id) + '">' +
+        return '<li class="' + liClass + '" data-item-id="' + escapeHtml(row.id) + '">' +
           '<label class="notes-checklist-row">' +
           '<input type="checkbox" class="notes-todo-done"' + done + '>' +
           '<input type="text" class="notes-todo-text"' + (isModal ? ' readonly' : '') + ' value="' + t + '" placeholder="Item…" autocomplete="off">' +
@@ -1867,7 +1925,7 @@
         : '';
       var addBtnHtml = readonlyPreview ? '' : '<button type="button" class="btn-small notes-checklist-add">Add item</button>';
       return '<article class="notes-card notes-card--todo notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
-        '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+        '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
         '<ul class="notes-checklist">' + rows + '</ul>' +
         truncatedHint +
         addBtnHtml +
@@ -1880,12 +1938,12 @@
       var bodyInner = bodyIsEmpty ? 'No content' : bodyEsc;
       var bodyClass = 'notes-card-body-display' + (bodyIsEmpty ? ' notes-card-body-display--empty' : '');
       return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
-        '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+        '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
         '<div class="' + bodyClass + '">' + bodyInner + '</div>' +
         '</article>';
     }
     return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
-      '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+      '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
       '<textarea class="notes-card-body auto-resize" rows="4" placeholder="Take a note…"' + (isModal ? ' readonly' : '') + '>' + bodyEsc + '</textarea>' +
       '</article>';
   }
@@ -1899,7 +1957,11 @@
   function renderNotes() {
     var board = document.getElementById('notes-board');
     if (!board || !state.data.notes) return;
-    var items = state.data.notes.items || [];
+    var allItems = state.data.notes.items || [];
+    var f = state.notesDateFilter || { mode: 'all' };
+    var items = allItems.filter(function (it) {
+      return noteMatchesDateFilter(it, f);
+    });
     board.innerHTML = items.map(function (it) {
       return renderNoteCardHtml(it, { compact: true });
     }).join('');
@@ -2006,6 +2068,84 @@
     });
   }
 
+  function syncNotesFilterInputsVisibility() {
+    var modeEl = document.getElementById('notes-filter-mode');
+    if (!modeEl) return;
+    var m = modeEl.value || 'all';
+    var day = document.getElementById('notes-filter-day');
+    var month = document.getElementById('notes-filter-month');
+    var rangeWrap = document.getElementById('notes-filter-range-wrap');
+    if (day) day.hidden = m !== 'day';
+    if (month) month.hidden = m !== 'month';
+    if (rangeWrap) rangeWrap.hidden = m !== 'range';
+  }
+
+  function syncNotesFilterPanelFromState() {
+    var f = state.notesDateFilter || { mode: 'all' };
+    var mode = document.getElementById('notes-filter-mode');
+    var day = document.getElementById('notes-filter-day');
+    var month = document.getElementById('notes-filter-month');
+    var from = document.getElementById('notes-filter-from');
+    var to = document.getElementById('notes-filter-to');
+    if (mode) mode.value = f.mode || 'all';
+    if (day) day.value = f.date || '';
+    if (month) month.value = f.month || '';
+    if (from) from.value = f.from || '';
+    if (to) to.value = f.to || '';
+    syncNotesFilterInputsVisibility();
+  }
+
+  function applyNotesDateFilterFromForm() {
+    var modeEl = document.getElementById('notes-filter-mode');
+    if (!modeEl) return;
+    var m = modeEl.value || 'all';
+    if (m === 'all') {
+      state.notesDateFilter = { mode: 'all' };
+    } else if (m === 'day') {
+      var d = document.getElementById('notes-filter-day');
+      state.notesDateFilter = { mode: 'day', date: d && d.value ? d.value : '' };
+    } else if (m === 'month') {
+      var mo = document.getElementById('notes-filter-month');
+      state.notesDateFilter = { mode: 'month', month: mo && mo.value ? mo.value : '' };
+    } else if (m === 'range') {
+      var fr = document.getElementById('notes-filter-from');
+      var t = document.getElementById('notes-filter-to');
+      state.notesDateFilter = {
+        mode: 'range',
+        from: fr && fr.value ? fr.value : '',
+        to: t && t.value ? t.value : ''
+      };
+    }
+    renderNotes();
+  }
+
+  function wireNotesFilterControls() {
+    var wrap = document.getElementById('notes-toolbar-filter');
+    if (!wrap || wrap.dataset.wiredFilter === '1') return;
+    wrap.dataset.wiredFilter = '1';
+    var mode = document.getElementById('notes-filter-mode');
+    var applyBtn = document.getElementById('notes-filter-apply');
+    var clearBtn = document.getElementById('notes-filter-clear');
+    if (mode) {
+      mode.addEventListener('change', function () {
+        syncNotesFilterInputsVisibility();
+      });
+    }
+    if (applyBtn) {
+      applyBtn.addEventListener('click', function () {
+        applyNotesDateFilterFromForm();
+      });
+    }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        state.notesDateFilter = { mode: 'all' };
+        syncNotesFilterPanelFromState();
+        renderNotes();
+      });
+    }
+    syncNotesFilterPanelFromState();
+  }
+
   function wireNotesToolbar() {
     var addNote = document.getElementById('notes-add-note-btn');
     var addTodo = document.getElementById('notes-add-todo-btn');
@@ -2039,6 +2179,7 @@
       });
     }
     syncNotesGridColumnsUi();
+    wireNotesFilterControls();
     bindNotesEventsOnce();
     bindNotesModalEventsOnce();
   }

@@ -429,6 +429,23 @@
           <button type="button" id="notes-add-todo-btn" class="notes-toolbar-btn notes-toolbar-btn--todo">New list</button>
         </div>
       </div>
+      <div class="notes-filter-bar" id="notes-toolbar-filter">
+        <label class="notes-filter-label" for="notes-filter-mode">Created</label>
+        <select id="notes-filter-mode" class="notes-filter-mode" aria-label="Filter notes by created date">
+          <option value="all">All dates</option>
+          <option value="day">Single day</option>
+          <option value="month">Month</option>
+          <option value="range">Date range</option>
+        </select>
+        <input type="date" id="notes-filter-day" class="notes-filter-input" aria-label="Day" hidden />
+        <input type="month" id="notes-filter-month" class="notes-filter-input" aria-label="Month" hidden />
+        <span class="notes-filter-range-wrap" id="notes-filter-range-wrap" hidden>
+          <label class="notes-filter-range-label">From <input type="date" id="notes-filter-from" class="notes-filter-input" aria-label="Range start" /></label>
+          <label class="notes-filter-range-label">To <input type="date" id="notes-filter-to" class="notes-filter-input" aria-label="Range end" /></label>
+        </span>
+        <button type="button" id="notes-filter-apply" class="notes-filter-apply-btn">Apply</button>
+        <button type="button" id="notes-filter-clear" class="notes-filter-clear-btn">Clear</button>
+      </div>
       <div id="notes-board" class="notes-board" aria-live="polite"></div>
     </div>
     </div>

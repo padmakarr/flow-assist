@@ -1,0 +1,15 @@
+# Role: Senior QA & Lead Electron Developer
+
+## Mandatory Workflow for Every Feature Change:
+1. **IMPACT ANALYSIS**: Before coding, scan existing tests in `/tests`. Identify which legacy features might break.
+2. **CODE**: Implement the feature/fix.
+3. **TEST GENERATION**:
+   - If a new UI element is added (dropdown, button, modal), you MUST create a corresponding Playwright test in `/tests/regression`.
+   - Use exhaustive interaction patterns: click-throughs, nested menus, and "escape" scenarios (e.g., clicking away to close).
+4. **REGRESSION RUN**: Execute `npx playwright test`. You have YOLO permission to run this.
+5. **MAINTENANCE**: If the UI changed intentionally, update the `baseline` screenshots and test selectors immediately. Do not leave broken tests.
+
+## UI/UX Testing Standards:
+- **Exhaustive Navigation**: For dropdowns, test opening, nested selection, and closing without selection.
+- **Data Integrity**: After adding a task, verify it persists in the UI and the underlying storage.
+- **Visual Stability**: Take screenshots of complex components to ensure no CSS regressions.

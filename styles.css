@@ -6167,6 +6167,173 @@ a.auto-link:hover {
   margin-top: 6px;
 }
 
+.notes-reminder-presets-label {
+  display: block;
+  width: 100%;
+  margin-bottom: 4px;
+  font-size: var(--font-xs, 0.75rem);
+}
+
+.notes-card-reminders--compact {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.notes-reminder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 4px 11px 4px 9px;
+  border-radius: 999px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--accent-blue-muted, #3b82f6) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-muted) 70%, var(--accent-blue-muted, #3b82f6) 35%);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+
+.notes-reminder-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.notes-reminder-bell {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue-bright, #60a5fa);
+}
+
+.notes-reminder-bell--ring {
+  transform-origin: 50% 0;
+  animation: notesReminderBellRing 1.4s ease-in-out infinite;
+}
+
+@keyframes notesReminderBellRing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  12% {
+    transform: rotate(16deg);
+  }
+  24% {
+    transform: rotate(-14deg);
+  }
+  36% {
+    transform: rotate(12deg);
+  }
+  48% {
+    transform: rotate(-8deg);
+  }
+  60% {
+    transform: rotate(5deg);
+  }
+  72% {
+    transform: rotate(-3deg);
+  }
+}
+
+.notes-reminder-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.notes-reminder-section-title {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.notes-reminder-section-sub {
+  font-size: var(--font-sm);
+  line-height: 1.45;
+}
+
+.notes-reminder-hint {
+  margin: 0 0 12px;
+  font-size: var(--font-sm);
+}
+
+.notes-reminder-list--single {
+  margin-bottom: 12px;
+}
+
+.notes-reminder-list--single .notes-reminder-item {
+  padding: 10px 12px;
+  border: 1px solid var(--border-muted);
+  border-radius: 10px;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--bg-surface-raised, rgba(255, 255, 255, 0.03));
+}
+
+.notes-reminder-toolbar {
+  margin-top: 4px;
+}
+
+.notes-reminder-dropdown {
+  margin-top: 10px;
+  padding: 14px 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-muted);
+  background: var(--bg-content);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+.notes-reminder-fieldset {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.notes-reminder-legend {
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: var(--font-sm);
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.notes-reminder-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.notes-reminder-rel {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.notes-reminder-rel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.notes-reminder-dropdown-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-muted);
+}
+
 /* ── Relax tab & nav (sapling green) ─────────────────────── */
 .nav-btn.nav-btn--relax {
   color: var(--accent-green-bright);

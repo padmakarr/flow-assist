@@ -2033,45 +2033,67 @@
     var next = getNextNoteReminder(item);
     var nextTxt = next ? formatNoteReminderShort(next.fireAt) : '';
     if (readonlyPreview) {
-      var line = next
-        ? '<span class="notes-reminder-summary-line" title="Open for reminders"><span class="notes-reminder-bell" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span> ' + escapeHtml(nextTxt) + '</span>'
-        : '<span class="notes-reminder-summary-line notes-reminder-summary-line--empty muted">No reminder</span>';
+      if (!next) {
+        return '<div class="notes-card-reminders notes-card-reminders--compact" aria-hidden="true"></div>';
+      }
+      var line =
+        '<div class="notes-reminder-pill" title="Reminder set — open note to edit">' +
+        '<span class="notes-reminder-bell notes-reminder-bell--ring" aria-hidden="true">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>' +
+        '<span class="notes-reminder-pill-text">' + escapeHtml(nextTxt) + '</span>' +
+        '</div>';
       return '<div class="notes-card-reminders notes-card-reminders--compact">' + line + '</div>';
     }
-    var listRows = (item.reminders || []).map(function (r) {
-      var active = isNoteReminderScheduled(r);
-      var lbl = formatNoteReminderShort(r.fireAt) || r.fireAt.slice(0, 16);
-      return '<li class="notes-reminder-item' + (active ? '' : ' notes-reminder-item--inactive') + '">' +
-        '<span class="notes-reminder-when">' + escapeHtml(lbl) + (r.dismissedAt ? ' · dismissed' : '') + '</span>' +
-        (isModal
-          ? '<button type="button" class="btn-small notes-reminder-remove" data-note-id="' + nid + '" data-reminder-id="' + escapeHtml(r.id) + '">Remove</button>'
-          : '') +
-        '</li>';
-    }).join('');
     if (!isModal) return '';
-    return '<div class="notes-card-reminders" data-note-id="' + nid + '">' +
-      '<div class="notes-reminder-head"><span class="notes-reminder-title">Reminders</span></div>' +
-      (listRows ? '<ul class="notes-reminder-list">' + listRows + '</ul>' : '<p class="muted notes-reminder-empty">No reminders yet.</p>') +
-      '<div class="notes-reminder-add">' +
-      '<div class="notes-reminder-mode-row">' +
-      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="absolute" checked> Date &amp; time</label>' +
-      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="relative"> In …</label>' +
+    var scheduledRows = (item.reminders || []).filter(isNoteReminderScheduled);
+    var activeRow = scheduledRows.length
+      ? '<ul class="notes-reminder-list notes-reminder-list--single">' + scheduledRows.map(function (r) {
+        var lbl = formatNoteReminderShort(r.fireAt) || r.fireAt.slice(0, 16);
+        return '<li class="notes-reminder-item">' +
+          '<span class="notes-reminder-when">' + escapeHtml(lbl) + '</span>' +
+          '<button type="button" class="btn-small notes-reminder-remove" data-note-id="' + nid + '" data-reminder-id="' + escapeHtml(r.id) + '">Remove</button>' +
+          '</li>';
+      }).join('') + '</ul>'
+      : '<p class="notes-reminder-hint muted">No reminder scheduled yet.</p>';
+    return '<div class="notes-card-reminders notes-card-reminders--modal" data-note-id="' + nid + '">' +
+      '<div class="notes-reminder-section-head">' +
+      '<span class="notes-reminder-section-title">Reminder</span>' +
+      '<span class="notes-reminder-section-sub muted">One schedule per note: choose a date and time, or a countdown.</span>' +
       '</div>' +
+      activeRow +
+      '<div class="notes-reminder-toolbar">' +
+      '<button type="button" class="btn-secondary notes-reminder-dropdown-toggle" data-note-id="' + nid + '" aria-expanded="false" aria-haspopup="true">' +
+      (scheduledRows.length ? 'Change reminder' : 'Add reminder') +
+      '</button></div>' +
+      '<div class="notes-reminder-dropdown" hidden>' +
+      '<fieldset class="notes-reminder-fieldset">' +
+      '<legend class="notes-reminder-legend">How should we remind you?</legend>' +
+      '<div class="notes-reminder-mode-row">' +
+      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="absolute" checked> <span>At a specific date and time</span></label>' +
+      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="relative"> <span>After a countdown</span></label>' +
+      '</div></fieldset>' +
       '<div class="notes-reminder-abs">' +
-      '<input type="datetime-local" class="notes-reminder-datetime add-task-input" aria-label="Reminder date and time">' +
+      '<label class="notes-reminder-field-label" for="nr-dt-' + nid + '">Date and time</label>' +
+      '<input type="datetime-local" id="nr-dt-' + nid + '" class="notes-reminder-datetime add-task-input" aria-label="Reminder date and time">' +
       '</div>' +
       '<div class="notes-reminder-rel" hidden>' +
-      '<input type="number" class="notes-reminder-rel-num add-task-input" min="1" max="999" value="15" aria-label="Duration value">' +
-      '<select class="notes-reminder-rel-unit add-task-input" aria-label="Duration unit">' +
-      '<option value="minutes" selected>minutes</option><option value="hours">hours</option></select>' +
-      '<div class="notes-reminder-presets">' +
-      '<button type="button" class="btn-small notes-reminder-preset" data-min="5">5m</button>' +
-      '<button type="button" class="btn-small notes-reminder-preset" data-min="15">15m</button>' +
-      '<button type="button" class="btn-small notes-reminder-preset" data-min="30">30m</button>' +
-      '<button type="button" class="btn-small notes-reminder-preset" data-min="60">1h</button>' +
+      '<label class="notes-reminder-field-label" for="nr-num-' + nid + '">Countdown length</label>' +
+      '<div class="notes-reminder-rel-row">' +
+      '<input type="number" id="nr-num-' + nid + '" class="notes-reminder-rel-num add-task-input" min="1" max="999" value="15" aria-label="Countdown amount">' +
+      '<select class="notes-reminder-rel-unit add-task-input" aria-label="Countdown unit">' +
+      '<option value="minutes" selected>Minutes</option><option value="hours">Hours</option></select></div>' +
+      '<div class="notes-reminder-presets" role="group" aria-label="Quick countdown presets">' +
+      '<span class="notes-reminder-presets-label muted">Quick picks</span>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="1">1 min</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="5">5 min</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="15">15 min</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="30">30 min</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="60">1 hour</button>' +
       '</div></div>' +
-      '<button type="button" class="btn-small notes-reminder-add-btn" data-note-id="' + nid + '">Add reminder</button>' +
-      '</div></div>';
+      '<div class="notes-reminder-dropdown-actions">' +
+      '<button type="button" class="btn-primary notes-reminder-save-btn" data-note-id="' + nid + '">Save reminder</button>' +
+      '<button type="button" class="btn-secondary notes-reminder-cancel-dropdown">Cancel</button>' +
+      '</div></div></div>';
   }
 
   function localInputValueFromDate(d) {
@@ -2088,6 +2110,9 @@
     var fireAtIso = options.fireAtIso;
     var mode = options.mode === 'relative' ? 'relative' : 'absolute';
     if (!fireAtIso) return;
+    item.reminders = (item.reminders || []).filter(function (r) {
+      return !isNoteReminderScheduled(r);
+    });
     item.reminders.push({
       id: generateId(),
       fireAt: fireAtIso,
@@ -2138,6 +2163,39 @@
       if (state.view !== 'notes') return;
       var body = document.getElementById('notes-modal-body');
       if (!body || !body.contains(e.target)) return;
+
+      function closeReminderDropdowns(container) {
+        if (!container) return;
+        container.querySelectorAll('.notes-reminder-dropdown').forEach(function (dd) {
+          dd.hidden = true;
+        });
+        container.querySelectorAll('.notes-reminder-dropdown-toggle').forEach(function (t) {
+          t.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      var toggle = e.target.closest('.notes-reminder-dropdown-toggle');
+      if (toggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        var wrapT = toggle.closest('.notes-card-reminders');
+        if (!wrapT) return;
+        var ddT = wrapT.querySelector('.notes-reminder-dropdown');
+        var willOpen = ddT && ddT.hidden;
+        closeReminderDropdowns(body);
+        if (ddT && willOpen) {
+          ddT.hidden = false;
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+        return;
+      }
+      var cancelDd = e.target.closest('.notes-reminder-cancel-dropdown');
+      if (cancelDd) {
+        e.preventDefault();
+        closeReminderDropdowns(body);
+        return;
+      }
+
       var preset = e.target.closest('.notes-reminder-preset');
       if (preset) {
         e.preventDefault();
@@ -2154,11 +2212,11 @@
         }
         return;
       }
-      var addBtn = e.target.closest('.notes-reminder-add-btn');
-      if (addBtn) {
+      var saveBtn = e.target.closest('.notes-reminder-save-btn');
+      if (saveBtn) {
         e.preventDefault();
-        var nid = addBtn.getAttribute('data-note-id');
-        var wrap2 = addBtn.closest('.notes-card-reminders');
+        var nid = saveBtn.getAttribute('data-note-id');
+        var wrap2 = saveBtn.closest('.notes-card-reminders');
         if (!nid || !wrap2) return;
         var useRel = wrap2.querySelector('.notes-reminder-mode[value="relative"]');
         var fireAtIso = '';
@@ -2178,6 +2236,7 @@
           fireAtIso = d.toISOString();
         }
         addNoteReminderForNoteId(nid, { fireAtIso: fireAtIso, mode: mode });
+        closeReminderDropdowns(body);
         return;
       }
       var remBtn = e.target.closest('.notes-reminder-remove');
@@ -2186,6 +2245,11 @@
         var rnid = remBtn.getAttribute('data-note-id');
         var rid = remBtn.getAttribute('data-reminder-id');
         if (rnid && rid) removeNoteReminder(rnid, rid);
+        closeReminderDropdowns(body);
+        return;
+      }
+      if (!e.target.closest('.notes-reminder-dropdown') && !e.target.closest('.notes-reminder-dropdown-toggle')) {
+        closeReminderDropdowns(body);
       }
     });
   }

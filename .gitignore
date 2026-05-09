@@ -419,3 +419,7 @@ FodyWeavers.xsd
 
 # Electron (electron-builder) distributables
 dist/
+
+# Playwright
+playwright-report/
+test-results/

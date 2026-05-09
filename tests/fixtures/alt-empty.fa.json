@@ -1,0 +1,19 @@
+{
+  "settings": {
+    "priorityColors": {
+      "1": "#2e4a6e",
+      "2": "#2e4a6e",
+      "3": "#2e4a6e",
+      "4": "#2e4a6e",
+      "5": "#7a5c2e",
+      "6": "#7a5c2e",
+      "7": "#7a5c2e",
+      "8": "#7a5c2e",
+      "9": "#7a3d3d",
+      "10": "#7a3d3d"
+    },
+    "theme": "classic",
+    "workingHoursPerDay": 8
+  },
+  "tasks": []
+}

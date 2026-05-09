@@ -1,11 +1,18 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+/** Playwright / E2E: isolated profile dir and allow a second process while dev app may be running. */
+const isE2E = process.env.FLOWASSIST_E2E === '1';
+if (isE2E) {
+  app.setPath('userData', path.join(os.tmpdir(), 'flowassist-e2e-' + process.pid));
+}
 
 let mainWindow = null;
 
 /* One main process only (especially on Windows): a second launch exits immediately and focuses the running app. */
-if (!app.requestSingleInstanceLock()) {
+if (!isE2E && !app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
@@ -124,8 +131,8 @@ function showReminderOsNotification(payload) {
 function openReminderPopupWindow(payload) {
   closeReminderPopupWindow();
   const win = new BrowserWindow({
-    width: 400,
-    height: 300,
+    width: 440,
+    height: 340,
     show: true,
     alwaysOnTop: true,
     resizable: false,
@@ -514,6 +521,18 @@ ipcMain.handle('open-html-in-browser', async (event, payload) => {
 });
 
 app.whenReady().then(function () {
+  if (isE2E && process.env.FLOWASSIST_E2E_PROFILE) {
+    var rawProfile = String(process.env.FLOWASSIST_E2E_PROFILE).trim();
+    var resolvedProfile = path.isAbsolute(rawProfile)
+      ? path.normalize(rawProfile)
+      : path.resolve(process.cwd(), rawProfile);
+    if (fs.existsSync(resolvedProfile)) {
+      writePrefs({ profilePath: resolvedProfile });
+    } else {
+      console.error('[FlowAssist E2E] FLOWASSIST_E2E_PROFILE not found:', resolvedProfile);
+    }
+  }
+
   /* Register reminder IPC before any window loads so invoke() never races missing handlers. */
   ipcMain.handle('sync-note-reminders', async (event, list) => {
     scheduleNoteReminders(Array.isArray(list) ? list : []);

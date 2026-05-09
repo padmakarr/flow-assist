@@ -1,0 +1,6731 @@
+{
+  "tasks": [
+    {
+      "id": "ai-v24-megatask-001",
+      "title": "[VIS-QA] Mega parent — 24 sub-tasks (visibility / filters)",
+      "description": "Synthetic task for testing sub-task visibility toggles, sorting, expand/collapse, and long lists. Sub-tasks ST01–ST08 Open, ST09–ST13 Ongoing, ST14–ST18 Done, ST19–ST24 Dropped.",
+      "priority": 5,
+      "tags": [
+        "#qa",
+        "#visibility"
+      ],
+      "assigned_date": "2026-05-09",
+      "eta": "",
+      "effort_required_hours": 48,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Hard",
+      "created_at": "2026-05-09T10:09:18.171Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-v24-sub-001",
+          "title": "[ST01] Open — visibility row",
+          "description": "Synthetic sub-task 1 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 2,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-pyl6p7n",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-002",
+          "title": "[ST02] Open — visibility row",
+          "description": "Synthetic sub-task 2 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-p5cfskk",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-003",
+          "title": "[ST03] Open — visibility row",
+          "description": "Synthetic sub-task 3 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 4,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-6q789ei",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-004",
+          "title": "[ST04] Open — visibility row",
+          "description": "Synthetic sub-task 4 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 5,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-9g3cwba",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-005",
+          "title": "[ST05] Open — visibility row",
+          "description": "Synthetic sub-task 5 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 6,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-ut0x8ke",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-006",
+          "title": "[ST06] Open — visibility row",
+          "description": "Synthetic sub-task 6 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 7,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-s5r8arj",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-007",
+          "title": "[ST07] Open — visibility row",
+          "description": "Synthetic sub-task 7 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 8,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-ns9l69q",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-008",
+          "title": "[ST08] Open — visibility row",
+          "description": "Synthetic sub-task 8 for filter/visibility testing.",
+          "status": "Open",
+          "priority": 9,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-0oioipb",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-009",
+          "title": "[ST09] Ongoing — visibility row",
+          "description": "Synthetic sub-task 9 for filter/visibility testing.",
+          "status": "Ongoing",
+          "priority": 10,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-5iyrxxn",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-54qk8qk",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-010",
+          "title": "[ST10] Ongoing — visibility row",
+          "description": "Synthetic sub-task 10 for filter/visibility testing.",
+          "status": "Ongoing",
+          "priority": 1,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-yw6dzie",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-i71p69f",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-011",
+          "title": "[ST11] Ongoing — visibility row",
+          "description": "Synthetic sub-task 11 for filter/visibility testing.",
+          "status": "Ongoing",
+          "priority": 2,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-mrfbjoq",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-z79hkdq",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-012",
+          "title": "[ST12] Ongoing — visibility row",
+          "description": "Synthetic sub-task 12 for filter/visibility testing.",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-xqg9c7v",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-rkc6hqv",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-013",
+          "title": "[ST13] Ongoing — visibility row",
+          "description": "Synthetic sub-task 13 for filter/visibility testing.",
+          "status": "Ongoing",
+          "priority": 4,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-0qpovud",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-fb79n5g",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-014",
+          "title": "[ST14] Done — visibility row",
+          "description": "Synthetic sub-task 14 for filter/visibility testing.",
+          "status": "Done",
+          "priority": 5,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-1lxy69r",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-kkb44ee",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-hmz8y11",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-015",
+          "title": "[ST15] Done — visibility row",
+          "description": "Synthetic sub-task 15 for filter/visibility testing.",
+          "status": "Done",
+          "priority": 6,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-v8b1vbg",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-tzx5udi",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-oe4xq79",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-016",
+          "title": "[ST16] Done — visibility row",
+          "description": "Synthetic sub-task 16 for filter/visibility testing.",
+          "status": "Done",
+          "priority": 7,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-24bkgcn",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-ngjboqg",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-siyz8be",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-017",
+          "title": "[ST17] Done — visibility row",
+          "description": "Synthetic sub-task 17 for filter/visibility testing.",
+          "status": "Done",
+          "priority": 8,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-r3hc0v1",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-ek94egw",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-kduapy0",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-018",
+          "title": "[ST18] Done — visibility row",
+          "description": "Synthetic sub-task 18 for filter/visibility testing.",
+          "status": "Done",
+          "priority": 9,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-klyjf7z",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-yieonm4",
+              "status": "Ongoing",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-xevy03m",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-019",
+          "title": "[ST19] Dropped — visibility row",
+          "description": "Synthetic sub-task 19 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 10,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-d1eyt7y",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-hjoy4ha",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-020",
+          "title": "[ST20] Dropped — visibility row",
+          "description": "Synthetic sub-task 20 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 1,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-pugo03g",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-3owfmmo",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-021",
+          "title": "[ST21] Dropped — visibility row",
+          "description": "Synthetic sub-task 21 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 2,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-clqh113",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-mdff38p",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-022",
+          "title": "[ST22] Dropped — visibility row",
+          "description": "Synthetic sub-task 22 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 3,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-ti2kof7",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-aefyxuu",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-023",
+          "title": "[ST23] Dropped — visibility row",
+          "description": "Synthetic sub-task 23 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 4,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Support"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-ppufyz2",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-yx8ryd8",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        },
+        {
+          "id": "ai-v24-sub-024",
+          "title": "[ST24] Dropped — visibility row",
+          "description": "Synthetic sub-task 24 for filter/visibility testing.",
+          "status": "Dropped",
+          "priority": 5,
+          "assigned_date": "2026-05-09",
+          "eta": "",
+          "effort_required_hours": 0.5,
+          "progress_updates": [],
+          "categories": [
+            "Design"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "no_effort_needed": false,
+          "status_changes": [
+            {
+              "id": "ai-1778321396595-ydfa4hb",
+              "status": "Open",
+              "date": "2026-05-09"
+            },
+            {
+              "id": "ai-1778321396595-p5o9zyr",
+              "status": "Dropped",
+              "date": "2026-05-09"
+            }
+          ]
+        }
+      ],
+      "categories": [
+        "Debug"
+      ],
+      "project": "Alpha",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "no_effort_needed": false,
+      "archived": false,
+      "status_changes": [
+        {
+          "id": "ai-1778321396595-90osm57",
+          "status": "Open",
+          "date": "2026-05-09"
+        },
+        {
+          "id": "ai-1778321396595-30ju2a7",
+          "status": "Ongoing",
+          "date": "2026-05-09"
+        }
+      ]
+    },
+    {
+      "id": "ai-may26-task-00013",
+      "title": "[T01] Parent no-effort + mixed sub effort flags",
+      "description": "Main exempt; subs mix no-effort and tracked.",
+      "priority": 4,
+      "tags": [
+        "#may",
+        "#qa"
+      ],
+      "assigned_date": "2026-05-01",
+      "eta": "",
+      "effort_required_hours": 40,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-01T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00001",
+          "text": "Decoy main progress (ribbon ignores for spent)",
+          "date_added": "2026-05-02",
+          "effort_consumed_hours": 5,
+          "categories": []
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00005",
+          "title": "Tracked sub A",
+          "description": "",
+          "status": "Done",
+          "priority": 3,
+          "assigned_date": "2026-05-01",
+          "eta": "2026-05-20",
+          "effort_required_hours": 8,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00002",
+              "text": "Work",
+              "date_added": "2026-05-03",
+              "effort_consumed_hours": 2,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-09",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00006",
+              "status": "Open",
+              "date": "2026-05-01"
+            },
+            {
+              "id": "ai-1778316463618-067w6kh",
+              "status": "Done",
+              "date": "2026-05-09"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00007",
+          "title": "Exempt sub B (stale 8h)",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-02",
+          "eta": "2026-05-15",
+          "effort_required_hours": 8,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00003",
+              "text": "Sync",
+              "date_added": "2026-05-04",
+              "effort_consumed_hours": 0.5,
+              "categories": [
+                "Meeting"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00008",
+              "status": "Open",
+              "date": "2026-05-02"
+            }
+          ],
+          "no_effort_needed": true
+        },
+        {
+          "id": "ai-may26-sub-00009",
+          "title": "Open roll-up sub C",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-03",
+          "eta": "",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00004",
+              "text": "Uplift",
+              "date_added": "2026-05-05",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "Debug"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00010",
+              "status": "Open",
+              "date": "2026-05-03"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "DV",
+        "Meeting"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00011",
+          "status": "Open",
+          "date": "2026-05-01"
+        },
+        {
+          "id": "ai-may26-sch-00012",
+          "status": "Ongoing",
+          "date": "2026-05-02"
+        }
+      ],
+      "no_effort_needed": true,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00018",
+      "title": "[T02] All no-effort (main + every sub)",
+      "description": "",
+      "priority": 2,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-02",
+      "eta": "",
+      "effort_required_hours": 0,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-02T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00014",
+          "title": "Sub 1 all-exempt",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-02",
+          "eta": "",
+          "effort_required_hours": 4,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00015",
+              "status": "Open",
+              "date": "2026-05-02"
+            }
+          ],
+          "no_effort_needed": true
+        },
+        {
+          "id": "ai-may26-sub-00016",
+          "title": "Sub 2 all-exempt",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-02",
+          "eta": "",
+          "effort_required_hours": 2,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00017",
+              "status": "Open",
+              "date": "2026-05-02"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00019",
+          "status": "Open",
+          "date": "2026-05-02"
+        }
+      ],
+      "no_effort_needed": true,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00025",
+      "title": "[T03] Excluded from summary and export",
+      "description": "",
+      "priority": 5,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-03",
+      "eta": "2026-05-28",
+      "effort_required_hours": 4,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-03T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00020",
+          "text": "Private note",
+          "date_added": "2026-05-04",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Skillup"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00021",
+          "title": "Also hidden sub",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-03",
+          "eta": "2026-05-18",
+          "effort_required_hours": 2,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": true,
+          "exclude_from_export": true,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00022",
+              "status": "Open",
+              "date": "2026-05-03"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [],
+      "project": "",
+      "done_date": "",
+      "exclude_from_summary": true,
+      "exclude_from_export": true,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00023",
+          "status": "Open",
+          "date": "2026-05-03"
+        },
+        {
+          "id": "ai-may26-sch-00024",
+          "status": "Ongoing",
+          "date": "2026-05-04"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00033",
+      "title": "[T04] Done + archived (May close)",
+      "description": "",
+      "priority": 6,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-04",
+      "eta": "2026-05-08",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-04T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00026",
+          "text": "Shipped",
+          "date_added": "2026-05-08",
+          "effort_consumed_hours": 6,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00028",
+          "title": "Sub done",
+          "description": "",
+          "status": "Done",
+          "priority": 3,
+          "assigned_date": "2026-05-04",
+          "eta": "",
+          "effort_required_hours": 2,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00027",
+              "text": "OK",
+              "date_added": "2026-05-08",
+              "effort_consumed_hours": 2,
+              "categories": []
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "2026-05-08",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00029",
+              "status": "Open",
+              "date": "2026-05-04"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Design"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-08",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00030",
+          "status": "Open",
+          "date": "2026-05-04"
+        },
+        {
+          "id": "ai-may26-sch-00031",
+          "status": "Ongoing",
+          "date": "2026-05-05"
+        },
+        {
+          "id": "ai-may26-sch-00032",
+          "status": "Done",
+          "date": "2026-05-08"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": true
+    },
+    {
+      "id": "ai-may26-task-00037",
+      "title": "[T05] Dropped main",
+      "description": "",
+      "priority": 3,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-05",
+      "eta": "2026-05-10",
+      "effort_required_hours": 3,
+      "bug_numbers": [
+        5001
+      ],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-05T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00034",
+          "text": "Abandoned after triage",
+          "date_added": "2026-05-06",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Support"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [],
+      "project": "",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00035",
+          "status": "Open",
+          "date": "2026-05-05"
+        },
+        {
+          "id": "ai-may26-sch-00036",
+          "status": "Dropped",
+          "date": "2026-05-06"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00045",
+      "title": "[T06] ETA slip + effort increase",
+      "description": "",
+      "priority": 7,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-06",
+      "eta": "2026-05-30",
+      "effort_required_hours": 20,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-06T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [
+        {
+          "id": "ai-may26-eu-00038",
+          "date_recorded": "2026-05-07",
+          "old_eta": "2026-05-20",
+          "new_eta": "2026-05-25"
+        },
+        {
+          "id": "ai-may26-eu-00039",
+          "date_recorded": "2026-05-09",
+          "old_eta": "2026-05-25",
+          "new_eta": "2026-05-30"
+        }
+      ],
+      "effort_updates": [
+        {
+          "id": "ai-may26-ef-00040",
+          "date_recorded": "2026-05-08",
+          "old_effort_hours": 12,
+          "new_effort_hours": 20
+        }
+      ],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00041",
+          "title": "Tied sub with own ETA",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-06",
+          "eta": "2026-05-22",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00042",
+              "status": "Open",
+              "date": "2026-05-06"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [],
+      "project": "",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00043",
+          "status": "Open",
+          "date": "2026-05-06"
+        },
+        {
+          "id": "ai-may26-sch-00044",
+          "status": "Ongoing",
+          "date": "2026-05-07"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00053",
+      "title": "[T07] Open + addressed concerns",
+      "description": "",
+      "priority": 8,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-07",
+      "eta": "2026-05-19",
+      "effort_required_hours": 8,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-07T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [
+        {
+          "id": "ai-may26-cn-00046",
+          "description": "Risk: spec unclear for block A",
+          "logged_date": "2026-05-07",
+          "status": "Open",
+          "addressed_date": "",
+          "addressed_comment": ""
+        },
+        {
+          "id": "ai-may26-cn-00047",
+          "description": "Power domain noise",
+          "logged_date": "2026-05-08",
+          "status": "Addressed",
+          "addressed_date": "2026-05-09",
+          "addressed_comment": "Doc updated in wiki"
+        }
+      ],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00049",
+          "title": "Sub with concern",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-07",
+          "eta": "2026-05-16",
+          "effort_required_hours": 4,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [
+            {
+              "id": "ai-may26-cn-00048",
+              "description": "TB flakiness",
+              "logged_date": "2026-05-08",
+              "status": "Open",
+              "addressed_date": "",
+              "addressed_comment": ""
+            }
+          ],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00050",
+              "status": "Open",
+              "date": "2026-05-07"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [],
+      "project": "",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00051",
+          "status": "Open",
+          "date": "2026-05-07"
+        },
+        {
+          "id": "ai-may26-sch-00052",
+          "status": "Ongoing",
+          "date": "2026-05-08"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00057",
+      "title": "[T08] Multi-category progress",
+      "description": "",
+      "priority": 9,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-08",
+      "eta": "2026-05-29",
+      "effort_required_hours": 16,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-08T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00054",
+          "text": "DV sim",
+          "date_added": "2026-05-09",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV",
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00055",
+          "text": "Support handoff",
+          "date_added": "2026-05-10",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Support"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00056",
+          "text": "Training",
+          "date_added": "2026-05-11",
+          "effort_consumed_hours": 0.5,
+          "categories": [
+            "Skillup",
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00058",
+          "status": "Open",
+          "date": "2026-05-08"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00061",
+      "title": "[T09] Multiple bug IDs",
+      "description": "",
+      "priority": 10,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-09",
+      "eta": "2026-05-21",
+      "effort_required_hours": 10,
+      "bug_numbers": [
+        9102,
+        9103,
+        9104
+      ],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-09T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00059",
+          "title": "Fix slice",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-09",
+          "eta": "2026-05-14",
+          "effort_required_hours": 4,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00060",
+              "status": "Open",
+              "date": "2026-05-09"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [],
+      "project": "",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00062",
+          "status": "Open",
+          "date": "2026-05-09"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00067",
+      "title": "[T10] Very Hard / P10 bar color",
+      "description": "",
+      "priority": 10,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-10",
+      "eta": "2026-05-31",
+      "effort_required_hours": 32,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Very Hard",
+      "created_at": "2026-05-10T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00063",
+          "title": "Hard slice",
+          "description": "",
+          "status": "Open",
+          "priority": 10,
+          "assigned_date": "2026-05-10",
+          "eta": "2026-05-24",
+          "effort_required_hours": 16,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Hard",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00064",
+              "status": "Open",
+              "date": "2026-05-10"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00065",
+          "status": "Open",
+          "date": "2026-05-10"
+        },
+        {
+          "id": "ai-may26-sch-00066",
+          "status": "Ongoing",
+          "date": "2026-05-11"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00070",
+      "title": "[T11] Week May W1 kickoff",
+      "description": "Fixture T11: May 2026 exhaustive mix.",
+      "priority": 1,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-11",
+      "eta": "2026-05-12",
+      "effort_required_hours": 4,
+      "bug_numbers": [
+        8000
+      ],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-11T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00068",
+          "text": "Log 0",
+          "date_added": "2026-05-14",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Design"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00069",
+          "status": "Open",
+          "date": "2026-05-11"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00078",
+      "title": "[T12] Week May W1 mid",
+      "description": "Fixture T12: May 2026 exhaustive mix.",
+      "priority": 2,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-12",
+      "eta": "2026-05-15",
+      "effort_required_hours": 8,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-12T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00072",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00073",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00074",
+          "title": "Sub 1 for T12",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-12",
+          "eta": "2026-05-15",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00071",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00075",
+              "status": "Open",
+              "date": "2026-05-12"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00076",
+          "status": "Open",
+          "date": "2026-05-12"
+        },
+        {
+          "id": "ai-may26-sch-00077",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00088",
+      "title": "[T13] Week May W2 planning",
+      "description": "Fixture T13: May 2026 exhaustive mix.",
+      "priority": 3,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-13",
+      "eta": "2026-05-18",
+      "effort_required_hours": 12,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-13T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00089",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00081",
+          "title": "Sub 1 for T13",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-13",
+          "eta": "2026-05-18",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00079",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00082",
+              "status": "Open",
+              "date": "2026-05-13"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00083",
+          "title": "Sub 2 for T13",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-13",
+          "eta": "2026-05-19",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00080",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00084",
+              "status": "Open",
+              "date": "2026-05-13"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Support"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00085",
+          "status": "Open",
+          "date": "2026-05-13"
+        },
+        {
+          "id": "ai-may26-sch-00086",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00087",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00100",
+      "title": "[T14] Week May W2 exec",
+      "description": "Fixture T14: May 2026 exhaustive mix.",
+      "priority": 4,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-14",
+      "eta": "2026-05-21",
+      "effort_required_hours": 16,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-14T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00092",
+          "title": "Sub 1 for T14",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-14",
+          "eta": "2026-05-21",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00090",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00093",
+              "status": "Open",
+              "date": "2026-05-14"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00094",
+          "title": "Sub 2 for T14",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-14",
+          "eta": "2026-05-22",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00091",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00095",
+              "status": "Open",
+              "date": "2026-05-14"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00096",
+          "title": "Sub 3 for T14",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-14",
+          "eta": "2026-05-23",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00097",
+              "status": "Open",
+              "date": "2026-05-14"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00098",
+          "status": "Open",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00099",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00103",
+      "title": "[T15] Calendar density Mon",
+      "description": "Fixture T15: May 2026 exhaustive mix.",
+      "priority": 5,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-15",
+      "eta": "2026-05-24",
+      "effort_required_hours": 2,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-15T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00101",
+          "text": "Log 4",
+          "date_added": "2026-05-18",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00102",
+          "status": "Open",
+          "date": "2026-05-15"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00110",
+      "title": "[T16] Calendar density Tue",
+      "description": "Fixture T16: May 2026 exhaustive mix.",
+      "priority": 6,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-16",
+      "eta": "2026-05-27",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-16T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00105",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00106",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00107",
+          "title": "Sub 1 for T16",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-16",
+          "eta": "2026-05-27",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00104",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00108",
+              "status": "Open",
+              "date": "2026-05-16"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00109",
+          "status": "Open",
+          "date": "2026-05-16"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00119",
+      "title": "[T17] Calendar density Wed",
+      "description": "Fixture T17: May 2026 exhaustive mix.",
+      "priority": 7,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-17",
+      "eta": "2026-05-30",
+      "effort_required_hours": 10,
+      "bug_numbers": [
+        8006
+      ],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-17T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00113",
+          "title": "Sub 1 for T17",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-17",
+          "eta": "2026-05-30",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00111",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00114",
+              "status": "Open",
+              "date": "2026-05-17"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00115",
+          "title": "Sub 2 for T17",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-17",
+          "eta": "2026-05-31",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00112",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00116",
+              "status": "Open",
+              "date": "2026-05-17"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Design"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00117",
+          "status": "Open",
+          "date": "2026-05-17"
+        },
+        {
+          "id": "ai-may26-sch-00118",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00131",
+      "title": "[T18] Calendar density Thu",
+      "description": "Fixture T18: May 2026 exhaustive mix.",
+      "priority": 8,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-18",
+      "eta": "2026-05-14",
+      "effort_required_hours": 14,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-18T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00132",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00122",
+          "title": "Sub 1 for T18",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-18",
+          "eta": "2026-05-14",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00120",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00123",
+              "status": "Open",
+              "date": "2026-05-18"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00124",
+          "title": "Sub 2 for T18",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-18",
+          "eta": "2026-05-15",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00121",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00125",
+              "status": "Open",
+              "date": "2026-05-18"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00126",
+          "title": "Sub 3 for T18",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-18",
+          "eta": "2026-05-16",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00127",
+              "status": "Open",
+              "date": "2026-05-18"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00128",
+          "status": "Open",
+          "date": "2026-05-18"
+        },
+        {
+          "id": "ai-may26-sch-00129",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00130",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": true
+    },
+    {
+      "id": "ai-may26-task-00136",
+      "title": "[T19] Calendar density Fri",
+      "description": "Fixture T19: May 2026 exhaustive mix.",
+      "priority": 9,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-19",
+      "eta": "2026-05-17",
+      "effort_required_hours": 1,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-19T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00133",
+          "text": "Log 8",
+          "date_added": "2026-05-22",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Support"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00134",
+          "status": "Open",
+          "date": "2026-05-19"
+        },
+        {
+          "id": "ai-may26-sch-00135",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00143",
+      "title": "[T20] Bandwidth hook A",
+      "description": "Fixture T20: May 2026 exhaustive mix.",
+      "priority": 10,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-20",
+      "eta": "2026-05-20",
+      "effort_required_hours": 3,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-20T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00138",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00139",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00140",
+          "title": "Sub 1 for T20",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-20",
+          "eta": "2026-05-20",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00137",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00141",
+              "status": "Open",
+              "date": "2026-05-20"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00142",
+          "status": "Open",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00151",
+      "title": "[T21] Bandwidth hook B",
+      "description": "Fixture T21: May 2026 exhaustive mix.",
+      "priority": 1,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-21",
+      "eta": "2026-05-23",
+      "effort_required_hours": 4,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-21T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00146",
+          "title": "Sub 1 for T21",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-21",
+          "eta": "2026-05-23",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00144",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00147",
+              "status": "Open",
+              "date": "2026-05-21"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00148",
+          "title": "Sub 2 for T21",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-21",
+          "eta": "2026-05-24",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00145",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00149",
+              "status": "Open",
+              "date": "2026-05-21"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00150",
+          "status": "Open",
+          "date": "2026-05-21"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00162",
+      "title": "[T22] Summary range overlap",
+      "description": "Fixture T22: May 2026 exhaustive mix.",
+      "priority": 2,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-22",
+      "eta": "2026-05-26",
+      "effort_required_hours": 8,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-22T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00154",
+          "title": "Sub 1 for T22",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-22",
+          "eta": "2026-05-26",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00152",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00155",
+              "status": "Open",
+              "date": "2026-05-22"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00156",
+          "title": "Sub 2 for T22",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-22",
+          "eta": "2026-05-27",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00153",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00157",
+              "status": "Open",
+              "date": "2026-05-22"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00158",
+          "title": "Sub 3 for T22",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-22",
+          "eta": "2026-05-28",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00159",
+              "status": "Open",
+              "date": "2026-05-22"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00160",
+          "status": "Open",
+          "date": "2026-05-22"
+        },
+        {
+          "id": "ai-may26-sch-00161",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00167",
+      "title": "[T23] Export HTML tags",
+      "description": "Fixture T23: May 2026 exhaustive mix.",
+      "priority": 3,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-23",
+      "eta": "2026-05-29",
+      "effort_required_hours": 12,
+      "bug_numbers": [
+        8012
+      ],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-23T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00163",
+          "text": "Log 12",
+          "date_added": "2026-05-16",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00168",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Design"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00164",
+          "status": "Open",
+          "date": "2026-05-23"
+        },
+        {
+          "id": "ai-may26-sch-00165",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00166",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00176",
+      "title": "[T24] Markdown export slice",
+      "description": "Fixture T24: May 2026 exhaustive mix.",
+      "priority": 4,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-24",
+      "eta": "2026-05-13",
+      "effort_required_hours": 16,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-24T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00170",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00171",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00172",
+          "title": "Sub 1 for T24",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-24",
+          "eta": "2026-05-13",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00169",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00173",
+              "status": "Open",
+              "date": "2026-05-24"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00174",
+          "status": "Open",
+          "date": "2026-05-24"
+        },
+        {
+          "id": "ai-may26-sch-00175",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00184",
+      "title": "[T25] Daily formatted hook",
+      "description": "Fixture T25: May 2026 exhaustive mix.",
+      "priority": 5,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-25",
+      "eta": "2026-05-16",
+      "effort_required_hours": 2,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-25T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00179",
+          "title": "Sub 1 for T25",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-25",
+          "eta": "2026-05-16",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00177",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00180",
+              "status": "Open",
+              "date": "2026-05-25"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00181",
+          "title": "Sub 2 for T25",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-25",
+          "eta": "2026-05-17",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00178",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00182",
+              "status": "Open",
+              "date": "2026-05-25"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Support"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00183",
+          "status": "Open",
+          "date": "2026-05-25"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00194",
+      "title": "[T26] List filter Today",
+      "description": "Fixture T26: May 2026 exhaustive mix.",
+      "priority": 6,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-26",
+      "eta": "2026-05-19",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-26T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00187",
+          "title": "Sub 1 for T26",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-26",
+          "eta": "2026-05-19",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00185",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00188",
+              "status": "Open",
+              "date": "2026-05-26"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00189",
+          "title": "Sub 2 for T26",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-26",
+          "eta": "2026-05-20",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00186",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00190",
+              "status": "Open",
+              "date": "2026-05-26"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00191",
+          "title": "Sub 3 for T26",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-26",
+          "eta": "2026-05-21",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00192",
+              "status": "Open",
+              "date": "2026-05-26"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00193",
+          "status": "Open",
+          "date": "2026-05-26"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00198",
+      "title": "[T27] List filter Yesterday",
+      "description": "Fixture T27: May 2026 exhaustive mix.",
+      "priority": 7,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-27",
+      "eta": "2026-05-22",
+      "effort_required_hours": 10,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-27T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00195",
+          "text": "Log 16",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00196",
+          "status": "Open",
+          "date": "2026-05-27"
+        },
+        {
+          "id": "ai-may26-sch-00197",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00207",
+      "title": "[T28] Archive tab mix",
+      "description": "Fixture T28: May 2026 exhaustive mix.",
+      "priority": 8,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-28",
+      "eta": "2026-05-25",
+      "effort_required_hours": 24,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-28T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00200",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00201",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00208",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00202",
+          "title": "Sub 1 for T28",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-28",
+          "eta": "2026-05-25",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00199",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00203",
+              "status": "Open",
+              "date": "2026-05-28"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00204",
+          "status": "Open",
+          "date": "2026-05-28"
+        },
+        {
+          "id": "ai-may26-sch-00205",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00206",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": true,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00217",
+      "title": "[T29] Notifications ETA soon",
+      "description": "Fixture T29: May 2026 exhaustive mix.",
+      "priority": 9,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-29",
+      "eta": "2026-05-28",
+      "effort_required_hours": 1,
+      "bug_numbers": [
+        8018
+      ],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-29T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00211",
+          "title": "Sub 1 for T29",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-29",
+          "eta": "2026-05-28",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00209",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00212",
+              "status": "Open",
+              "date": "2026-05-29"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00213",
+          "title": "Sub 2 for T29",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-29",
+          "eta": "2026-05-29",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00210",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00214",
+              "status": "Open",
+              "date": "2026-05-29"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Design"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00215",
+          "status": "Open",
+          "date": "2026-05-29"
+        },
+        {
+          "id": "ai-may26-sch-00216",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00227",
+      "title": "[T30] Partial day-off math",
+      "description": "Fixture T30: May 2026 exhaustive mix.",
+      "priority": 10,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-30",
+      "eta": "2026-05-12",
+      "effort_required_hours": 3,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-30T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00220",
+          "title": "Sub 1 for T30",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-30",
+          "eta": "2026-05-12",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00218",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00221",
+              "status": "Open",
+              "date": "2026-05-30"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00222",
+          "title": "Sub 2 for T30",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-30",
+          "eta": "2026-05-13",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00219",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00223",
+              "status": "Open",
+              "date": "2026-05-30"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00224",
+          "title": "Sub 3 for T30",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-30",
+          "eta": "2026-05-14",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00225",
+              "status": "Open",
+              "date": "2026-05-30"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00226",
+          "status": "Open",
+          "date": "2026-05-30"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00230",
+      "title": "[T31] Ongoing stale",
+      "description": "Fixture T31: May 2026 exhaustive mix.",
+      "priority": 1,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-31",
+      "eta": "2026-05-15",
+      "effort_required_hours": 4,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-31T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00228",
+          "text": "Log 20",
+          "date_added": "2026-05-14",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Support"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00229",
+          "status": "Open",
+          "date": "2026-05-31"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00238",
+      "title": "[T32] Open idle",
+      "description": "Fixture T32: May 2026 exhaustive mix.",
+      "priority": 2,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-11",
+      "eta": "2026-05-18",
+      "effort_required_hours": 8,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-11T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00232",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00233",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00234",
+          "title": "Sub 1 for T32",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-11",
+          "eta": "2026-05-18",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00231",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00235",
+              "status": "Open",
+              "date": "2026-05-11"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00236",
+          "status": "Open",
+          "date": "2026-05-11"
+        },
+        {
+          "id": "ai-may26-sch-00237",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00248",
+      "title": "[T33] Done no archive",
+      "description": "Fixture T33: May 2026 exhaustive mix.",
+      "priority": 3,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-12",
+      "eta": "2026-05-21",
+      "effort_required_hours": 12,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-12T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00249",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00241",
+          "title": "Sub 1 for T33",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-12",
+          "eta": "2026-05-21",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00239",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00242",
+              "status": "Open",
+              "date": "2026-05-12"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00243",
+          "title": "Sub 2 for T33",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-12",
+          "eta": "2026-05-22",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00240",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00244",
+              "status": "Open",
+              "date": "2026-05-12"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00245",
+          "status": "Open",
+          "date": "2026-05-12"
+        },
+        {
+          "id": "ai-may26-sch-00246",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00247",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00260",
+      "title": "[T34] Dropped late",
+      "description": "Fixture T34: May 2026 exhaustive mix.",
+      "priority": 4,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-13",
+      "eta": "2026-05-24",
+      "effort_required_hours": 16,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-13T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00252",
+          "title": "Sub 1 for T34",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-13",
+          "eta": "2026-05-24",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00250",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00253",
+              "status": "Open",
+              "date": "2026-05-13"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00254",
+          "title": "Sub 2 for T34",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-13",
+          "eta": "2026-05-25",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00251",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00255",
+              "status": "Open",
+              "date": "2026-05-13"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00256",
+          "title": "Sub 3 for T34",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-13",
+          "eta": "2026-05-26",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00257",
+              "status": "Open",
+              "date": "2026-05-13"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00258",
+          "status": "Open",
+          "date": "2026-05-13"
+        },
+        {
+          "id": "ai-may26-sch-00259",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00263",
+      "title": "[T35] Re-open style",
+      "description": "Fixture T35: May 2026 exhaustive mix.",
+      "priority": 5,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-14",
+      "eta": "2026-05-27",
+      "effort_required_hours": 2,
+      "bug_numbers": [
+        8024
+      ],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-14T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00261",
+          "text": "Log 24",
+          "date_added": "2026-05-18",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Design"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00262",
+          "status": "Open",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00270",
+      "title": "[T36] Tags #default",
+      "description": "Fixture T36: May 2026 exhaustive mix.",
+      "priority": 6,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-15",
+      "eta": "2026-05-30",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-15T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00265",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00266",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00267",
+          "title": "Sub 1 for T36",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-15",
+          "eta": "2026-05-30",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00264",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00268",
+              "status": "Open",
+              "date": "2026-05-15"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00269",
+          "status": "Open",
+          "date": "2026-05-15"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00279",
+      "title": "[T37] Tags #sprint",
+      "description": "Fixture T37: May 2026 exhaustive mix.",
+      "priority": 7,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-16",
+      "eta": "2026-05-14",
+      "effort_required_hours": 10,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-16T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00273",
+          "title": "Sub 1 for T37",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-16",
+          "eta": "2026-05-14",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00271",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00274",
+              "status": "Open",
+              "date": "2026-05-16"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00275",
+          "title": "Sub 2 for T37",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-16",
+          "eta": "2026-05-15",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00272",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00276",
+              "status": "Open",
+              "date": "2026-05-16"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Support"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00277",
+          "status": "Open",
+          "date": "2026-05-16"
+        },
+        {
+          "id": "ai-may26-sch-00278",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00291",
+      "title": "[T38] Multi-project SR100",
+      "description": "Fixture T38: May 2026 exhaustive mix.",
+      "priority": 8,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-17",
+      "eta": "2026-05-17",
+      "effort_required_hours": 14,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-17T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00292",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00282",
+          "title": "Sub 1 for T38",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-17",
+          "eta": "2026-05-17",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00280",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00283",
+              "status": "Open",
+              "date": "2026-05-17"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00284",
+          "title": "Sub 2 for T38",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-17",
+          "eta": "2026-05-18",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00281",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00285",
+              "status": "Open",
+              "date": "2026-05-17"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00286",
+          "title": "Sub 3 for T38",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-17",
+          "eta": "2026-05-19",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00287",
+              "status": "Open",
+              "date": "2026-05-17"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00288",
+          "status": "Open",
+          "date": "2026-05-17"
+        },
+        {
+          "id": "ai-may26-sch-00289",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00290",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00296",
+      "title": "[T39] Multi-project F16",
+      "description": "Fixture T39: May 2026 exhaustive mix.",
+      "priority": 9,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-18",
+      "eta": "2026-05-20",
+      "effort_required_hours": 1,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-18T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00293",
+          "text": "Log 28",
+          "date_added": "2026-05-22",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00294",
+          "status": "Open",
+          "date": "2026-05-18"
+        },
+        {
+          "id": "ai-may26-sch-00295",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00303",
+      "title": "[T40] Category Design only",
+      "description": "Fixture T40: May 2026 exhaustive mix.",
+      "priority": 10,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-19",
+      "eta": "2026-05-23",
+      "effort_required_hours": 3,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-19T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00298",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00299",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00300",
+          "title": "Sub 1 for T40",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-19",
+          "eta": "2026-05-23",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00297",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00301",
+              "status": "Open",
+              "date": "2026-05-19"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00302",
+          "status": "Open",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00311",
+      "title": "[T41] Category Meeting only",
+      "description": "Fixture T41: May 2026 exhaustive mix.",
+      "priority": 1,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-20",
+      "eta": "2026-05-26",
+      "effort_required_hours": 4,
+      "bug_numbers": [
+        8030
+      ],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-20T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00306",
+          "title": "Sub 1 for T41",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-20",
+          "eta": "2026-05-26",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00304",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00307",
+              "status": "Open",
+              "date": "2026-05-20"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00308",
+          "title": "Sub 2 for T41",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-20",
+          "eta": "2026-05-27",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00305",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00309",
+              "status": "Open",
+              "date": "2026-05-20"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Design"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00310",
+          "status": "Open",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00322",
+      "title": "[T42] Sub exclude summary only",
+      "description": "Fixture T42: May 2026 exhaustive mix.",
+      "priority": 2,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-21",
+      "eta": "2026-05-29",
+      "effort_required_hours": 8,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-21T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00314",
+          "title": "Sub 1 for T42",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-21",
+          "eta": "2026-05-29",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00312",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00315",
+              "status": "Open",
+              "date": "2026-05-21"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00316",
+          "title": "Sub 2 for T42",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-21",
+          "eta": "2026-05-30",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00313",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00317",
+              "status": "Open",
+              "date": "2026-05-21"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00318",
+          "title": "Sub 3 for T42",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-21",
+          "eta": "2026-05-31",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00319",
+              "status": "Open",
+              "date": "2026-05-21"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00320",
+          "status": "Open",
+          "date": "2026-05-21"
+        },
+        {
+          "id": "ai-may26-sch-00321",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00327",
+      "title": "[T43] Sub exclude export only",
+      "description": "Fixture T43: May 2026 exhaustive mix.",
+      "priority": 3,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-22",
+      "eta": "2026-05-13",
+      "effort_required_hours": 12,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-22T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00323",
+          "text": "Log 32",
+          "date_added": "2026-05-16",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00328",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Support"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00324",
+          "status": "Open",
+          "date": "2026-05-22"
+        },
+        {
+          "id": "ai-may26-sch-00325",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00326",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00336",
+      "title": "[T44] Three subs rollup",
+      "description": "Fixture T44: May 2026 exhaustive mix.",
+      "priority": 4,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-23",
+      "eta": "2026-05-16",
+      "effort_required_hours": 16,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-23T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00330",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00331",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00332",
+          "title": "Sub 1 for T44",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-23",
+          "eta": "2026-05-16",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00329",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00333",
+              "status": "Open",
+              "date": "2026-05-23"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00334",
+          "status": "Open",
+          "date": "2026-05-23"
+        },
+        {
+          "id": "ai-may26-sch-00335",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00344",
+      "title": "[T45] Dedicated sub effort split",
+      "description": "Fixture T45: May 2026 exhaustive mix.",
+      "priority": 5,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-24",
+      "eta": "2026-05-19",
+      "effort_required_hours": 2,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-24T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00339",
+          "title": "Sub 1 for T45",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-24",
+          "eta": "2026-05-19",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00337",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00340",
+              "status": "Open",
+              "date": "2026-05-24"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00341",
+          "title": "Sub 2 for T45",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-24",
+          "eta": "2026-05-20",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00338",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00342",
+              "status": "Open",
+              "date": "2026-05-24"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Meeting"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00343",
+          "status": "Open",
+          "date": "2026-05-24"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00354",
+      "title": "[T46] Zero hour main progress only",
+      "description": "Fixture T46: May 2026 exhaustive mix.",
+      "priority": 6,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-25",
+      "eta": "2026-05-22",
+      "effort_required_hours": 6,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-25T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00347",
+          "title": "Sub 1 for T46",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-25",
+          "eta": "2026-05-22",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00345",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00348",
+              "status": "Open",
+              "date": "2026-05-25"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00349",
+          "title": "Sub 2 for T46",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-25",
+          "eta": "2026-05-23",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00346",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00350",
+              "status": "Open",
+              "date": "2026-05-25"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00351",
+          "title": "Sub 3 for T46",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-25",
+          "eta": "2026-05-24",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00352",
+              "status": "Open",
+              "date": "2026-05-25"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "DV",
+        "Debug"
+      ],
+      "project": "F16",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00353",
+          "status": "Open",
+          "date": "2026-05-25"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00358",
+      "title": "[T47] Large description short",
+      "description": "Fixture T47: May 2026 exhaustive mix.",
+      "priority": 7,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-26",
+      "eta": "2026-05-25",
+      "effort_required_hours": 10,
+      "bug_numbers": [
+        8036
+      ],
+      "status": "Ongoing",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-26T12:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00355",
+          "text": "Log 36",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 1.5,
+          "categories": [
+            "Meeting"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [],
+      "categories": [
+        "Design"
+      ],
+      "project": "R0X",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00356",
+          "status": "Open",
+          "date": "2026-05-26"
+        },
+        {
+          "id": "ai-may26-sch-00357",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00367",
+      "title": "[T48] ETA same-day May 9",
+      "description": "Fixture T48: May 2026 exhaustive mix.",
+      "priority": 8,
+      "tags": [
+        "#may",
+        "#default"
+      ],
+      "assigned_date": "2026-05-09",
+      "eta": "2026-05-09",
+      "effort_required_hours": 14,
+      "bug_numbers": [],
+      "status": "Done",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-09T09:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-may26-pr-00360",
+          "text": "A",
+          "date_added": "2026-05-12",
+          "effort_consumed_hours": 1,
+          "categories": [
+            "Debug"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00361",
+          "text": "B",
+          "date_added": "2026-05-15",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "DV"
+          ]
+        },
+        {
+          "id": "ai-may26-pr-00368",
+          "text": "Closed out",
+          "date_added": "2026-05-20",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Design"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00362",
+          "title": "Sub 1 for T48",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-09",
+          "eta": "2026-05-28",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00359",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00363",
+              "status": "Open",
+              "date": "2026-05-27"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Debug",
+        "Skillup"
+      ],
+      "project": "SR100",
+      "done_date": "2026-05-20",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00364",
+          "status": "Open",
+          "date": "2026-05-27"
+        },
+        {
+          "id": "ai-may26-sch-00365",
+          "status": "Ongoing",
+          "date": "2026-05-14"
+        },
+        {
+          "id": "ai-may26-sch-00366",
+          "status": "Done",
+          "date": "2026-05-20"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00377",
+      "title": "[T49] Month-end pressure May 30",
+      "description": "Fixture T49: May 2026 exhaustive mix.",
+      "priority": 9,
+      "tags": [
+        "#may",
+        "#sprint"
+      ],
+      "assigned_date": "2026-05-28",
+      "eta": "2026-05-12",
+      "effort_required_hours": 1,
+      "bug_numbers": [],
+      "status": "Dropped",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-28T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00371",
+          "title": "Sub 1 for T49",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-28",
+          "eta": "2026-05-12",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00369",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00372",
+              "status": "Open",
+              "date": "2026-05-28"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00373",
+          "title": "Sub 2 for T49",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-28",
+          "eta": "2026-05-13",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00370",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00374",
+              "status": "Open",
+              "date": "2026-05-28"
+            }
+          ],
+          "no_effort_needed": false
+        }
+      ],
+      "categories": [
+        "Support"
+      ],
+      "project": "Exynos",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00375",
+          "status": "Open",
+          "date": "2026-05-28"
+        },
+        {
+          "id": "ai-may26-sch-00376",
+          "status": "Dropped",
+          "date": "2026-05-19"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    },
+    {
+      "id": "ai-may26-task-00387",
+      "title": "[T50] Month-end pressure May 31",
+      "description": "Fixture T50: May 2026 exhaustive mix.",
+      "priority": 10,
+      "tags": [
+        "#may"
+      ],
+      "assigned_date": "2026-05-29",
+      "eta": "2026-05-15",
+      "effort_required_hours": 3,
+      "bug_numbers": [],
+      "status": "Open",
+      "difficulty": "Moderate",
+      "created_at": "2026-05-29T12:00:00.000Z",
+      "progress_updates": [],
+      "eta_updates": [],
+      "effort_updates": [],
+      "concerns": [],
+      "subtasks": [
+        {
+          "id": "ai-may26-sub-00380",
+          "title": "Sub 1 for T50",
+          "description": "",
+          "status": "Ongoing",
+          "priority": 3,
+          "assigned_date": "2026-05-29",
+          "eta": "2026-05-15",
+          "effort_required_hours": 4,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00378",
+              "text": "Progress 0",
+              "date_added": "2026-05-10",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Very Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00381",
+              "status": "Open",
+              "date": "2026-05-29"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00382",
+          "title": "Sub 2 for T50",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-29",
+          "eta": "2026-05-16",
+          "effort_required_hours": 0,
+          "progress_updates": [
+            {
+              "id": "ai-may26-pr-00379",
+              "text": "Progress 1",
+              "date_added": "2026-05-11",
+              "effort_consumed_hours": 1.5,
+              "categories": [
+                "DV"
+              ]
+            }
+          ],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00383",
+              "status": "Open",
+              "date": "2026-05-29"
+            }
+          ],
+          "no_effort_needed": false
+        },
+        {
+          "id": "ai-may26-sub-00384",
+          "title": "Sub 3 for T50",
+          "description": "",
+          "status": "Open",
+          "priority": 3,
+          "assigned_date": "2026-05-29",
+          "eta": "2026-05-17",
+          "effort_required_hours": 6,
+          "progress_updates": [],
+          "categories": [],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "exclude_from_summary": false,
+          "exclude_from_export": false,
+          "status_changes": [
+            {
+              "id": "ai-may26-sch-00385",
+              "status": "Open",
+              "date": "2026-05-29"
+            }
+          ],
+          "no_effort_needed": true
+        }
+      ],
+      "categories": [
+        "Skillup",
+        "DV"
+      ],
+      "project": "Quant7",
+      "done_date": "",
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "status_changes": [
+        {
+          "id": "ai-may26-sch-00386",
+          "status": "Open",
+          "date": "2026-05-29"
+        }
+      ],
+      "no_effort_needed": false,
+      "archived": false
+    }
+  ],
+  "settings": {
+    "priorityColors": {
+      "1": "#2e4a6e",
+      "2": "#2e4a6e",
+      "3": "#2e4a6e",
+      "4": "#2e4a6e",
+      "5": "#8c6931",
+      "6": "#90682c",
+      "7": "#876026",
+      "8": "#93692a",
+      "9": "#7a3d3d",
+      "10": "#7a3d3d"
+    },
+    "categories": [
+      "Design",
+      "DV",
+      "Support",
+      "Debug",
+      "Meeting",
+      "Skillup"
+    ],
+    "workingHoursPerDay": 8,
+    "dayOffs": [
+      {
+        "id": "ai-may26-do-00388",
+        "date": "2026-05-12",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      },
+      {
+        "id": "ai-may26-do-00389",
+        "date": "2026-05-14",
+        "type": "partial",
+        "reason": "Sick",
+        "hoursOff": 4
+      },
+      {
+        "id": "ai-may26-do-00391",
+        "date": "2026-05-26",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      },
+      {
+        "id": "ai-1778315946916-s0nj5l8",
+        "date": "2026-05-18",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      },
+      {
+        "id": "ai-1778315949699-nyiogex",
+        "date": "2026-05-19",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      },
+      {
+        "id": "ai-1778315952781-1rhc9p8",
+        "date": "2026-05-28",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      },
+      {
+        "id": "ai-1778315956381-z90etlp",
+        "date": "2026-05-29",
+        "type": "full",
+        "reason": "PTO",
+        "hoursOff": 0
+      }
+    ],
+    "projects": [
+      "F16",
+      "R0X",
+      "SR100",
+      "Exynos",
+      "Quant7"
+    ],
+    "theme": "refined",
+    "subtaskVisibilityByTaskId": {
+      "ai-may26-task-00013": {
+        "Open": true,
+        "Ongoing": true,
+        "Done": false,
+        "Dropped": true
+      },
+      "ai-v24-megatask-001": {
+        "Open": true,
+        "Ongoing": true,
+        "Done": false,
+        "Dropped": false
+      }
+    },
+    "subtaskViewportByTaskId": {
+      "ai-v24-megatask-001": {
+        "pageSize": 5,
+        "startIndex": 0
+      }
+    },
+    "notesGridColumns": 3,
+    "relax": {
+      "breakPresetMinutes": 10,
+      "workPresetMinutes": 25,
+      "soundEnabled": false,
+      "tipIndex": 5
+    }
+  },
+  "notes": {
+    "items": [
+      {
+        "id": "ai-1778325980489-zde3egw9",
+        "kind": "note",
+        "title": "VIS-QA: mega parent / 24 sub-tasks",
+        "body": "Synthetic parent used for sub-task visibility toggles, sorting, and expand/collapse.\n\nWhen paging or resizing the sub-task viewport, confirm no rows disappear while filters change. Compare expanded vs collapsed counts against the task list totals.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:54:34.493Z",
+        "updatedAt": "2026-05-09T17:40:01.625Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-667xm3un",
+        "kind": "note",
+        "title": "[T01] Mixed effort flags under exempt parent",
+        "body": "Main task marked no-effort; sub-tasks mix tracked vs no-effort.\n\nVerify rollups and summary math only include intended rows. Spot-check that exempt parents still show child effort where configured.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T17:28:31.333Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-ez4utb4p",
+        "kind": "note",
+        "title": "[T02] All no-effort (main + subs)",
+        "body": "Everything in this fixture should read as zero tracked effort end-to-end.\n\nConfirm list badges, calendar hints, and export columns stay consistent with “no effort” expectations.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-eh6vvcmc",
+        "kind": "note",
+        "title": "[T03] Excluded from summary + export",
+        "body": "This task must stay out of aggregate summary and export payloads.\n\nRegression: toggle nearby filters and confirm exclusion survives reload and HTML/markdown export.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T13:22:20.442Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-nne68gib",
+        "kind": "todo",
+        "title": "Regression — summary exclusions & export slices",
+        "body": "Batch check [T03], [T22], [T23], [T24], [T42], [T43]: excluded subs, HTML tags, markdown slices.",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-pj5suyy2",
+            "text": "Summary totals omit [T03] and sub-exclusion fixtures.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-qjezonwh",
+            "text": "Export HTML: escape/render check for [T23].",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-9vf8ldzu",
+            "text": "Markdown export slice boundaries for [T24].",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-6mer99mt",
+            "text": "[T42]/[T43] sub-only exclusions in summary vs export.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-5pimgmky",
+            "text": "Range overlap sanity on [T22] vs calendar selection.",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-i329s6pt",
+        "kind": "todo",
+        "title": "VIS-QA — viewport & visibility toggles",
+        "body": "Focused pass on the mega parent: filters, sort order, and per-task visibility persistence.",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-r1798k7g",
+            "text": "Expand parent; scroll sub-task viewport; no missing rows.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-brxoak6u",
+            "text": "Collapse + re-expand preserves scroll sanity.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-c99iynmw",
+            "text": "Flip visibility presets; reload profile; settings stick.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-as4yep4t",
+            "text": "Sort subs by title/status; compare against baseline order.",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-3tz22wsj",
+        "kind": "todo",
+        "title": "May calendar density — Mon→Fri cluster",
+        "body": "Uses [T15]–[T19]. Watch for overlap stacking and week/month boundaries around May regression dates.",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-ossb6x60",
+            "text": "Mon [T15]: density bar matches task count.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-4521mfig",
+            "text": "Tue–Wed [T16]/[T17]: no duplicate chips.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-mc61455q",
+            "text": "Thu–Fri [T18]/[T19]: overflow tooltip readable.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-95ieeon0",
+            "text": "Cross-check week strip vs List view for same IDs.",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T13:22:48.071Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-48k0chax",
+        "kind": "todo",
+        "title": "List filters + bandwidth hooks",
+        "body": "Pair [T26] Today / [T27] Yesterday with bandwidth hooks [T20]/[T21] and daily formatted [T25].",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-btwnda3d",
+            "text": "Today filter: expected subset only.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-oh9trcud",
+            "text": "Yesterday filter: no stray midnight-boundary tasks.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-yo7jr4ik",
+            "text": "Bandwidth hooks A/B: ordering stable when toggling filters.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-zyayuouk",
+            "text": "Daily formatted hook still fires after filter change.",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:54:41.544Z",
+        "updatedAt": "2026-05-09T11:54:41.544Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-vtiitc8d",
+        "kind": "todo",
+        "title": "Notifications & ETA pressure spots",
+        "body": "Cover [T29] notifications, same-day [T48], and month-end pressure [T49]/[T50].",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-o995eda8",
+            "text": "[T29] “ETA soon” surfaces without duplicate banners.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-9vqt0b6d",
+            "text": "[T48] same-day May 9 handling vs calendar dot.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-ccej590r",
+            "text": "[T49]/[T50] May 30–31 ordering under load.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-fttq7fdj",
+            "text": "No false positives when archive mix [T28] enabled.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-j8p6obvn",
+            "text": "Spot-check stale vs idle pair [T31]/[T32].",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-qehx80dz",
+        "kind": "note",
+        "title": "[T04] Done + archived (May close)",
+        "body": "Represents completed work kept for archive tab scenarios.\n\nConfirm archived styling does not leak into active lists; reopen path matches [T35] expectations if toggled.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-bi764gii",
+        "kind": "note",
+        "title": "[T05] Dropped main task",
+        "body": "Dropped parent state should stay visually distinct from Done.\n\nRegression: export and summary treat dropped mains per product rules without affecting sibling fixtures.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-q20idxnx",
+        "kind": "note",
+        "title": "[T06] ETA slip + effort increase",
+        "body": "Use when testing ETA drift and upward effort adjustments.\n\nVerify timeline annotations and any “effort increased” hints stay in sync after edits.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-xaf2rkrc",
+        "kind": "note",
+        "title": "[T07] Open + addressed concerns",
+        "body": "Concern workflow mix: open items vs addressed.\n\nCheck badges, filters that surface “needs attention”, and that addressed rows drop out of alert-style views.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-as9wz0z1",
+        "kind": "note",
+        "title": "[T08] Multi-category progress",
+        "body": "Multiple categories on one logical thread.\n\nEnsure category chips filter correctly and progress rollups do not double-count shared parents.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-h7qs2fwv",
+        "kind": "note",
+        "title": "[T09] Multiple bug IDs",
+        "body": "Several external IDs attached.\n\nConfirm search-by-ID, copy/export formatting, and tooltip truncation on narrow layouts.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-gvw4fnrq",
+        "kind": "todo",
+        "title": "Archive / tags / multi-project sweep",
+        "body": "Wide checklist for mixed fixtures: archive tab [T28], tags [T36]/[T37], multi-project [T38]/[T39], rollup [T44]–[T46].",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-y8v9ia7j",
+            "text": "VIS-QA parent: 24 subs visible when expanded.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-00i28q6a",
+            "text": "Per-task sub visibility persisted after reload.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-trh88hn3",
+            "text": "[T28] Archive tab mix—done/dropped/open buckets.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-qsapfcxi",
+            "text": "[T36] #default vs [T37] #sprint filters.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-feck3vmg",
+            "text": "[T38] SR100 vs [T39] F16 cross-project headers.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-v2oo0x96",
+            "text": "[T44] Three subs rollup totals.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-xj2ioku0",
+            "text": "[T45] Dedicated sub effort split vs parent.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-pd3bzya3",
+            "text": "[T46] Zero-hour main progress-only edge.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-cfrkihva",
+            "text": "[T30] Partial day-off math vs calendar hours.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-3qsd0kma",
+            "text": "[T35] Re-open styling after drop.",
+            "done": false
+          },
+          {
+            "id": "ai-1778326928975-rg7c5h9",
+            "text": "",
+            "done": false
+          },
+          {
+            "id": "ai-1778326930873-vn080wm",
+            "text": "",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:42:10.873Z",
+        "updatedAt": "2026-05-09T11:42:10.873Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-zuf3e0o6",
+        "kind": "note",
+        "title": "[T10] Very Hard / P10 priority bar color",
+        "body": "Stress-test priority visualization.\n\nConfirm bar color slot P10 remains readable in dark/light assumptions and does not collide with warning hues used elsewhere.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-ee6sybew",
+        "kind": "note",
+        "title": "[T11]–[T14] May week — kickoff through exec",
+        "body": "Week-of-May placeholders for planning vs execution density.\n\nUse when validating week strip summaries and “May regression” labeling in UI copy.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-cde8t51o",
+        "kind": "note",
+        "title": "[T15]–[T19] Calendar density Mon→Fri",
+        "body": "One task per weekday cluster to overload the calendar strip.\n\nLook for clipping, tooltips, and hover affordances when multiple fixtures share the same day.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-f339bl4u",
+        "kind": "note",
+        "title": "[T20]/[T21] Bandwidth hooks A & B",
+        "body": "Hook ordering experiments.\n\nAfter navigation or filter changes, bandwidth-derived hints should remain deterministic for comparisons across sessions.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-xtzbben0",
+        "kind": "note",
+        "title": "[T22] Summary range overlap",
+        "body": "Overlapping summary windows vs calendar selection.\n\nVerify counts do not duplicate tasks straddling boundary dates.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-12l2bmq4",
+        "kind": "note",
+        "title": "[T23]/[T24] Export — HTML tags & markdown slice",
+        "body": "HTML export must not execute injected tags; markdown slice should respect start/end markers.\n\nCompare rendered preview with raw export output.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-yn01z89m",
+        "kind": "note",
+        "title": "[T25] Daily formatted hook",
+        "body": "Daily rollup narrative / formatted block.\n\nCheck timezone edges near midnight and DST-free May fixtures.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-bxipdbgb",
+        "kind": "note",
+        "title": "[T26]/[T27] List filters — Today / Yesterday",
+        "body": "Relative date filters.\n\nValidate boundary at local midnight and that tasks exactly on boundary appear only once.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-ymlp26ow",
+        "kind": "note",
+        "title": "[T29] Notifications — ETA soon",
+        "body": "Soon-ETA banner / toast behavior.\n\nEnsure suppressed when task marked done or dropped; no spam on refresh.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-xt98k9ra",
+        "kind": "note",
+        "title": "[T30] Partial day-off math",
+        "body": "Fractional availability.\n\nCapacity calculations should reflect partial day-off without breaking weekly totals.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-tbsfg1fr",
+        "kind": "note",
+        "title": "[T31]/[T32] Ongoing stale vs open idle",
+        "body": "Contrast long-running ongoing vs idle open tasks.\n\nStale indicators should track last activity fields if surfaced.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-mw20uj4y",
+        "kind": "note",
+        "title": "[T33]/[T34]/[T35] Done no archive / dropped late / re-open",
+        "body": "Lifecycle edges.\n\n[Dropped late] vs [done without archive] vs [re-open style] should stay visually distinct in list + archive surfaces.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-ywiklcpc",
+        "kind": "note",
+        "title": "[T36]/[T37] Tags — #default vs #sprint",
+        "body": "Tag facets for filtering and export.\n\nCollision tests with category-only fixtures below.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-xsn7qk06",
+        "kind": "note",
+        "title": "[T38]/[T39] Multi-project SR100 & F16",
+        "body": "Cross-project identifiers on one profile.\n\nEnsure project headers/group-bys remain stable when sorting.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-2esvp8jo",
+        "kind": "note",
+        "title": "[T40]/[T41] Category-only — Design / Meeting",
+        "body": "Tasks that exist purely as category probes.\n\nEmpty or minimal descriptions should still list correctly under category-only filters.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-mzsguvgj",
+        "kind": "note",
+        "title": "[T42]/[T43] Sub exclude — summary vs export only",
+        "body": "Subs excluded from summary only or export only.\n\nRegression matrix: toggle each flag independently and re-export.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-65gnhdph",
+        "kind": "note",
+        "title": "[T44]/[T45]/[T46] Rollups — three subs / split effort / zero-hour main",
+        "body": "Rollup arithmetic torture tests.\n\nThree-sub rollup vs dedicated sub effort split vs zero-hour main progress-only — totals must reconcile with inspector.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-88dbgmq5",
+        "kind": "note",
+        "title": "[T47] Large description rendered short",
+        "body": "Very long description body with abbreviated display.\n\nExpand/collapse and tooltip preview should stay performant with markdown-ish noise.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-9a5fwilt",
+        "kind": "note",
+        "title": "[T48]/[T49]/[T50] ETA — same day & month-end pressure",
+        "body": "Same-day May 9 vs heavy load May 30–31.\n\nCalendar + list should agree on ordering under “pressure” sorting if enabled.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-2d4l44m2",
+        "kind": "note",
+        "title": "[T28] Archive tab mix",
+        "body": "Mixed statuses coexisting in archive-oriented views.\n\nArchive tab chips should not resurrect dropped tasks into active swimlanes.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-5ts5c9lu",
+        "kind": "todo",
+        "title": "Full May regression — ordered smoke list",
+        "body": "Long checklist spanning fixtures T01–T50 + VIS-QA; use as session guide, not blocking.",
+        "color": "",
+        "checklist": [
+          {
+            "id": "ai-1778325980489-jp28ljd9",
+            "text": "Load profile cold start; no console errors.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-lbbnuxac",
+            "text": "VIS-QA expand/collapse + viewport scroll.",
+            "done": true
+          },
+          {
+            "id": "ai-1778325980489-z4jbziie",
+            "text": "[T01]/[T02] effort exemption matrix.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-usirhxja",
+            "text": "[T03]/[T42]/[T43] exclusions throughout.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-7ep625vi",
+            "text": "[T04]/[T05]/[T33]–[T35] lifecycle visuals.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-ykghvqda",
+            "text": "[T06]/[T07] ETA + concerns.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-4lw32bcd",
+            "text": "[T08]/[T09]/[T10] categories / bugs / P10 bar.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-fae79sxs",
+            "text": "[T11]–[T14] May week labels.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-pgpssa5q",
+            "text": "[T15]–[T19] calendar density.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-yu1xisav",
+            "text": "[T20]/[T21]/[T25] hooks.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-23dku9cy",
+            "text": "[T22]–[T24] summary + exports.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-wsya8sem",
+            "text": "[T26]/[T27] date filters.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-r8p7qwml",
+            "text": "[T29]/[T48]–[T50] notifications & ETA pressure.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-dri8cpe1",
+            "text": "[T30]–[T32] math + staleness.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-7g7vz9ms",
+            "text": "[T36]–[T41] tags & categories.",
+            "done": false
+          },
+          {
+            "id": "ai-1778325980489-gofnasxv",
+            "text": "[T44]–[T47] rollups & large text.",
+            "done": false
+          }
+        ],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-un4akymq",
+        "kind": "note",
+        "title": "Profile QA — padmakarr-testing-2 load sanity",
+        "body": "This JSON is a deliberate torture fixture for FlowAssist.\n\nAfter edits, always File → Load Profile and confirm Notes board renders without normalization warnings.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      },
+      {
+        "id": "ai-1778325980489-0eo6zcwp",
+        "kind": "note",
+        "title": "Regression notes — how to use this board",
+        "body": "Prefer linking mentally from a note to its matching task title (e.g. search “[T17]”).\n\nTodos above are actionable sweeps; free-form notes capture observations while clicking through May scenarios.",
+        "color": "",
+        "checklist": [],
+        "createdAt": "2026-05-09T11:26:20.487Z",
+        "updatedAt": "2026-05-09T11:26:20.487Z",
+        "reminders": []
+      }
+    ]
+  }
+}

@@ -34,7 +34,9 @@
     projects: [],
     workingHoursPerDay: 8,
     dayOffs: [],
-    theme: 'classic'
+    theme: 'classic',
+    /** Notes board: how many columns when the Notes panel is wide (1–5). Narrow layouts still collapse to one column. */
+    notesGridColumns: 5
   };
 
   var TASK_DIFFICULTY_LEVELS = ['Very Easy', 'Easy', 'Moderate', 'Hard', 'Very Hard'];
@@ -367,6 +369,8 @@
       if (!Array.isArray(s.categories)) s.categories = [];
       if (!Array.isArray(s.concerns)) s.concerns = [];
       if (s.done_date == null) s.done_date = '';
+      var subEtaRaw = s.eta;
+      s.eta = (subEtaRaw != null && String(subEtaRaw).trim() !== '') ? String(subEtaRaw).trim().slice(0, 10) : '';
       s.difficulty = normalizeTaskDifficulty(s.difficulty);
       s.project = (s.project != null && String(s.project).trim()) ? String(s.project).trim() : '';
       s.exclude_from_summary = !!s.exclude_from_summary;
@@ -722,8 +726,20 @@
     return v === true || v === 1 || v === 'true';
   }
 
+  /** Main-task ribbon Effort chip when parent has No Effort Needed (subs determine All vs only-main scope). */
+  function mainTaskEffortChipValueWhenExempt(task) {
+    var subs = task.subtasks || [];
+    if (!subs.length) return '— (Only Main Task)';
+    var allNo = subs.every(function (s) {
+      return isTruthyFlag(s.no_effort_needed);
+    });
+    if (allNo) return '— (All)';
+    return '— (Only Main Task)';
+  }
+
   /** Sub-task has its own planned effort (>0); otherwise its logged hours roll up to main-task summary totals. */
   function subtaskHasDedicatedEffort(s) {
+    if (isTruthyFlag(s.no_effort_needed)) return false;
     var h = s.effort_required_hours;
     if (h == null || h === '') return false;
     var n = parseFloat(h);
@@ -746,6 +762,21 @@
 
   function taskEffortSpent(task) {
     return taskEffortSpentMainAttributed(task) + taskEffortSpentSubOnlyTask(task);
+  }
+
+  /** Hours logged only on the main task's progress (not sub-tasks). */
+  function taskEffortSpentOnMainOnly(task) {
+    return (task.progress_updates || []).reduce(function (sum, p) {
+      return sum + progressEffortHours(p);
+    }, 0);
+  }
+
+  /** List ribbon: when parent is exempt, show sub-task spent only (exclude main-task progress rows). */
+  function taskEffortSpentForRibbon(task) {
+    if (!isTruthyFlag(task.no_effort_needed)) return taskEffortSpent(task);
+    var total = taskEffortSpent(task);
+    var mainOnly = taskEffortSpentOnMainOnly(task);
+    return Math.max(0, total - mainOnly);
   }
 
   function taskEffortSpentMainAttributed(task) {
@@ -889,6 +920,10 @@
     calendarView: 'month',
     calendarFocusDate: new Date().toISOString().slice(0, 10),
     calendarChartStyle: 'basic',
+    /** Calendar day-off list: `all` | `month` | `year` — summary/export ignore this (range-only). */
+    dayOffBrowseMode: 'all',
+    dayOffBrowseYM: new Date().toISOString().slice(0, 7),
+    dayOffBrowseYear: new Date().getFullYear(),
     expandedTasks: {},
     expandedSubtasks: {},
     mainTaskSort: { by: 'date_added', dir: 'asc' },
@@ -899,12 +934,174 @@
     progressLogSort: {},
     /** When open: { taskId, subtaskId } (subtaskId null for main task) */
     progressHistoryOpen: null,
+    /** When non-null, expanded note/todo editor modal is showing this note id. */
+    notesModalNoteId: null,
     summaryGenerated: false,
     lastSummaryMeta: null,
-    listFilter: 'all'
+    listFilter: 'all',
+    /** In-memory form drafts (not persisted until Save). Survives collapse / view switch. */
+    editorDrafts: {
+      tasks: {},
+      subtasks: {},
+      newSubtask: {}
+    },
+    /** Which detail/status/concern/new-sub panels were expanded (survives re-render + restart). */
+    editorPanelState: {
+      tasks: {},
+      subtasks: {}
+    }
   };
 
+  var EDITOR_SESSION_STORAGE_VERSION = 1;
+  var EDITOR_SESSION_STORAGE_PREFIX = 'flowassist_editor_session_v1';
+
+  function editorSessionStorageKey() {
+    var p = state.profilePath || '_noprofile';
+    return EDITOR_SESSION_STORAGE_PREFIX + ':' + String(p);
+  }
+
+  function editorBlockOpen(el) {
+    return !!(el && !el.classList.contains('task-block-collapsed'));
+  }
+
+  function captureEditorPanelStateFromDom() {
+    var ep = state.editorPanelState;
+    document.querySelectorAll('#task-list .task-card, #completed-task-list .task-card').forEach(function (card) {
+      var taskId = card.dataset.id;
+      if (!taskId) return;
+      var body = card.querySelector(':scope > .task-body');
+      if (!body) return;
+      var ps = {};
+      var el;
+      el = card.querySelector(':scope > .task-body > .task-details-block');
+      ps.details = editorBlockOpen(el);
+      el = card.querySelector(':scope > .task-body > .task-update-eta-block');
+      ps.eta = editorBlockOpen(el);
+      el = card.querySelector(':scope > .task-body > .task-update-effort-block');
+      ps.effort = editorBlockOpen(el);
+      el = card.querySelector(':scope > .task-body > .task-update-status-changes-block');
+      ps.statusChanges = editorBlockOpen(el);
+      el = card.querySelector(':scope > .task-body > .task-concerns-block');
+      ps.concerns = editorBlockOpen(el);
+      el = card.querySelector(':scope > .task-body > .new-subtask-block');
+      ps.newSubtask = editorBlockOpen(el);
+      ep.tasks[taskId] = ps;
+
+      card.querySelectorAll(':scope .subtask-card').forEach(function (subCard) {
+        var sid = subCard.dataset.subtaskId;
+        var tid = subCard.dataset.taskId;
+        if (!sid || tid !== taskId) return;
+        var subBody = subCard.querySelector('.subtask-body');
+        if (!subBody) return;
+        var sps = {};
+        el = subCard.querySelector('.subtask-details-block');
+        sps.details = editorBlockOpen(el);
+        el = subCard.querySelector('.subtask-status-changes-block');
+        sps.statusChanges = editorBlockOpen(el);
+        el = subCard.querySelector(':scope > .subtask-body > .task-concerns-block');
+        sps.concerns = editorBlockOpen(el);
+        ep.subtasks[tid + ':' + sid] = sps;
+      });
+    });
+  }
+
+  function pruneEditorSessionForLoadedTasks() {
+    var tasks = getTasks();
+    var idSet = {};
+    var subMap = {};
+    tasks.forEach(function (t) {
+      idSet[t.id] = true;
+      subMap[t.id] = {};
+      (t.subtasks || []).forEach(function (s) {
+        subMap[t.id][s.id] = true;
+      });
+    });
+    function pruneMap(map, fn) {
+      Object.keys(map).forEach(function (k) {
+        if (!fn(k)) delete map[k];
+      });
+    }
+    pruneMap(state.editorDrafts.tasks, function (k) { return idSet[k]; });
+    pruneMap(state.editorDrafts.newSubtask, function (k) { return idSet[k]; });
+    pruneMap(state.editorDrafts.subtasks, function (k) {
+      var ix = k.indexOf(':');
+      if (ix < 0) return false;
+      var tid = k.slice(0, ix);
+      var sid = k.slice(ix + 1);
+      return !!(idSet[tid] && subMap[tid] && subMap[tid][sid]);
+    });
+    pruneMap(state.editorPanelState.tasks, function (k) { return idSet[k]; });
+    pruneMap(state.editorPanelState.subtasks, function (k) {
+      var ix = k.indexOf(':');
+      if (ix < 0) return false;
+      var tid = k.slice(0, ix);
+      var sid = k.slice(ix + 1);
+      return !!(idSet[tid] && subMap[tid] && subMap[tid][sid]);
+    });
+  }
+
+  function purgeEditorPanelStateForTask(taskId) {
+    if (!taskId) return;
+    delete state.editorPanelState.tasks[taskId];
+    var pref = taskId + ':';
+    Object.keys(state.editorPanelState.subtasks).forEach(function (k) {
+      if (k.slice(0, pref.length) === pref) delete state.editorPanelState.subtasks[k];
+    });
+  }
+
+  function purgeEditorPanelStateForSubtask(taskId, subtaskId) {
+    if (!taskId || !subtaskId) return;
+    delete state.editorPanelState.subtasks[taskId + ':' + subtaskId];
+  }
+
+  function persistEditorSessionToStorage() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      var payload = {
+        v: EDITOR_SESSION_STORAGE_VERSION,
+        drafts: state.editorDrafts,
+        panels: state.editorPanelState
+      };
+      localStorage.setItem(editorSessionStorageKey(), JSON.stringify(payload));
+    } catch (err) {
+      /* quota / private mode */
+    }
+  }
+
+  function loadEditorSessionFromStorage() {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      var raw = localStorage.getItem(editorSessionStorageKey());
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (!parsed || parsed.v !== EDITOR_SESSION_STORAGE_VERSION) return;
+      if (parsed.drafts && typeof parsed.drafts === 'object') {
+        state.editorDrafts = {
+          tasks: parsed.drafts.tasks || {},
+          subtasks: parsed.drafts.subtasks || {},
+          newSubtask: parsed.drafts.newSubtask || {}
+        };
+      }
+      if (parsed.panels && typeof parsed.panels === 'object') {
+        state.editorPanelState = {
+          tasks: parsed.panels.tasks || {},
+          subtasks: parsed.panels.subtasks || {}
+        };
+      }
+      pruneEditorSessionForLoadedTasks();
+    } catch (err) {
+      /* ignore corrupt JSON */
+    }
+  }
+
+  function refreshEditorSessionPanelsFromDom() {
+    captureEditorPanelStateFromDom();
+    persistEditorSessionToStorage();
+  }
+
   var PROGRESS_LOG_PAGE = 5;
+  /** Default number of sub-task cards visible per page (user can change per task). */
+  var DEFAULT_SUBTASK_VIEWPORT_PAGE_SIZE = 5;
 
   function progressLogKeyMain(taskId) {
     return 'm:' + taskId;
@@ -1138,14 +1335,15 @@
       var dow = d.getDay();
       if (dow !== 0 && dow !== 6) {
         var off = byDate[ymd];
+        var dowShort = d.toLocaleDateString('en-US', { weekday: 'short' });
         if (off && (off.type === 'full' || off.type === 'Full')) {
-          noteReason(off.reason || 'Other', ymd + ' (full day)');
+          noteReason(off.reason || 'Other', ymd + ' ' + dowShort + ' (full day)');
         } else if (off && (off.type === 'partial' || off.type === 'Partial')) {
           var hOff = parseFloat(off.hoursOff);
           if (isNaN(hOff)) hOff = 0;
           hOff = Math.min(Math.max(0, hOff), hrsPerDay);
           cap += Math.max(0, hrsPerDay - hOff);
-          noteReason(off.reason || 'Other', ymd + ' (partial, ' + hOff + 'h off)');
+          noteReason(off.reason || 'Other', ymd + ' ' + dowShort + ' (partial, ' + hOff + 'h off)');
         } else {
           cap += hrsPerDay;
         }
@@ -1179,6 +1377,13 @@
     var m = String(date.getMonth() + 1).padStart(2, '0');
     var d = String(date.getDate()).padStart(2, '0');
     return y + '-' + m + '-' + d;
+  }
+
+  /** Short weekday (e.g. Mon) for a calendar date string YYYY-MM-DD; empty if invalid. */
+  function weekdayShortFromYMD(ymd) {
+    var date = parseYMD(ymd);
+    if (!date || isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
   }
 
   function getMonday(ymd) {
@@ -1314,6 +1519,528 @@
       }).filter(Boolean);
     }
     if (!state.data.settings.theme) state.data.settings.theme = 'classic';
+    if (!state.data.settings.subtaskVisibilityByTaskId || typeof state.data.settings.subtaskVisibilityByTaskId !== 'object') {
+      state.data.settings.subtaskVisibilityByTaskId = {};
+    }
+    if (!state.data.settings.subtaskViewportByTaskId || typeof state.data.settings.subtaskViewportByTaskId !== 'object') {
+      state.data.settings.subtaskViewportByTaskId = {};
+    }
+    var ngc = parseInt(state.data.settings.notesGridColumns, 10);
+    if (isNaN(ngc) || ngc < 1 || ngc > 5) state.data.settings.notesGridColumns = 5;
+    else state.data.settings.notesGridColumns = ngc;
+    if (!state.data.notes || typeof state.data.notes !== 'object') state.data.notes = { items: [] };
+    if (!Array.isArray(state.data.notes.items)) state.data.notes.items = [];
+    state.data.notes.items = state.data.notes.items.map(normalizeNoteItem);
+  }
+
+  function getNotesGridColumns() {
+    var n = parseInt(getSettings().notesGridColumns, 10);
+    if (isNaN(n) || n < 1 || n > 5) return 5;
+    return n;
+  }
+
+  function syncNotesGridColumnsUi() {
+    var n = getNotesGridColumns();
+    var panel = document.getElementById('view-notes');
+    if (panel) panel.style.setProperty('--notes-cols', String(n));
+    var sel = document.getElementById('notes-grid-columns-select');
+    if (sel) sel.value = String(n);
+  }
+
+  function normalizeNoteItem(raw) {
+    var id = raw && raw.id ? String(raw.id) : generateId();
+    var kind = raw && raw.kind === 'todo' ? 'todo' : 'note';
+    var title = raw && raw.title != null ? String(raw.title) : '';
+    var body = raw && raw.body != null ? String(raw.body) : '';
+    var color = raw && raw.color != null ? String(raw.color) : '';
+    var checklist = [];
+    if (kind === 'todo' && raw && Array.isArray(raw.checklist)) {
+      raw.checklist.forEach(function (row) {
+        checklist.push({
+          id: row && row.id ? String(row.id) : generateId(),
+          text: row && row.text != null ? String(row.text) : '',
+          done: !!(row && row.done)
+        });
+      });
+    }
+    if (kind === 'todo' && checklist.length === 0) {
+      checklist.push({ id: generateId(), text: '', done: false });
+    }
+    return {
+      id: id,
+      kind: kind,
+      title: title,
+      body: body,
+      color: color,
+      checklist: checklist,
+      updatedAt: raw && raw.updatedAt ? String(raw.updatedAt) : new Date().toISOString()
+    };
+  }
+
+  function findNoteItemById(noteId) {
+    var items = state.data.notes && state.data.notes.items ? state.data.notes.items : [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id === noteId) return items[i];
+    }
+    return null;
+  }
+
+  function canonicalSubtaskStatusLabel(s) {
+    var st = (s && s.status) || 'Open';
+    if (st === 'Completed') return 'Done';
+    if (st === 'Closed') return 'Dropped';
+    if (st === 'Done' || st === 'Dropped' || st === 'Open' || st === 'Ongoing') return st;
+    return 'Open';
+  }
+
+  /** Default all true; missing keys treated as true. */
+  function getSubtaskVisibilityForTask(taskId) {
+    var map = getSettings().subtaskVisibilityByTaskId || {};
+    var v = map[taskId];
+    var def = { Open: true, Ongoing: true, Done: true, Dropped: true };
+    if (!v || typeof v !== 'object') return def;
+    return {
+      Open: v.Open !== false,
+      Ongoing: v.Ongoing !== false,
+      Done: v.Done !== false,
+      Dropped: v.Dropped !== false
+    };
+  }
+
+  function getSubtaskViewportForTask(taskId) {
+    var m = getSettings().subtaskViewportByTaskId || {};
+    var v = m[taskId];
+    var pageSize = DEFAULT_SUBTASK_VIEWPORT_PAGE_SIZE;
+    var startIndex = 0;
+    if (v && typeof v === 'object') {
+      if (v.pageSize != null) {
+        var ps = parseInt(v.pageSize, 10);
+        if (!isNaN(ps)) pageSize = Math.min(50, Math.max(1, ps));
+      }
+      if (v.startIndex != null) {
+        var si = parseInt(v.startIndex, 10);
+        if (!isNaN(si)) startIndex = Math.max(0, si);
+      }
+    }
+    return { pageSize: pageSize, startIndex: startIndex };
+  }
+
+  function setSubtaskViewportForTask(taskId, patch) {
+    if (!state.data.settings.subtaskViewportByTaskId) state.data.settings.subtaskViewportByTaskId = {};
+    var cur = getSubtaskViewportForTask(taskId);
+    state.data.settings.subtaskViewportByTaskId[taskId] = {
+      pageSize: patch.pageSize != null ? patch.pageSize : cur.pageSize,
+      startIndex: patch.startIndex != null ? patch.startIndex : cur.startIndex
+    };
+  }
+
+  /** Sub-tasks after sort + View Type visibility filter (same order as the list). */
+  function getFilteredSubtasksForTask(task) {
+    if (!task || !task.subtasks || !task.subtasks.length) return [];
+    var sorted = sortSubtasksForTask(task.id, task.subtasks);
+    var vis = getSubtaskVisibilityForTask(task.id);
+    return sorted.filter(function (s) {
+      return vis[canonicalSubtaskStatusLabel(s)] === true;
+    });
+  }
+
+  var notesSaveTimer = null;
+
+  function scheduleNotesSave() {
+    if (notesSaveTimer) clearTimeout(notesSaveTimer);
+    notesSaveTimer = setTimeout(function () {
+      notesSaveTimer = null;
+      save();
+    }, 450);
+  }
+
+  /** Persist notes-related edits. When force is false, only saves if a debounced save was pending (unsynced typing).
+   *  Unconditional save here previously overwrote the profile on Reload / tab hide with stale in-memory notes
+   *  after external JSON edits (e.g. repopulating notes while the app still held an older session). */
+  function flushNotesSave(force) {
+    var hadTimer = !!notesSaveTimer;
+    if (notesSaveTimer) {
+      clearTimeout(notesSaveTimer);
+      notesSaveTimer = null;
+    }
+    if (hadTimer || force) save();
+  }
+
+  function focusLastTodoTextInCard(card) {
+    if (!card) return;
+    var rows = card.querySelectorAll('.notes-checklist-item');
+    var last = rows[rows.length - 1];
+    var inp = last && last.querySelector('.notes-todo-text');
+    if (inp) inp.focus();
+  }
+
+  function notesModalUnlockLazyFields(card) {
+    if (!card) return;
+    card.querySelectorAll('.notes-card-title[readonly], textarea.notes-card-body[readonly], .notes-todo-text[readonly]').forEach(function (el) {
+      el.removeAttribute('readonly');
+    });
+  }
+
+  function renderNotesModal() {
+    var id = state.notesModalNoteId;
+    var body = document.getElementById('notes-modal-body');
+    var item = findNoteItemById(id);
+    if (!body) return;
+    if (!item) {
+      body.innerHTML = '';
+      return;
+    }
+    body.innerHTML = renderNoteCardHtml(item, { compact: false, modal: true });
+    body.querySelectorAll('textarea.notes-card-body.auto-resize').forEach(function (ta) {
+      autoResizeTextarea(ta);
+    });
+  }
+
+  function openNotesModal(id, focusOpts) {
+    flushNotesSave();
+    var item = findNoteItemById(id);
+    if (!item) return;
+    state.notesModalNoteId = id;
+    var m = document.getElementById('notes-modal');
+    if (m) {
+      m.classList.add('open');
+      m.setAttribute('aria-hidden', 'false');
+    }
+    renderNotesModal();
+    requestAnimationFrame(function () {
+      var b = document.getElementById('notes-modal-body');
+      var card = b && b.querySelector('.notes-card');
+      if (!card) return;
+      if (focusOpts && focusOpts.focusLastTodo) {
+        notesModalUnlockLazyFields(card);
+        focusLastTodoTextInCard(card);
+        return;
+      }
+    });
+  }
+
+  function closeNotesModal(skipSync) {
+    var body = document.getElementById('notes-modal-body');
+    if (!skipSync && body) {
+      var card = body.querySelector('.notes-card');
+      if (card) syncNoteCardToModel(card);
+    }
+    flushNotesSave();
+    state.notesModalNoteId = null;
+    var m = document.getElementById('notes-modal');
+    if (m) {
+      m.classList.remove('open');
+      m.setAttribute('aria-hidden', 'true');
+    }
+    if (body) body.innerHTML = '';
+    renderNotes();
+  }
+
+  function notesAfterChecklistAdd(nid2) {
+    var it = findNoteItemById(nid2);
+    if (!it) return;
+    flushNotesSave(true);
+    renderNotes();
+    var n = (it.checklist || []).length;
+    var modalOpen = state.notesModalNoteId === nid2;
+    if (n > 5 && !modalOpen) {
+      openNotesModal(nid2, { focusLastTodo: true });
+      return;
+    }
+    if (modalOpen) {
+      renderNotesModal();
+      requestAnimationFrame(function () {
+        var card = document.querySelector('#notes-modal-body .notes-card');
+        notesModalUnlockLazyFields(card);
+        focusLastTodoTextInCard(card);
+      });
+      return;
+    }
+    var gridCard = document.querySelector('#notes-board .notes-card[data-note-id="' + nid2 + '"]');
+    focusLastTodoTextInCard(gridCard);
+  }
+
+  function notesOnChecklistAddClick(addBtn) {
+    var cardA = addBtn.closest('.notes-card');
+    var nid2 = cardA && cardA.getAttribute('data-note-id');
+    var it = findNoteItemById(nid2);
+    if (!it || it.kind !== 'todo') return;
+    syncNoteCardToModel(cardA);
+    it.checklist.push({ id: generateId(), text: '', done: false });
+    it.updatedAt = new Date().toISOString();
+    notesAfterChecklistAdd(nid2);
+  }
+
+  function notesOnCardDelete(delBtn) {
+    var card = delBtn.closest('.notes-card');
+    var nid = card && card.getAttribute('data-note-id');
+    if (!nid || !state.data.notes) return;
+    var hideModal = state.notesModalNoteId === nid;
+    state.data.notes.items = state.data.notes.items.filter(function (x) { return x.id !== nid; });
+    flushNotesSave(true);
+    if (hideModal) {
+      state.notesModalNoteId = null;
+      var modalEl = document.getElementById('notes-modal');
+      if (modalEl) {
+        modalEl.classList.remove('open');
+        modalEl.setAttribute('aria-hidden', 'true');
+      }
+      var mb = document.getElementById('notes-modal-body');
+      if (mb) mb.innerHTML = '';
+    }
+    renderNotes();
+  }
+
+  function syncNoteCardToModel(card) {
+    if (!card || !state.data.notes || !state.data.notes.items) return;
+    var noteId = card.getAttribute('data-note-id');
+    var item = findNoteItemById(noteId);
+    if (!item) return;
+    var titleInput = card.querySelector('input.notes-card-title');
+    if (titleInput) item.title = titleInput.value;
+    item.updatedAt = new Date().toISOString();
+    if (item.kind === 'note') {
+      var bodyEl = card.querySelector('textarea.notes-card-body');
+      if (bodyEl) item.body = bodyEl.value;
+      return;
+    }
+    card.querySelectorAll('.notes-checklist-item').forEach(function (row) {
+      var itemId = row.getAttribute('data-item-id');
+      var chk = row.querySelector('.notes-todo-done');
+      var txt = row.querySelector('.notes-todo-text');
+      for (var i = 0; i < item.checklist.length; i++) {
+        if (item.checklist[i].id === itemId) {
+          if (chk) item.checklist[i].done = chk.checked;
+          if (txt) item.checklist[i].text = txt.value;
+          break;
+        }
+      }
+    });
+  }
+
+  function renderNoteCardHtml(item, opts) {
+    opts = opts || {};
+    var compact = opts.compact !== false;
+    var isModal = opts.modal === true;
+    var readonlyPreview = compact && !isModal;
+    var accent = String(Math.abs(hashStringSimple(item.id)) % 4);
+    var cardMods = '';
+    if (isModal) cardMods += ' notes-card--modal';
+    if (readonlyPreview) cardMods += ' notes-card--readonly';
+    var delBtn = isModal
+      ? '<button type="button" class="notes-card-delete notes-card-delete--modal" title="Delete" aria-label="Delete">' +
+        '<svg class="notes-delete-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>' +
+        '<span class="notes-delete-label">Delete</span></button>'
+      : '<button type="button" class="notes-card-delete" title="Delete" aria-label="Delete note">' +
+        '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>';
+    var rawTitle = item.title != null ? String(item.title) : '';
+    var titleVal = escapeHtml(rawTitle);
+    var titleIsEmpty = !rawTitle.trim();
+    var titleBlock = readonlyPreview
+      ? (titleIsEmpty
+        ? '<div class="notes-card-title-display notes-card-title-display--empty">No title</div>'
+        : '<div class="notes-card-title-display">' + titleVal + '</div>')
+      : '<input type="text" class="notes-card-title"' + (isModal ? ' readonly' : '') + ' placeholder="Title" value="' + titleVal + '" autocomplete="off">';
+    if (item.kind === 'todo') {
+      var fullList = item.checklist || [];
+      var rowSource = compact ? fullList.slice(0, 5) : fullList;
+      var moreCount = compact && fullList.length > 5 ? fullList.length - 5 : 0;
+      var rows = rowSource.map(function (row) {
+        var done = row.done ? ' checked' : '';
+        var t = escapeHtml(row.text || '');
+        if (readonlyPreview) {
+          return '<li class="notes-checklist-item" data-item-id="' + escapeHtml(row.id) + '">' +
+            '<div class="notes-checklist-row notes-checklist-row--readonly">' +
+            '<input type="checkbox" class="notes-todo-done"' + done + ' title="Done">' +
+            '<span class="notes-todo-text-display">' + t + '</span>' +
+            '</div></li>';
+        }
+        return '<li class="notes-checklist-item" data-item-id="' + escapeHtml(row.id) + '">' +
+          '<label class="notes-checklist-row">' +
+          '<input type="checkbox" class="notes-todo-done"' + done + '>' +
+          '<input type="text" class="notes-todo-text"' + (isModal ? ' readonly' : '') + ' value="' + t + '" placeholder="Item…" autocomplete="off">' +
+          '</label></li>';
+      }).join('');
+      var truncatedHint = moreCount > 0
+        ? '<p class="notes-checklist-truncated muted">+' + moreCount + ' more — open to view</p>'
+        : '';
+      var addBtnHtml = readonlyPreview ? '' : '<button type="button" class="btn-small notes-checklist-add">Add item</button>';
+      return '<article class="notes-card notes-card--todo notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
+        '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+        '<ul class="notes-checklist">' + rows + '</ul>' +
+        truncatedHint +
+        addBtnHtml +
+        '</article>';
+    }
+    var rawBody = item.body != null ? String(item.body) : '';
+    var bodyEsc = escapeHtml(rawBody);
+    var bodyIsEmpty = !rawBody.trim();
+    if (readonlyPreview) {
+      var bodyInner = bodyIsEmpty ? 'No content' : bodyEsc;
+      var bodyClass = 'notes-card-body-display' + (bodyIsEmpty ? ' notes-card-body-display--empty' : '');
+      return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
+        '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+        '<div class="' + bodyClass + '">' + bodyInner + '</div>' +
+        '</article>';
+    }
+    return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
+      '<div class="notes-card-top">' + delBtn + titleBlock + '</div>' +
+      '<textarea class="notes-card-body auto-resize" rows="4" placeholder="Take a note…"' + (isModal ? ' readonly' : '') + '>' + bodyEsc + '</textarea>' +
+      '</article>';
+  }
+
+  function hashStringSimple(s) {
+    var h = 0;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+    return h;
+  }
+
+  function renderNotes() {
+    var board = document.getElementById('notes-board');
+    if (!board || !state.data.notes) return;
+    var items = state.data.notes.items || [];
+    board.innerHTML = items.map(function (it) {
+      return renderNoteCardHtml(it, { compact: true });
+    }).join('');
+  }
+
+  function bindNotesEventsOnce() {
+    var board = document.getElementById('notes-board');
+    if (!board || board.dataset.boundNotes === '1') return;
+    board.dataset.boundNotes = '1';
+    board.addEventListener('input', function (e) {
+      if (state.view !== 'notes') return;
+      var card = e.target.closest('.notes-card');
+      if (!card || !board.contains(card)) return;
+      syncNoteCardToModel(card);
+      scheduleNotesSave();
+    });
+    board.addEventListener('change', function (e) {
+      if (state.view !== 'notes') return;
+      var card = e.target.closest('.notes-card');
+      if (!card || !board.contains(card)) return;
+      syncNoteCardToModel(card);
+      scheduleNotesSave();
+    });
+    board.addEventListener('click', function (e) {
+      if (state.view !== 'notes') return;
+      var del = e.target.closest('.notes-card-delete');
+      if (del) {
+        e.preventDefault();
+        notesOnCardDelete(del);
+        return;
+      }
+      var addBtn = e.target.closest('.notes-checklist-add');
+      if (addBtn) {
+        e.preventDefault();
+        notesOnChecklistAddClick(addBtn);
+        return;
+      }
+      var cardHit = e.target.closest('.notes-card');
+      if (cardHit && board.contains(cardHit)) {
+        if (e.target.closest('input.notes-todo-done')) return;
+        if (e.target.closest('button')) return;
+        var nidOpen = cardHit.getAttribute('data-note-id');
+        if (nidOpen) openNotesModal(nidOpen);
+      }
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && state.view === 'notes') flushNotesSave();
+    });
+  }
+
+  function bindNotesModalEventsOnce() {
+    var modal = document.getElementById('notes-modal');
+    if (!modal || modal.dataset.boundNotesModal === '1') return;
+    modal.dataset.boundNotesModal = '1';
+    var backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.addEventListener('click', function () { closeNotesModal(false); });
+    modal.addEventListener('input', function (e) {
+      if (state.view !== 'notes') return;
+      var body = document.getElementById('notes-modal-body');
+      var card = e.target.closest('.notes-card');
+      if (!body || !card || !body.contains(card)) return;
+      syncNoteCardToModel(card);
+      scheduleNotesSave();
+    });
+    modal.addEventListener('change', function (e) {
+      if (state.view !== 'notes') return;
+      var body = document.getElementById('notes-modal-body');
+      var card = e.target.closest('.notes-card');
+      if (!body || !card || !body.contains(card)) return;
+      syncNoteCardToModel(card);
+      scheduleNotesSave();
+    });
+    modal.addEventListener('focusin', function (e) {
+      if (state.view !== 'notes') return;
+      var body = document.getElementById('notes-modal-body');
+      var card = e.target.closest('.notes-card');
+      if (!body || !card || !body.contains(card)) return;
+      var t = e.target;
+      if (t.matches('.notes-card-title[readonly], textarea.notes-card-body[readonly], .notes-todo-text[readonly]')) {
+        t.removeAttribute('readonly');
+      }
+    });
+    modal.addEventListener('click', function (e) {
+      if (state.view !== 'notes') return;
+      var body = document.getElementById('notes-modal-body');
+      if (!body) return;
+      var del = e.target.closest('.notes-card-delete');
+      if (del && body.contains(del)) {
+        e.preventDefault();
+        notesOnCardDelete(del);
+        return;
+      }
+      var addBtn = e.target.closest('.notes-checklist-add');
+      if (addBtn && body.contains(addBtn)) {
+        e.preventDefault();
+        notesOnChecklistAddClick(addBtn);
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var m = document.getElementById('notes-modal');
+      if (!m || !m.classList.contains('open')) return;
+      closeNotesModal(false);
+    });
+  }
+
+  function wireNotesToolbar() {
+    var addNote = document.getElementById('notes-add-note-btn');
+    var addTodo = document.getElementById('notes-add-todo-btn');
+    if (addNote && !addNote.dataset.wired) {
+      addNote.dataset.wired = '1';
+      addNote.addEventListener('click', function () {
+        if (!state.data.notes) state.data.notes = { items: [] };
+        state.data.notes.items.unshift(normalizeNoteItem({ kind: 'note', id: generateId(), title: '', body: '' }));
+        flushNotesSave(true);
+        renderNotes();
+      });
+    }
+    if (addTodo && !addTodo.dataset.wired) {
+      addTodo.dataset.wired = '1';
+      addTodo.addEventListener('click', function () {
+        if (!state.data.notes) state.data.notes = { items: [] };
+        state.data.notes.items.unshift(normalizeNoteItem({ kind: 'todo', id: generateId(), title: '', checklist: [{ id: generateId(), text: '', done: false }] }));
+        flushNotesSave(true);
+        renderNotes();
+      });
+    }
+    var colSel = document.getElementById('notes-grid-columns-select');
+    if (colSel && !colSel.dataset.wired) {
+      colSel.dataset.wired = '1';
+      colSel.addEventListener('change', function () {
+        var v = parseInt(colSel.value, 10);
+        if (isNaN(v) || v < 1 || v > 5) v = 5;
+        state.data.settings.notesGridColumns = v;
+        syncNotesGridColumnsUi();
+        save();
+      });
+    }
+    syncNotesGridColumnsUi();
+    bindNotesEventsOnce();
+    bindNotesModalEventsOnce();
   }
 
   function updateDocumentTitleFromPath(fullPath) {
@@ -1360,6 +2087,7 @@
       }
       setData(res.data);
       updateDocumentTitleFromPath(res.path);
+      loadEditorSessionFromStorage();
       render();
       return res.data;
     });
@@ -1541,7 +2269,9 @@
       categories: Array.isArray(payload.categories) ? payload.categories.slice() : [],
       project: (payload.project != null && String(payload.project).trim()) ? String(payload.project).trim() : '',
       exclude_from_summary: !!payload.exclude_from_summary,
-      exclude_from_export: !!payload.exclude_from_export
+      exclude_from_export: !!payload.exclude_from_export,
+      no_effort_needed: !!payload.no_effort_needed,
+      eta: (payload.eta != null && String(payload.eta).trim()) ? String(payload.eta).trim().slice(0, 10) : ''
     });
     return save().then(function () { render(); });
   }
@@ -1568,12 +2298,16 @@
     if (updates.description !== undefined) s.description = updates.description;
     if (updates.priority !== undefined) s.priority = Math.min(10, Math.max(1, updates.priority));
     if (updates.assigned_date !== undefined) s.assigned_date = updates.assigned_date;
+    if (updates.eta !== undefined) {
+      s.eta = (updates.eta != null && String(updates.eta).trim()) ? String(updates.eta).trim().slice(0, 10) : '';
+    }
     if (updates.effort_required_hours !== undefined) s.effort_required_hours = updates.effort_required_hours;
     if (updates.categories !== undefined) s.categories = Array.isArray(updates.categories) ? updates.categories.slice() : [];
     if (updates.project !== undefined) s.project = (updates.project != null && String(updates.project).trim()) ? String(updates.project).trim() : '';
     if (updates.difficulty !== undefined) s.difficulty = normalizeTaskDifficulty(updates.difficulty);
     if (updates.exclude_from_summary !== undefined) s.exclude_from_summary = !!updates.exclude_from_summary;
     if (updates.exclude_from_export !== undefined) s.exclude_from_export = !!updates.exclude_from_export;
+    if (updates.no_effort_needed !== undefined) s.no_effort_needed = !!updates.no_effort_needed;
     return save().then(function () { render(); });
   }
 
@@ -1622,6 +2356,7 @@
   }
 
   function deleteSubtask(taskId, subtaskId) {
+    purgeEditorDraftForSubtask(taskId, subtaskId);
     var task = state.data.tasks.find(function (t) { return t.id === taskId; });
     if (!task || !task.subtasks) return Promise.resolve();
     task.subtasks = task.subtasks.filter(function (s) { return s.id !== subtaskId; });
@@ -1723,6 +2458,7 @@
   }
 
   function deleteTask(id) {
+    purgeEditorDraftsForTask(id);
     state.data.tasks = state.data.tasks.filter(function (t) { return t.id !== id; });
     return save().then(function () { render(); });
   }
@@ -2129,10 +2865,11 @@
     }).join('');
   }
 
-  function renderTaskStatusChangesSection(task) {
+  function renderTaskStatusChangesSection(task, isOpen) {
     var statusDisp = normalizeStatusForHistory(task.status);
     var rows = renderStatusChangeRows(task.status_changes);
-    return '<div class="task-update-status-changes-block task-toggleable-block task-block-collapsed">' +
+    var collMain = isOpen === true ? '' : ' task-block-collapsed';
+    return '<div class="task-update-status-changes-block task-toggleable-block' + collMain + '">' +
       '<h4 class="task-update-title">Update Status Changes</h4>' +
       '<p class="task-status-changes-desc muted">When the task entered each status (chronological). New transitions come from the status buttons. Edit dates so <strong>Generate Summary</strong> uses the correct completion day. Delete mistaken rows.</p>' +
       '<p class="task-update-current">Current status: <strong>' + escapeHtml(statusDisp) + '</strong>. Completion date (summary): <strong' + (!task.done_date ? ' class="default-value"' : '') + '>' + escapeHtml(task.done_date || '—') + '</strong></p>' +
@@ -2140,10 +2877,11 @@
     '</div>';
   }
 
-  function renderSubtaskStatusChangesSection(s) {
+  function renderSubtaskStatusChangesSection(s, isOpen) {
     var statusDisp = normalizeStatusForHistory(s.status);
     var rows = renderStatusChangeRows(s.status_changes);
-    return '<div class="task-update-status-changes-block subtask-status-changes-block task-toggleable-block task-block-collapsed">' +
+    var collSub = isOpen === true ? '' : ' task-block-collapsed';
+    return '<div class="task-update-status-changes-block subtask-status-changes-block task-toggleable-block' + collSub + '">' +
       '<h4 class="task-update-title">Update Status Changes</h4>' +
       '<p class="task-status-changes-desc muted">Sub-task status history; same rules as the main task.</p>' +
       '<p class="task-update-current">Current status: <strong>' + escapeHtml(statusDisp) + '</strong>. Completion date (summary): <strong' + (!s.done_date ? ' class="default-value"' : '') + '>' + escapeHtml(s.done_date || '—') + '</strong></p>' +
@@ -2151,7 +2889,7 @@
     '</div>';
   }
 
-  function renderConcernsBlock(concerns) {
+  function renderConcernsBlock(concerns, isOpen) {
     var today = new Date().toISOString().slice(0, 10);
     var openCount = concerns ? concerns.filter(function (c) { return c.status !== 'Addressed'; }).length : 0;
     var list = (concerns && concerns.length) ? concerns.map(function (c) {
@@ -2210,7 +2948,8 @@
       ? ' <span class="concerns-count">(' + concerns.length + (openCount ? ', ' + openCount + ' open' : '') + ')</span>'
       : '';
 
-    return '<div class="task-concerns-block task-toggleable-block task-block-collapsed">' +
+    var collConc = isOpen === true ? '' : ' task-block-collapsed';
+    return '<div class="task-concerns-block task-toggleable-block' + collConc + '">' +
       '<h4 class="task-update-title">Concerns' + countLabel + '</h4>' +
       (list ? '<ul class="concern-list">' + list + '</ul>' : '') +
       '<div class="concern-add-form">' +
@@ -2222,6 +2961,45 @@
     '</div>';
   }
 
+  function renderSubtaskViewportPageSizeOptions(pageSize) {
+    var sizes = [3, 5, 8, 10, 15];
+    var list = sizes.indexOf(pageSize) >= 0 ? sizes.slice() : [pageSize].concat(sizes);
+    list.sort(function (a, b) { return a - b; });
+    var seen = {};
+    list = list.filter(function (n) {
+      if (seen[n]) return false;
+      seen[n] = true;
+      return true;
+    });
+    return list.map(function (n) {
+      return '<option value="' + n + '"' + (n === pageSize ? ' selected' : '') + '>' + n + '</option>';
+    }).join('');
+  }
+
+  function renderSubtaskViewportToolbarHtml(taskId, startIdx, pageSize, totalFiltered) {
+    if (totalFiltered <= 0) return '';
+    var maxStart = Math.max(0, totalFiltered - pageSize);
+    var canPrev = startIdx > 0;
+    var canNext = startIdx < maxStart;
+    var from = startIdx + 1;
+    var to = Math.min(startIdx + pageSize, totalFiltered);
+    var opts = renderSubtaskViewportPageSizeOptions(pageSize);
+    var svgL = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M10.78 4.22a.75.75 0 010 1.06L8.06 8l2.72 2.72a.75.75 0 11-1.06 1.06L5.47 8.53a.75.75 0 010-1.06l3.25-3.25a.75.75 0 011.06 0z"/></svg>';
+    var svgR = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.22 4.22a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06l-3.25 3.25a.75.75 0 01-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 010-1.06z"/></svg>';
+    return '<div class="subtask-viewport-toolbar">' +
+      '<label class="subtask-viewport-size-label muted">' +
+      '<span>Show</span> ' +
+      '<select class="subtask-viewport-page-size" data-task-id="' + escapeHtml(taskId) + '" title="Number of sub-tasks visible">' + opts + '</select>' +
+      '<span> at a time</span>' +
+      '</label>' +
+      '<div class="subtask-viewport-nav-group">' +
+      '<button type="button" class="subtask-viewport-nav-btn subtask-viewport-prev" data-task-id="' + escapeHtml(taskId) + '" title="Previous page of sub-tasks" aria-label="Previous sub-tasks"' + (canPrev ? '' : ' disabled') + '>' + svgL + '</button>' +
+      '<span class="subtask-viewport-range muted">' + from + '–' + to + ' of ' + totalFiltered + '</span>' +
+      '<button type="button" class="subtask-viewport-nav-btn subtask-viewport-next" data-task-id="' + escapeHtml(taskId) + '" title="Next page of sub-tasks" aria-label="Next sub-tasks"' + (canNext ? '' : ' disabled') + '>' + svgR + '</button>' +
+      '</div>' +
+      '</div>';
+  }
+
   function renderSubtaskCard(taskId, s, settings) {
     var today = new Date().toISOString().slice(0, 10);
     var subKey = taskId + '_' + s.id;
@@ -2229,8 +3007,11 @@
     var baseColor = getPriorityColor(s.priority, settings);
     var subPriorityColor = darkenColor(baseColor, 0.72);
     var subAssignedStr = s.assigned_date || null;
+    var subEtaStr = s.eta || null;
     var subEffortReq = isTruthyFlag(s.no_effort_needed) ? '—' :
       (s.effort_required_hours != null && s.effort_required_hours !== '' ? (s.effort_required_hours + ' hrs') : '0 hrs');
+    var subSpentHrs = subtaskEffortSpent(s);
+    var subSpentStr = subSpentHrs ? (subSpentHrs + ' hrs') : '0 hrs';
     var subCats = (s.categories || []).length ? (s.categories || []).map(function (c) {
       return '<span class="meta-chip meta-chip-category">' + escapeHtml(c) + '</span>';
     }).join('') : '';
@@ -2239,7 +3020,9 @@
       '<span class="meta-chip"><span class="meta-label">Difficulty</span><span class="meta-value">' + escapeHtml(normalizeTaskDifficulty(s.difficulty)) + '</span></span>',
       (subCats ? '<span class="meta-chip meta-chip-categories"><span class="meta-label">Category</span>' + subCats + '</span>' : '<span class="meta-chip"><span class="meta-label">Category</span><span class="meta-value default-value">—</span></span>'),
       '<span class="meta-chip"><span class="meta-label">Assigned</span><span class="meta-value' + (!subAssignedStr ? ' default-value' : '') + '">' + escapeHtml(subAssignedStr || '—') + '</span></span>',
-      '<span class="meta-chip meta-chip-effort"><span class="meta-label">Effort</span><span class="meta-value">' + escapeHtml(subEffortReq) + '</span></span>'
+      '<span class="meta-chip meta-chip-eta"><span class="meta-label">ETA</span><span class="meta-value' + (!subEtaStr ? ' default-value' : '') + '">' + escapeHtml(subEtaStr || '—') + '</span></span>',
+      '<span class="meta-chip meta-chip-effort"><span class="meta-label">Effort</span><span class="meta-value">' + escapeHtml(subEffortReq) + '</span></span>',
+      '<span class="meta-chip meta-chip-spent"><span class="meta-label">Effort spent</span><span class="meta-value' + (!subSpentHrs ? ' default-value' : '') + '">' + escapeHtml(subSpentStr) + '</span></span>'
     ].join('');
 
     var noEffortSub = isTruthyFlag(s.no_effort_needed);
@@ -2248,7 +3031,6 @@
     var subDeadlineLabel = formatDeadlineLabel(subDeadlineDays);
     var subDeadlineCls = subDeadlineDays !== null ? (subDeadlineDays < 0 ? ' hl-overdue' : (subDeadlineDays <= 3 ? ' hl-urgent' : '')) : '';
     var subPlannedHrs = getLatestPlannedEffortHours(s);
-    var subSpentHrs = subtaskEffortSpent(s);
     var subRemHrs = subPlannedHrs - subSpentHrs;
     var subEffortRemStr = noEffortSub ? '—' : (subRemHrs.toFixed(1).replace(/\.0$/, '') + ' / ' + subPlannedHrs.toFixed(1).replace(/\.0$/, '') + ' hrs');
     var subEffortRemCls = (!noEffortSub && subRemHrs < 0) ? ' hl-overdue' : '';
@@ -2287,56 +3069,95 @@
 
     var subBody = '';
     if (isSubExpanded) {
-      var subDesc = formatRichDescription(s.description || '');
+      var sdk = taskId + ':' + s.id;
+      var sd = state.editorDrafts.subtasks[sdk];
+      function spick(field, fallback) {
+        if (sd && Object.prototype.hasOwnProperty.call(sd, field)) return sd[field];
+        return fallback;
+      }
+      function spickBool(field, fallbackBool) {
+        if (sd && Object.prototype.hasOwnProperty.call(sd, field)) return !!sd[field];
+        return fallbackBool;
+      }
+      var subDescRaw = spick('description', s.description || '');
+      var subDesc = formatRichDescription(subDescRaw || '');
+      var subDescEditing = sd && sd.subDescEditing === true;
+      var subDescViewCls = subDescEditing ? 'task-description-view hidden' : 'task-description-view';
+      var subDescEditCls = subDescEditing ? 'task-description-edit subtask-desc-edit auto-resize rich-text-target' : 'task-description-edit hidden subtask-desc-edit auto-resize rich-text-target';
+      var subToggleSvg = subDescEditing ? SVG_ICON_CHECK : SVG_ICON_EDIT;
+      var stTitle = spick('title', s.title || '');
+      var stPri = spick('priority', s.priority != null ? String(s.priority) : '1');
+      var stDiff = spick('difficulty', normalizeTaskDifficulty(s.difficulty));
+      var stAsg = spick('assigned_date', s.assigned_date || '');
+      var stEta = spick('eta', s.eta || '');
+      var stEff = spick('effort', s.effort_required_hours != null && s.effort_required_hours !== '' ? String(s.effort_required_hours) : '0');
+      var stCats = spick('categories', s.categories || []);
+      if (!Array.isArray(stCats)) stCats = [];
+      var stProj = spick('project', s.project || '');
+      var sExSum = spickBool('exclude_from_summary', isTruthyFlag(s.exclude_from_summary));
+      var sExExp = spickBool('exclude_from_export', isTruthyFlag(s.exclude_from_export));
+      var sNoEff = spickBool('no_effort_needed', isTruthyFlag(s.no_effort_needed));
+      var sProgT = spick('progressText', '');
+      var sProgD = spick('progressDate', today);
+      var sProgE = spick('progressEffort', '');
+      var sProgC = spick('progressCategories', []);
+      if (!Array.isArray(sProgC)) sProgC = [];
+
+      var sps = state.editorPanelState.subtasks[sdk] || {};
+      function spc(key) {
+        return (sps[key] === true) ? '' : ' task-block-collapsed';
+      }
+
       subBody = '<div class="subtask-body">' +
         '<div class="subtask-summary-export-flags">' +
-          '<label class="flag-check"><input type="checkbox" class="subtask-exclude-summary"' + (isTruthyFlag(s.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
-          '<label class="flag-check"><input type="checkbox" class="subtask-exclude-export"' + (isTruthyFlag(s.exclude_from_export) ? ' checked' : '') + '> Exclude from export</label>' +
-          '<label class="flag-check"><input type="checkbox" class="subtask-no-effort-needed"' + (isTruthyFlag(s.no_effort_needed) ? ' checked' : '') + '> No Effort Needed</label>' +
+          '<label class="flag-check"><input type="checkbox" class="subtask-exclude-summary"' + (sExSum ? ' checked' : '') + '> Exclude from summary</label>' +
+          '<label class="flag-check"><input type="checkbox" class="subtask-exclude-export"' + (sExExp ? ' checked' : '') + '> Exclude from export</label>' +
+          '<label class="flag-check"><input type="checkbox" class="subtask-no-effort-needed"' + (sNoEff ? ' checked' : '') + '> No Effort Needed</label>' +
         '</div>' +
         '<div class="subtask-update-toggles">' +
-          '<button type="button" class="btn-update-toggle btn-subtask-update-details">Update Details</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-subtask-status-changes">Update Status Changes</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle">Concerns</button>' +
+          '<button type="button" class="btn-update-toggle btn-subtask-update-details' + (sps.details === true ? ' active' : '') + '">Update Details</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-subtask-status-changes' + (sps.statusChanges === true ? ' active' : '') + '">Update Status Changes</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle' + (sps.concerns === true ? ' active' : '') + '">Concerns</button>' +
         '</div>' +
-        renderSubtaskStatusChangesSection(s) +
-        renderConcernsBlock(s.concerns || []) +
-        '<div class="subtask-details-block task-toggleable-block task-block-collapsed">' +
+        renderSubtaskStatusChangesSection(s, sps.statusChanges === true) +
+        renderConcernsBlock(s.concerns || [], sps.concerns === true) +
+        '<div class="subtask-details-block task-toggleable-block' + spc('details') + '">' +
           '<h4 class="task-details-title">Sub-task details</h4>' +
           '<div class="task-details-grid">' +
-            '<label class="task-detail-title-field">Title <input type="text" class="subtask-detail-title" value="' + escapeHtml(s.title || '') + '" placeholder="Sub-task title" autocomplete="off"></label>' +
-            '<label>Priority <input type="number" class="subtask-detail-priority" min="1" max="10" value="' + (s.priority != null ? s.priority : 1) + '" placeholder="1–10"></label>' +
-            '<label>Difficulty ' + renderDifficultySelectHtml(s.difficulty, 'subtask-detail-difficulty') + '</label>' +
-            '<label>Assigned <input type="date" class="subtask-detail-assigned" value="' + escapeHtml(s.assigned_date || '') + '" placeholder="YYYY-MM-DD"></label>' +
-            '<label>Effort (hrs) <input type="number" class="subtask-detail-effort" min="0" step="0.5" value="' + (s.effort_required_hours != null && s.effort_required_hours !== '' ? s.effort_required_hours : 0) + '" placeholder="hrs"></label>' +
+            '<label class="task-detail-title-field">Title <input type="text" class="subtask-detail-title" value="' + escapeHtml(stTitle) + '" placeholder="Sub-task title" autocomplete="off"></label>' +
+            '<label>Priority <input type="number" class="subtask-detail-priority" min="1" max="10" value="' + escapeHtml(stPri) + '" placeholder="1–10"></label>' +
+            '<label>Difficulty ' + renderDifficultySelectHtml(stDiff, 'subtask-detail-difficulty') + '</label>' +
+            '<label>Assigned <input type="date" class="subtask-detail-assigned" value="' + escapeHtml(stAsg) + '" placeholder="YYYY-MM-DD"></label>' +
+            '<label>ETA <input type="date" class="subtask-detail-eta" value="' + escapeHtml(stEta) + '" placeholder="YYYY-MM-DD"></label>' +
+            '<label>Effort (hrs) <input type="number" class="subtask-detail-effort" min="0" step="0.5" value="' + escapeHtml(stEff) + '" placeholder="hrs"></label>' +
           '</div>' +
           '<div class="task-detail-category-wrap">' +
             '<span class="task-detail-label">Category</span>' +
-            renderCategoryDropdownHtml(s.categories || [], 'subtask-detail-category-' + taskId + '-' + s.id) +
+            renderCategoryDropdownHtml(stCats, 'subtask-detail-category-' + taskId + '-' + s.id) +
           '</div>' +
           '<div class="task-detail-project-wrap">' +
             '<span class="task-detail-label">Project</span>' +
-            renderProjectSelectHtml(s.project || '', 'subtask-detail-project-' + taskId + '-' + s.id) +
+            renderProjectSelectHtml(stProj, 'subtask-detail-project-' + taskId + '-' + s.id) +
           '</div>' +
           '<button type="button" class="btn-small save-subtask-details-btn">Save details</button>' +
         '</div>' +
           '<div class="subtask-description-block">' +
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
-            '<div class="task-description-view">' + (subDesc || '<em class="no-desc">No description</em>') + '</div>' +
+            '<div class="' + subDescViewCls + '">' + (subDesc || '<em class="no-desc">No description</em>') + '</div>' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="task-description-edit hidden subtask-desc-edit auto-resize rich-text-target" rows="2" placeholder="Description…">' + escapeHtml(s.description || '') + '</textarea></div>' +
-            '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg></button>' +
+            '<textarea class="' + subDescEditCls + '" rows="2" placeholder="Description…">' + escapeHtml(subDescRaw || '') + '</textarea></div>' +
+            '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description">' + subToggleSvg + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
           renderProgressLogSection(s.progress_updates, progressLogKeySub(taskId, s.id), true, taskId, s.id) +
           '<div class="progress-add">' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="progress-text-in subtask-progress-text auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
-            '<input type="date" class="progress-date-in subtask-progress-date" value="' + today + '">' +
-            '<input type="number" class="progress-effort-in subtask-progress-effort" placeholder="Hrs" min="0" step="0.5">' +
-            renderProgressCategoryRowHtml([], 'subtask-progress-add-cat-' + taskId + '-' + s.id) +
+            '<textarea class="progress-text-in subtask-progress-text auto-resize rich-text-target" rows="2" placeholder="Progress note…">' + escapeHtml(sProgT) + '</textarea></div>' +
+            '<input type="date" class="progress-date-in subtask-progress-date" value="' + escapeHtml(sProgD) + '">' +
+            '<input type="number" class="progress-effort-in subtask-progress-effort" placeholder="Hrs" min="0" step="0.5" value="' + escapeHtml(sProgE) + '">' +
+            renderProgressCategoryRowHtml(sProgC, 'subtask-progress-add-cat-' + taskId + '-' + s.id) +
             '<button type="button" class="btn-small add-subtask-progress-btn">Add progress</button>' +
           '</div>' +
         '</div>' +
@@ -2346,21 +3167,43 @@
     return '<li class="subtask-card' + (isSubExpanded ? ' expanded' : '') + '" data-task-id="' + escapeHtml(taskId) + '" data-subtask-id="' + escapeHtml(s.id) + '">' + subBar + subBody + '</li>';
   }
 
+  function renderSubtaskViewTypeDropdown(taskId) {
+    var vis = getSubtaskVisibilityForTask(taskId);
+    function chk(on) { return on ? ' checked' : ''; }
+    return '<div class="filter-dropdown-wrap subtask-viewtype-wrap" data-task-id="' + escapeHtml(taskId) + '">' +
+      '<button type="button" class="filter-dropdown-btn" title="Filter sub-tasks by status">' + SVG_ICON_CHEVRON_DOWN + ' View Type</button>' +
+      '<div class="filter-dropdown-menu filter-dropdown-menu-checks">' +
+      '<label class="subtask-vis-label"><input type="checkbox" class="subtask-vis-cb" data-vis-key="Open"' + chk(vis.Open) + '> Open</label>' +
+      '<label class="subtask-vis-label"><input type="checkbox" class="subtask-vis-cb" data-vis-key="Ongoing"' + chk(vis.Ongoing) + '> Ongoing</label>' +
+      '<label class="subtask-vis-label"><input type="checkbox" class="subtask-vis-cb" data-vis-key="Done"' + chk(vis.Done) + '> Done</label>' +
+      '<label class="subtask-vis-label"><input type="checkbox" class="subtask-vis-cb" data-vis-key="Dropped"' + chk(vis.Dropped) + '> Dropped</label>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderTaskCard(task) {
     var today = new Date().toISOString().slice(0, 10);
     var settings = getSettings();
     var priorityColor = getPriorityColor(task.priority, settings);
     var isExpanded = state.expandedTasks[task.id];
     var effortDays = hoursToDays(task.effort_required_hours);
-    var effortStr = isTruthyFlag(task.no_effort_needed) ? '—' :
-      (task.effort_required_hours != null && task.effort_required_hours !== '' ? (task.effort_required_hours + ' hrs' + (effortDays ? ' (' + effortDays + ' d)' : '')) : null);
+    var effortStr = null;
+    if (!isTruthyFlag(task.no_effort_needed)) {
+      effortStr = task.effort_required_hours != null && task.effort_required_hours !== ''
+        ? (task.effort_required_hours + ' hrs' + (effortDays ? ' (' + effortDays + ' d)' : ''))
+        : null;
+    }
+    var effortRibbonVal = isTruthyFlag(task.no_effort_needed)
+      ? mainTaskEffortChipValueWhenExempt(task)
+      : (effortStr != null ? effortStr : '—');
+    var effortRibbonCls = (!isTruthyFlag(task.no_effort_needed) && effortStr == null) ? ' default-value' : '';
     var tagsStr = (task.tags && task.tags.length) ? task.tags.join(' ') : null;
     var bugNums = task.bug_numbers || (task.bug_number != null && task.bug_number !== 0 && task.bug_number !== '' ? [].concat(task.bug_number) : []);
     var bugStr = bugNums.length ? bugNums.join(', ') : null;
     var etaStr = task.eta || null;
     var counts = subtaskCounts(task.subtasks);
 
-    var effortSpentHrs = taskEffortSpent(task);
+    var effortSpentHrs = taskEffortSpentForRibbon(task);
     var effortSpentStr = effortSpentHrs ? (effortSpentHrs + ' hrs') : '0 hrs';
     var statusStr = (task.status === 'Closed' ? 'Dropped' : (task.status === 'Completed' ? 'Done' : task.status)) || 'Open';
     var statusClass = 'meta-status-' + (statusStr || 'open').toLowerCase().replace(/\s/g, '-');
@@ -2368,7 +3211,7 @@
     var taskCats = (task.categories || []).length ? (task.categories || []).map(function (c) {
       return '<span class="meta-chip meta-chip-category">' + escapeHtml(c) + '</span>';
     }).join('') : '';
-    var metaChips = [
+    var metaChipParts = [
       '<span class="meta-chip meta-chip-status ' + statusClass + '"><span class="meta-label">Status</span><span class="meta-value">' + escapeHtml(statusStr) + '</span></span>',
       '<span class="meta-chip"><span class="meta-label">Priority</span><span class="meta-value' + (task.priority == null ? ' default-value' : '') + '">' + (task.priority != null ? 'P' + task.priority : '—') + '</span></span>',
       '<span class="meta-chip"><span class="meta-label">Difficulty</span><span class="meta-value">' + escapeHtml(normalizeTaskDifficulty(task.difficulty)) + '</span></span>',
@@ -2376,10 +3219,13 @@
       '<span class="meta-chip"><span class="meta-label">Tags</span><span class="meta-value' + (!tagsStr ? ' default-value' : '') + '">' + escapeHtml(tagsStr || '—') + '</span></span>',
       '<span class="meta-chip"><span class="meta-label">Assigned</span><span class="meta-value' + (!task.assigned_date ? ' default-value' : '') + '">' + escapeHtml(task.assigned_date || '—') + '</span></span>',
       '<span class="meta-chip meta-chip-eta"><span class="meta-label">ETA</span><span class="meta-value' + (!etaStr ? ' default-value' : '') + '">' + escapeHtml(etaStr || '—') + '</span></span>',
-      '<span class="meta-chip meta-chip-effort"><span class="meta-label">Effort</span><span class="meta-value' + (effortStr == null ? ' default-value' : '') + '">' + (effortStr != null ? escapeHtml(effortStr) : '—') + '</span></span>',
+      '<span class="meta-chip meta-chip-effort"><span class="meta-label">Effort</span><span class="meta-value' + effortRibbonCls + '">' + escapeHtml(effortRibbonVal) + '</span></span>'
+    ];
+    metaChipParts.push(
       '<span class="meta-chip meta-chip-spent"><span class="meta-label">Effort spent</span><span class="meta-value' + (!effortSpentHrs ? ' default-value' : '') + '">' + effortSpentStr + '</span></span>',
       '<span class="meta-chip"><span class="meta-label">Bugs</span><span class="meta-value' + (!bugStr ? ' default-value' : '') + '">' + escapeHtml(bugStr || '—') + '</span></span>'
-    ].join('');
+    );
+    var metaChips = metaChipParts.join('');
 
     var noEffortTask = isTruthyFlag(task.no_effort_needed);
     var deadlineDays = daysUntilDeadline(task.eta);
@@ -2430,7 +3276,63 @@
 
     var bodyHtml = '';
     if (isExpanded) {
-      var desc = formatRichDescription(task.description || '');
+      var td = state.editorDrafts.tasks[task.id];
+      function pick(field, fallback) {
+        if (td && Object.prototype.hasOwnProperty.call(td, field)) return td[field];
+        return fallback;
+      }
+      function pickBool(field, fallbackBool) {
+        if (td && Object.prototype.hasOwnProperty.call(td, field)) return !!td[field];
+        return fallbackBool;
+      }
+      var tagsJoined = (task.tags || []).map(function (t) { return (t || '').replace(/^#/, ''); }).join(', ');
+      var detailTitle = pick('title', task.title || '');
+      var detailPriorityVal = pick('priority', task.priority != null ? String(task.priority) : '');
+      var detailTagsVal = pick('tags', tagsJoined);
+      var detailAssignedVal = pick('assigned_date', task.assigned_date || '');
+      var detailEtaVal = pick('eta', task.eta || '');
+      var effortDraftStr = pick('effort', task.effort_required_hours != null && task.effort_required_hours !== '' ? String(task.effort_required_hours) : '');
+      var detailBugsVal = pick('bugs', (task.bug_numbers || []).join(', '));
+      var detailDifficultyVal = pick('difficulty', normalizeTaskDifficulty(task.difficulty));
+      var detailProjectVal = pick('project', task.project || '');
+      var detailCats = pick('categories', task.categories || []);
+      if (!Array.isArray(detailCats)) detailCats = [];
+      var descRaw = pick('description', task.description || '');
+      var desc = formatRichDescription(descRaw || '');
+      var descEditing = td && td.descEditing === true;
+      var descViewCls = descEditing ? 'task-description-view hidden' : 'task-description-view';
+      var descEditCls = descEditing ? 'task-description-edit auto-resize rich-text-target' : 'task-description-edit hidden auto-resize rich-text-target';
+      var toggleDescSvg = descEditing ? SVG_ICON_CHECK : SVG_ICON_EDIT;
+      var exSumChk = pickBool('exclude_from_summary', isTruthyFlag(task.exclude_from_summary));
+      var exExpChk = pickBool('exclude_from_export', isTruthyFlag(task.exclude_from_export));
+      var noEffChk = pickBool('no_effort_needed', isTruthyFlag(task.no_effort_needed));
+      var archChk = pickBool('archived', !!task.archived);
+      var etaUpVal = pick('etaUpdateInput', today);
+      var effortUpVal = pick('effortUpdateInput', '');
+      var progTextVal = pick('progressText', '');
+      var progDateVal = pick('progressDate', today);
+      var progEffVal = pick('progressEffort', '');
+      var progCats = pick('progressCategories', []);
+      if (!Array.isArray(progCats)) progCats = [];
+      var ps = state.editorPanelState.tasks[task.id] || {};
+      function pc(key) {
+        return (ps[key] === true) ? '' : ' task-block-collapsed';
+      }
+      var nd = state.editorDrafts.newSubtask[task.id];
+      function np(field, fallback) {
+        if (nd && Object.prototype.hasOwnProperty.call(nd, field)) return nd[field];
+        return fallback;
+      }
+      var ntTitle = np('title', '');
+      var ntDesc = np('description', '');
+      var ntPri = np('priority', '1');
+      var ntAsg = np('assigned', today);
+      var ntEff = np('effort', '0');
+      var ntDiff = np('difficulty', DEFAULT_TASK_DIFFICULTY);
+      var ntProj = np('project', '');
+      var ntCats = np('categories', []);
+      if (!Array.isArray(ntCats)) ntCats = [];
+
       bodyHtml = '<div class="task-body">' +
         '<div class="task-body-actions">' +
           '<div class="status-buttons" data-status-target="task">' +
@@ -2442,45 +3344,45 @@
           '<button type="button" class="btn-icon task-delete" title="Delete task"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>' +
         '</div>' +
         '<div class="task-summary-export-flags">' +
-          '<label class="flag-check"><input type="checkbox" class="task-exclude-summary"' + (isTruthyFlag(task.exclude_from_summary) ? ' checked' : '') + '> Exclude from summary</label>' +
-          '<label class="flag-check"><input type="checkbox" class="task-exclude-export"' + (isTruthyFlag(task.exclude_from_export) ? ' checked' : '') + '> Exclude from export</label>' +
-          '<label class="flag-check"><input type="checkbox" class="task-no-effort-needed"' + (isTruthyFlag(task.no_effort_needed) ? ' checked' : '') + '> No Effort Needed</label>' +
-          (isTaskCompleted(task) ? '<label class="flag-check flag-check-archive"><input type="checkbox" class="task-archive-check"' + (task.archived ? ' checked' : '') + '> Archive</label>' : '') +
+          '<label class="flag-check"><input type="checkbox" class="task-exclude-summary"' + (exSumChk ? ' checked' : '') + '> Exclude from summary</label>' +
+          '<label class="flag-check"><input type="checkbox" class="task-exclude-export"' + (exExpChk ? ' checked' : '') + '> Exclude from export</label>' +
+          '<label class="flag-check"><input type="checkbox" class="task-no-effort-needed"' + (noEffChk ? ' checked' : '') + '> No Effort Needed</label>' +
+          (isTaskCompleted(task) ? '<label class="flag-check flag-check-archive"><input type="checkbox" class="task-archive-check"' + (archChk ? ' checked' : '') + '> Archive</label>' : '') +
         '</div>' +
         '<div class="task-update-toggles">' +
-          '<button type="button" class="btn-update-toggle btn-update-details">Update Task Details</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-eta">Update ETA</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-effort">Update Effort</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-status-changes">Update Status Changes</button>' +
-          '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle">Concerns</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-details' + (ps.details === true ? ' active' : '') + '">Update Task Details</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-eta' + (ps.eta === true ? ' active' : '') + '">Update ETA</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-effort' + (ps.effort === true ? ' active' : '') + '">Update Effort</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-status-changes' + (ps.statusChanges === true ? ' active' : '') + '">Update Status Changes</button>' +
+          '<button type="button" class="btn-update-toggle btn-update-toggle-concern btn-add-concern-toggle' + (ps.concerns === true ? ' active' : '') + '">Concerns</button>' +
         '</div>' +
-        '<div class="task-details-block task-toggleable-block task-block-collapsed">' +
+        '<div class="task-details-block task-toggleable-block' + pc('details') + '">' +
           '<h4 class="task-details-title">Task details</h4>' +
           '<div class="task-details-grid">' +
-            '<label class="task-detail-title-field">Title <input type="text" class="task-detail-title" value="' + escapeHtml(task.title || '') + '" placeholder="Task title" autocomplete="off"></label>' +
-            '<label>Priority <input type="number" class="task-detail-priority" min="1" max="10" value="' + (task.priority != null ? task.priority : '') + '" placeholder="1–10"></label>' +
-            '<label>Difficulty ' + renderDifficultySelectHtml(task.difficulty, 'task-detail-difficulty') + '</label>' +
-            '<label>Tags <input type="text" class="task-detail-tags" value="' + escapeHtml((task.tags || []).map(function (t) { return (t || '').replace(/^#/, ''); }).join(', ')) + '" placeholder="e.g. tag1, tag2"></label>' +
-            '<label>Assigned <input type="date" class="task-detail-assigned" value="' + escapeHtml(task.assigned_date || '') + '" placeholder="YYYY-MM-DD"></label>' +
-            '<label>ETA <input type="date" class="task-detail-eta" value="' + escapeHtml(task.eta || '') + '" placeholder="YYYY-MM-DD"></label>' +
-            '<label>Effort (hrs) <input type="number" class="task-detail-effort" min="0" step="0.5" value="' + (task.effort_required_hours != null && task.effort_required_hours !== '' ? task.effort_required_hours : '') + '" placeholder="hrs"></label>' +
-            '<label>Bugs <input type="text" class="task-detail-bugs" value="' + escapeHtml((task.bug_numbers || []).join(', ')) + '" placeholder="—"></label>' +
+            '<label class="task-detail-title-field">Title <input type="text" class="task-detail-title" value="' + escapeHtml(detailTitle) + '" placeholder="Task title" autocomplete="off"></label>' +
+            '<label>Priority <input type="number" class="task-detail-priority" min="1" max="10" value="' + escapeHtml(detailPriorityVal) + '" placeholder="1–10"></label>' +
+            '<label>Difficulty ' + renderDifficultySelectHtml(detailDifficultyVal, 'task-detail-difficulty') + '</label>' +
+            '<label>Tags <input type="text" class="task-detail-tags" value="' + escapeHtml(detailTagsVal) + '" placeholder="e.g. tag1, tag2"></label>' +
+            '<label>Assigned <input type="date" class="task-detail-assigned" value="' + escapeHtml(detailAssignedVal) + '" placeholder="YYYY-MM-DD"></label>' +
+            '<label>ETA <input type="date" class="task-detail-eta" value="' + escapeHtml(detailEtaVal) + '" placeholder="YYYY-MM-DD"></label>' +
+            '<label>Effort (hrs) <input type="number" class="task-detail-effort" min="0" step="0.5" value="' + escapeHtml(effortDraftStr) + '" placeholder="hrs"></label>' +
+            '<label>Bugs <input type="text" class="task-detail-bugs" value="' + escapeHtml(detailBugsVal) + '" placeholder="—"></label>' +
           '</div>' +
           '<div class="task-detail-category-wrap">' +
             '<span class="task-detail-label">Category</span>' +
-            renderCategoryDropdownHtml(task.categories || [], 'task-detail-category-' + task.id) +
+            renderCategoryDropdownHtml(detailCats, 'task-detail-category-' + task.id) +
           '</div>' +
           '<div class="task-detail-project-wrap">' +
             '<span class="task-detail-label">Project</span>' +
-            renderProjectSelectHtml(task.project || '', 'task-detail-project-' + task.id) +
+            renderProjectSelectHtml(detailProjectVal, 'task-detail-project-' + task.id) +
           '</div>' +
           '<button type="button" class="btn-small save-task-details-btn">Save details</button>' +
         '</div>' +
-        '<div class="task-update-eta-block task-toggleable-block task-block-collapsed">' +
+        '<div class="task-update-eta-block task-toggleable-block' + pc('eta') + '">' +
           '<h4 class="task-update-title">Update ETA</h4>' +
           '<p class="task-update-current">Current ETA: <strong' + (!task.eta ? ' class="default-value"' : '') + '>' + escapeHtml(task.eta || '—') + '</strong></p>' +
           '<div class="task-update-row">' +
-            '<input type="date" class="task-update-eta-in" value="' + today + '">' +
+            '<input type="date" class="task-update-eta-in" value="' + escapeHtml(etaUpVal) + '">' +
             '<button type="button" class="btn-small update-eta-btn">Update ETA</button>' +
           '</div>' +
           (task.eta_updates && task.eta_updates.length ? (function () {
@@ -2497,11 +3399,11 @@
             return '<p class="task-update-count">ETA changed ' + updates.length + ' time(s)</p><p class="task-update-chain task-update-history-eta">' + parts.join('') + (dates ? ' <span class="task-update-date">(' + escapeHtml(dates) + ')</span>' : '') + '</p>';
           })() : '') +
         '</div>' +
-        '<div class="task-update-effort-block task-toggleable-block task-block-collapsed">' +
+        '<div class="task-update-effort-block task-toggleable-block' + pc('effort') + '">' +
           '<h4 class="task-update-title">Update Effort</h4>' +
           '<p class="task-update-current">Current effort: <strong' + (task.effort_required_hours == null || task.effort_required_hours === '' ? ' class="default-value"' : '') + '>' + (task.effort_required_hours != null && task.effort_required_hours !== '' ? task.effort_required_hours + ' hrs' : '—') + '</strong></p>' +
           '<div class="task-update-row">' +
-            '<input type="number" class="task-update-effort-in" min="0" step="0.5" placeholder="New effort (hrs)">' +
+            '<input type="number" class="task-update-effort-in" min="0" step="0.5" placeholder="New effort (hrs)" value="' + escapeHtml(effortUpVal) + '">' +
             '<button type="button" class="btn-small update-effort-btn">Update Effort</button>' +
           '</div>' +
           (task.effort_updates && task.effort_updates.length ? (function () {
@@ -2522,25 +3424,25 @@
             return '<p class="task-update-count">Effort changed ' + updates.length + ' time(s)</p><p class="task-update-chain task-update-history-effort">' + parts.join('') + (dates ? ' <span class="task-update-date">(' + escapeHtml(dates) + ')</span>' : '') + '</p>';
           })() : '') +
         '</div>' +
-        renderTaskStatusChangesSection(task) +
-        renderConcernsBlock(task.concerns || []) +
+        renderTaskStatusChangesSection(task, ps.statusChanges === true) +
+        renderConcernsBlock(task.concerns || [], ps.concerns === true) +
         '<div class="task-description-block">' +
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
-            '<div class="task-description-view">' + (desc || '<em class="no-desc">No description</em>') + '</div>' +
+            '<div class="' + descViewCls + '">' + (desc || '<em class="no-desc">No description</em>') + '</div>' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="task-description-edit hidden auto-resize rich-text-target" rows="3" placeholder="Description…">' + escapeHtml(task.description || '') + '</textarea></div>' +
-            '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description"><svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M11.013 1.427a1.75 1.75 0 012.474 0l1.086 1.086a1.75 1.75 0 010 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 01-.927-.928l.929-3.25a1.75 1.75 0 01.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 00-.354 0L3.463 11.098a.25.25 0 00-.064.108l-.631 2.21 2.21-.632a.25.25 0 00.108-.063l8.61-8.61a.25.25 0 000-.354l-1.086-1.086z"/></svg></button>' +
+            '<textarea class="' + descEditCls + '" rows="3" placeholder="Description…">' + escapeHtml(descRaw || '') + '</textarea></div>' +
+            '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description">' + toggleDescSvg + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
           renderProgressLogSection(task.progress_updates, progressLogKeyMain(task.id), false, task.id, null) +
           '<div class="progress-add">' +
             '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="progress-text-in auto-resize rich-text-target" rows="2" placeholder="Progress note…"></textarea></div>' +
-            '<input type="date" class="progress-date-in" value="' + today + '">' +
-            '<input type="number" class="progress-effort-in" placeholder="Hrs" min="0" step="0.5">' +
-            renderProgressCategoryRowHtml([], 'progress-add-cat-' + task.id) +
+            '<textarea class="progress-text-in auto-resize rich-text-target" rows="2" placeholder="Progress note…">' + escapeHtml(progTextVal) + '</textarea></div>' +
+            '<input type="date" class="progress-date-in" value="' + escapeHtml(progDateVal) + '">' +
+            '<input type="number" class="progress-effort-in" placeholder="Hrs" min="0" step="0.5" value="' + escapeHtml(progEffVal) + '">' +
+            renderProgressCategoryRowHtml(progCats, 'progress-add-cat-' + task.id) +
             '<button type="button" class="btn-small add-progress-btn">Add progress</button>' +
           '</div>' +
         '</div>' +
@@ -2558,36 +3460,49 @@
                 '<button type="button" class="filter-option" data-sort-by="assigned_date" data-sort-dir="desc">Assigned date (newest first)</button>' +
               '</div>' +
             '</div>' +
+            renderSubtaskViewTypeDropdown(task.id) +
           '</div>' +
           (task.subtasks && task.subtasks.length ? (function () {
-            var sorted = sortSubtasksForTask(task.id, task.subtasks);
-            return '<ul class="subtask-list">' + sorted.map(function (s) {
+            var filtered = getFilteredSubtasksForTask(task);
+            if (!filtered.length) {
+              return '<p class="subtask-view-empty muted">No sub-tasks match View Type.</p>';
+            }
+            var vp = getSubtaskViewportForTask(task.id);
+            var pageSize = vp.pageSize;
+            var maxStart = Math.max(0, filtered.length - pageSize);
+            var startIdx = Math.min(vp.startIndex, maxStart);
+            if (startIdx !== vp.startIndex) {
+              setSubtaskViewportForTask(task.id, { pageSize: pageSize, startIndex: startIdx });
+            }
+            var slice = filtered.slice(startIdx, startIdx + pageSize);
+            var toolbar = renderSubtaskViewportToolbarHtml(task.id, startIdx, pageSize, filtered.length);
+            return toolbar + '<ul class="subtask-list">' + slice.map(function (s) {
               return renderSubtaskCard(task.id, s, settings);
             }).join('') + '</ul>';
           })() : '') +
           '<div class="new-subtask-toggles">' +
-            '<button type="button" class="btn-update-toggle btn-new-subtask">New Sub-Task</button>' +
+            '<button type="button" class="btn-update-toggle btn-new-subtask' + (ps.newSubtask === true ? ' active' : '') + '">New Sub-Task</button>' +
           '</div>' +
-          '<div class="new-subtask-block task-toggleable-block task-block-collapsed">' +
+          '<div class="new-subtask-block task-toggleable-block' + pc('newSubtask') + '">' +
             '<h4 class="task-details-title">New sub-task</h4>' +
             '<div class="new-subtask-form">' +
-              '<label>Title <input type="text" class="new-subtask-title-in" placeholder="Sub-task title"></label>' +
+              '<label>Title <input type="text" class="new-subtask-title-in" placeholder="Sub-task title" value="' + escapeHtml(ntTitle) + '"></label>' +
               '<label class="new-subtask-desc-label">Description</label>' +
               '<div class="rich-textarea-wrap new-subtask-desc-wrap">' + renderRichFormatToolbarHtml() +
-              '<textarea class="new-subtask-desc-in auto-resize rich-text-target" rows="3" placeholder="Description…"></textarea></div>' +
+              '<textarea class="new-subtask-desc-in auto-resize rich-text-target" rows="3" placeholder="Description…">' + escapeHtml(ntDesc) + '</textarea></div>' +
               '<div class="task-details-grid">' +
-                '<label>Priority <input type="number" class="new-subtask-priority-in" min="1" max="10" value="1" placeholder="1–10"></label>' +
-                '<label>Difficulty ' + renderDifficultySelectHtml(DEFAULT_TASK_DIFFICULTY, 'new-subtask-difficulty') + '</label>' +
-                '<label>Assigned <input type="date" class="new-subtask-assigned-in" value="' + today + '"></label>' +
-                '<label>Effort (hrs) <input type="number" class="new-subtask-effort-in" min="0" step="0.5" value="0" placeholder="hrs"></label>' +
+                '<label>Priority <input type="number" class="new-subtask-priority-in" min="1" max="10" value="' + escapeHtml(ntPri) + '" placeholder="1–10"></label>' +
+                '<label>Difficulty ' + renderDifficultySelectHtml(ntDiff, 'new-subtask-difficulty') + '</label>' +
+                '<label>Assigned <input type="date" class="new-subtask-assigned-in" value="' + escapeHtml(ntAsg) + '"></label>' +
+                '<label>Effort (hrs) <input type="number" class="new-subtask-effort-in" min="0" step="0.5" value="' + escapeHtml(ntEff) + '" placeholder="hrs"></label>' +
               '</div>' +
               '<div class="task-detail-category-wrap">' +
                 '<span class="task-detail-label">Category</span>' +
-                renderCategoryDropdownHtml([], 'new-subtask-category-' + task.id) +
+                renderCategoryDropdownHtml(ntCats, 'new-subtask-category-' + task.id) +
               '</div>' +
               '<div class="task-detail-project-wrap">' +
                 '<span class="task-detail-label">Project</span>' +
-                renderProjectSelectHtml('', 'new-subtask-project-' + task.id) +
+                renderProjectSelectHtml(ntProj, 'new-subtask-project-' + task.id) +
               '</div>' +
               '<button type="button" class="btn-cyan add-subtask-submit-btn">Add Sub-Task</button>' +
             '</div>' +
@@ -2883,6 +3798,7 @@
           block.classList.toggle('task-block-collapsed');
           btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
     card.querySelectorAll('.btn-update-eta').forEach(function (btn) {
@@ -2895,6 +3811,7 @@
           block.classList.toggle('task-block-collapsed');
           btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
     card.querySelectorAll('.btn-update-effort').forEach(function (btn) {
@@ -2907,6 +3824,7 @@
           block.classList.toggle('task-block-collapsed');
           btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
     card.querySelectorAll('.btn-update-status-changes').forEach(function (btn) {
@@ -2919,6 +3837,7 @@
           block.classList.toggle('task-block-collapsed');
           btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
 
@@ -2932,12 +3851,13 @@
           block.classList.toggle('task-block-collapsed');
           btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
 
-    var descView = card.querySelector('.task-description-view');
-    var descEdit = card.querySelector('.task-description-edit');
-    var toggleDesc = card.querySelector('.toggle-desc-edit');
+    var descView = card.querySelector(':scope > .task-body > .task-description-block .task-description-view');
+    var descEdit = card.querySelector(':scope > .task-body > .task-description-block .task-description-edit:not(.subtask-desc-edit)');
+    var toggleDesc = card.querySelector(':scope > .task-body > .task-description-block .toggle-desc-edit');
     if (toggleDesc && descView && descEdit) {
       toggleDesc.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -2948,6 +3868,11 @@
           autoResizeTextarea(descEdit);
         } else {
           updateTask(taskId, { description: descEdit.value });
+          var tdraft = state.editorDrafts.tasks[taskId];
+          if (tdraft) {
+            delete tdraft.description;
+            delete tdraft.descEditing;
+          }
           descEdit.classList.add('hidden');
           descView.classList.remove('hidden');
           descView.innerHTML = descEdit.value ? formatRichDescription(descEdit.value) : '<em class="no-desc">No description</em>';
@@ -2993,6 +3918,12 @@
         if (categories != null) updates.categories = categories;
         updates.project = project;
         updateTask(taskId, updates);
+        var tdPost = state.editorDrafts.tasks[taskId];
+        if (tdPost) {
+          ['title', 'priority', 'tags', 'assigned_date', 'eta', 'effort', 'bugs', 'difficulty', 'project', 'categories'].forEach(function (k) {
+            delete tdPost[k];
+          });
+        }
       });
     });
 
@@ -3041,16 +3972,17 @@
     card.querySelectorAll('.add-progress-btn').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
-        var textIn = card.querySelector('.progress-text-in');
-        var dateIn = card.querySelector('.progress-date-in');
-        var effortIn = card.querySelector('.progress-effort-in');
-        var progCatWrap = card.querySelector('.progress-add .category-dropdown-wrap');
+        var textIn = card.querySelector(':scope > .task-body > .task-progress-block .progress-text-in');
+        var dateIn = card.querySelector(':scope > .task-body > .task-progress-block .progress-date-in');
+        var effortIn = card.querySelector(':scope > .task-body > .task-progress-block .progress-effort-in');
+        var progCatWrap = card.querySelector(':scope > .task-body > .task-progress-block .progress-add .category-dropdown-wrap');
         addProgressUpdate(taskId, {
           text: textIn && textIn.value,
           date_added: dateIn && dateIn.value || new Date().toISOString().slice(0, 10),
           effort_consumed_hours: effortIn ? parseFloat(effortIn.value) || 0 : 0,
           categories: getSelectedCategoriesFromWrap(progCatWrap)
         });
+        pruneTaskDraftProgressFields(taskId);
         if (textIn) textIn.value = '';
         if (dateIn) dateIn.value = '';
         if (effortIn) effortIn.value = '';
@@ -3180,6 +4112,11 @@
           autoResizeTextarea(subDescEdit);
         } else {
             updateSubtask(subTaskId, subId, { description: subDescEdit.value });
+            var subDraft = state.editorDrafts.subtasks[subTaskId + ':' + subId];
+            if (subDraft) {
+              delete subDraft.description;
+              delete subDraft.subDescEditing;
+            }
             subDescEdit.classList.add('hidden');
             subDescView.classList.remove('hidden');
             subDescView.innerHTML = subDescEdit.value ? formatRichDescription(subDescEdit.value) : '<em class="no-desc">No description</em>';
@@ -3196,6 +4133,7 @@
             block.classList.toggle('task-block-collapsed');
             btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
           }
+          refreshEditorSessionPanelsFromDom();
         });
       });
       subCard.querySelectorAll('.btn-update-subtask-status-changes').forEach(function (btn) {
@@ -3206,6 +4144,7 @@
             block.classList.toggle('task-block-collapsed');
             btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
           }
+          refreshEditorSessionPanelsFromDom();
         });
       });
       subCard.querySelectorAll('.subtask-status-changes-block .status-change-save-date-btn').forEach(function (btn) {
@@ -3239,10 +4178,12 @@
           }
           var priorityEl = subCard.querySelector('.subtask-detail-priority');
           var assignedEl = subCard.querySelector('.subtask-detail-assigned');
+          var etaEl = subCard.querySelector('.subtask-detail-eta');
           var effortEl = subCard.querySelector('.subtask-detail-effort');
           var catWrap = subCard.querySelector('.subtask-details-block .category-dropdown-wrap');
           var priority = priorityEl ? Math.min(10, Math.max(1, parseInt(priorityEl.value, 10) || 1)) : undefined;
           var assigned_date = assignedEl ? (assignedEl.value || undefined) : undefined;
+          var eta = etaEl ? (etaEl.value || '') : undefined;
           var effort_required_hours = effortEl != null ? (parseFloat(effortEl.value) || 0) : undefined;
           var categories = catWrap ? getSelectedCategoriesFromWrap(catWrap) : undefined;
           var projEl = subCard.querySelector('.subtask-details-block .task-project-select');
@@ -3252,10 +4193,18 @@
           if (priority != null) updates.priority = priority;
           if (diffEl) updates.difficulty = diffEl.value;
           if (assigned_date != null) updates.assigned_date = assigned_date;
+          if (eta !== undefined) updates.eta = eta;
           if (effort_required_hours != null) updates.effort_required_hours = effort_required_hours;
           if (categories != null) updates.categories = categories;
           updates.project = project;
           updateSubtask(subTaskId, subId, updates);
+          var sdkKey = subTaskId + ':' + subId;
+          var sdPost = state.editorDrafts.subtasks[sdkKey];
+          if (sdPost) {
+            ['title', 'priority', 'assigned_date', 'eta', 'effort', 'difficulty', 'project', 'categories'].forEach(function (k) {
+              delete sdPost[k];
+            });
+          }
         });
       });
 
@@ -3272,6 +4221,7 @@
             effort_consumed_hours: effortIn ? parseFloat(effortIn.value) || 0 : 0,
             categories: getSelectedCategoriesFromWrap(subProgCatWrap)
           });
+          pruneSubtaskDraftProgressFields(subTaskId, subId);
           if (textIn) textIn.value = '';
           if (dateIn) dateIn.value = '';
           if (effortIn) effortIn.value = '';
@@ -3346,6 +4296,7 @@
             block.classList.toggle('task-block-collapsed');
             btn.classList.toggle('active', !block.classList.contains('task-block-collapsed'));
           }
+          refreshEditorSessionPanelsFromDom();
         });
       });
 
@@ -3548,6 +4499,7 @@
             if (assignedIn && !assignedIn.value) assignedIn.value = new Date().toISOString().slice(0, 10);
           }
         }
+        refreshEditorSessionPanelsFromDom();
       });
     });
     card.querySelectorAll('.add-subtask-submit-btn').forEach(function (btn) {
@@ -3581,6 +4533,8 @@
           categories: subCategories,
           project: subProject
         });
+        delete state.editorDrafts.newSubtask[taskIdEl];
+        persistEditorSessionToStorage();
         if (titleIn) titleIn.value = '';
         if (descIn) descIn.value = '';
         if (priorityIn) priorityIn.value = '1';
@@ -3610,6 +4564,75 @@
       });
     });
 
+    card.querySelectorAll('.subtask-viewtype-wrap').forEach(function (wrap) {
+      var taskIdVis = wrap.dataset.taskId;
+      var btnV = wrap.querySelector('.filter-dropdown-btn');
+      var menu = wrap.querySelector('.filter-dropdown-menu');
+      if (btnV) {
+        btnV.addEventListener('click', function (e) {
+          e.stopPropagation();
+          wrap.classList.toggle('open');
+        });
+      }
+      if (menu) {
+        menu.addEventListener('click', function (e) { e.stopPropagation(); });
+      }
+      wrap.querySelectorAll('.subtask-vis-cb').forEach(function (cb) {
+        cb.addEventListener('change', function (e) {
+          e.stopPropagation();
+          if (!state.data.settings.subtaskVisibilityByTaskId) state.data.settings.subtaskVisibilityByTaskId = {};
+          var keys = ['Open', 'Ongoing', 'Done', 'Dropped'];
+          var next = {};
+          keys.forEach(function (k) {
+            var box = wrap.querySelector('.subtask-vis-cb[data-vis-key="' + k + '"]');
+            next[k] = box ? !!box.checked : true;
+          });
+          state.data.settings.subtaskVisibilityByTaskId[taskIdVis] = next;
+          save().then(function () { renderList(); });
+          wrap.classList.remove('open');
+        });
+      });
+    });
+
+    card.querySelectorAll('.subtask-viewport-prev').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var tid = btn.getAttribute('data-task-id');
+        var task = state.data.tasks.find(function (t) { return t.id === tid; });
+        if (!task) return;
+        var vp = getSubtaskViewportForTask(tid);
+        var nextStart = Math.max(0, vp.startIndex - vp.pageSize);
+        setSubtaskViewportForTask(tid, { startIndex: nextStart });
+        save().then(function () { renderList(); });
+      });
+    });
+    card.querySelectorAll('.subtask-viewport-next').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var tid = btn.getAttribute('data-task-id');
+        var task = state.data.tasks.find(function (t) { return t.id === tid; });
+        if (!task) return;
+        var filtered = getFilteredSubtasksForTask(task);
+        var vp = getSubtaskViewportForTask(tid);
+        var maxStart = Math.max(0, filtered.length - vp.pageSize);
+        var nextStart = Math.min(maxStart, vp.startIndex + vp.pageSize);
+        setSubtaskViewportForTask(tid, { startIndex: nextStart });
+        save().then(function () { renderList(); });
+      });
+    });
+    card.querySelectorAll('.subtask-viewport-page-size').forEach(function (sel) {
+      sel.addEventListener('click', function (e) { e.stopPropagation(); });
+      sel.addEventListener('change', function (e) {
+        e.stopPropagation();
+        var tid = sel.getAttribute('data-task-id');
+        var ps = parseInt(sel.value, 10);
+        if (isNaN(ps) || ps < 1) return;
+        ps = Math.min(50, Math.max(1, ps));
+        setSubtaskViewportForTask(tid, { pageSize: ps, startIndex: 0 });
+        save().then(function () { renderList(); });
+      });
+    });
+
     card.querySelectorAll('.category-dropdown-wrap').forEach(function (w) {
       bindCategoryDropdownInWrap(w);
     });
@@ -3636,7 +4659,177 @@
     return d.toISOString().slice(0, 10);
   }
 
+  function purgeEditorDraftsForTask(taskId) {
+    if (!taskId) return;
+    delete state.editorDrafts.tasks[taskId];
+    delete state.editorDrafts.newSubtask[taskId];
+    var pref = taskId + ':';
+    Object.keys(state.editorDrafts.subtasks).forEach(function (k) {
+      if (k.slice(0, pref.length) === pref) delete state.editorDrafts.subtasks[k];
+    });
+    purgeEditorPanelStateForTask(taskId);
+    persistEditorSessionToStorage();
+  }
+
+  function purgeEditorDraftForSubtask(taskId, subtaskId) {
+    if (!taskId || !subtaskId) return;
+    delete state.editorDrafts.subtasks[taskId + ':' + subtaskId];
+    purgeEditorPanelStateForSubtask(taskId, subtaskId);
+    persistEditorSessionToStorage();
+  }
+
+  function pruneTaskDraftProgressFields(taskId) {
+    var t = state.editorDrafts.tasks[taskId];
+    if (!t) return;
+    delete t.progressText;
+    delete t.progressDate;
+    delete t.progressEffort;
+    delete t.progressCategories;
+  }
+
+  function pruneSubtaskDraftProgressFields(taskId, subId) {
+    var t = state.editorDrafts.subtasks[taskId + ':' + subId];
+    if (!t) return;
+    delete t.progressText;
+    delete t.progressDate;
+    delete t.progressEffort;
+    delete t.progressCategories;
+  }
+
+  function captureTaskListEditorDrafts() {
+    var drafts = state.editorDrafts;
+    document.querySelectorAll('#task-list .task-card, #completed-task-list .task-card').forEach(function (card) {
+      var taskId = card.dataset.id;
+      if (!taskId) return;
+      var body = card.querySelector(':scope > .task-body');
+      if (!body) return;
+
+      var d = {};
+      var titleEl = card.querySelector('.task-detail-title');
+      var priorityEl = card.querySelector('.task-detail-priority');
+      var tagsEl = card.querySelector('.task-detail-tags');
+      var assignedEl = card.querySelector('.task-detail-assigned');
+      var etaEl = card.querySelector('.task-detail-eta');
+      var effortEl = card.querySelector('.task-detail-effort');
+      var bugsEl = card.querySelector('.task-detail-bugs');
+      var catWrap = card.querySelector('.task-details-block .category-dropdown-wrap');
+      var projEl = card.querySelector('.task-details-block .task-project-select');
+      var diffEl = card.querySelector('.task-details-block .task-difficulty-select');
+      if (titleEl) d.title = titleEl.value;
+      if (priorityEl) d.priority = priorityEl.value;
+      if (tagsEl) d.tags = tagsEl.value;
+      if (assignedEl) d.assigned_date = assignedEl.value;
+      if (etaEl) d.eta = etaEl.value;
+      if (effortEl) d.effort = effortEl.value;
+      if (bugsEl) d.bugs = bugsEl.value;
+      if (diffEl) d.difficulty = diffEl.value;
+      if (projEl) d.project = projEl.value;
+      if (catWrap) d.categories = getSelectedCategoriesFromWrap(catWrap);
+
+      var descEdit = card.querySelector(':scope > .task-body .task-description-edit:not(.subtask-desc-edit)');
+      if (descEdit) {
+        d.description = descEdit.value;
+        d.descEditing = !descEdit.classList.contains('hidden');
+      }
+
+      function readCheckbox(sel, key) {
+        var inp = card.querySelector(sel);
+        if (inp) d[key] = !!inp.checked;
+      }
+      readCheckbox('.task-exclude-summary', 'exclude_from_summary');
+      readCheckbox('.task-exclude-export', 'exclude_from_export');
+      readCheckbox('.task-no-effort-needed', 'no_effort_needed');
+      readCheckbox('.task-archive-check', 'archived');
+
+      var etaUpIn = card.querySelector('.task-update-eta-in');
+      var effortUpIn = card.querySelector('.task-update-effort-in');
+      if (etaUpIn) d.etaUpdateInput = etaUpIn.value;
+      if (effortUpIn) d.effortUpdateInput = effortUpIn.value;
+
+      var pt = card.querySelector(':scope > .task-body .progress-add .progress-text-in');
+      var pd = card.querySelector(':scope > .task-body .progress-add .progress-date-in');
+      var pe = card.querySelector(':scope > .task-body .progress-add .progress-effort-in');
+      var pc = card.querySelector(':scope > .task-body .progress-add .category-dropdown-wrap');
+      if (pt && pt.value) d.progressText = pt.value;
+      if (pd && pd.value) d.progressDate = pd.value;
+      if (pe && pe.value) d.progressEffort = pe.value;
+      if (pc) d.progressCategories = getSelectedCategoriesFromWrap(pc);
+
+      drafts.tasks[taskId] = d;
+
+      card.querySelectorAll(':scope .subtask-card').forEach(function (subCard) {
+        var sid = subCard.dataset.subtaskId;
+        var tid = subCard.dataset.taskId;
+        if (!sid || tid !== taskId) return;
+        var subBody = subCard.querySelector('.subtask-body');
+        if (!subBody) return;
+        var sd = {};
+        var st = subCard.querySelector('.subtask-detail-title');
+        var sp = subCard.querySelector('.subtask-detail-priority');
+        var sa = subCard.querySelector('.subtask-detail-assigned');
+        var se = subCard.querySelector('.subtask-detail-eta');
+        var sf = subCard.querySelector('.subtask-detail-effort');
+        var scw = subCard.querySelector('.subtask-details-block .category-dropdown-wrap');
+        var spe = subCard.querySelector('.subtask-details-block .task-project-select');
+        var sdiff = subCard.querySelector('.subtask-details-block .task-difficulty-select');
+        if (st) sd.title = st.value;
+        if (sp) sd.priority = sp.value;
+        if (sa) sd.assigned_date = sa.value;
+        if (se) sd.eta = se.value;
+        if (sf) sd.effort = sf.value;
+        if (sdiff) sd.difficulty = sdiff.value;
+        if (spe) sd.project = spe.value;
+        if (scw) sd.categories = getSelectedCategoriesFromWrap(scw);
+        var sdesc = subCard.querySelector('.subtask-desc-edit');
+        if (sdesc) {
+          sd.description = sdesc.value;
+          sd.subDescEditing = !sdesc.classList.contains('hidden');
+        }
+        var sex = subCard.querySelector('.subtask-exclude-summary');
+        var see = subCard.querySelector('.subtask-exclude-export');
+        var sne = subCard.querySelector('.subtask-no-effort-needed');
+        if (sex) sd.exclude_from_summary = !!sex.checked;
+        if (see) sd.exclude_from_export = !!see.checked;
+        if (sne) sd.no_effort_needed = !!sne.checked;
+        var spt = subCard.querySelector('.subtask-progress-text');
+        var spd = subCard.querySelector('.subtask-progress-date');
+        var spef = subCard.querySelector('.subtask-progress-effort');
+        var spc = subCard.querySelector('.progress-add .category-dropdown-wrap');
+        if (spt && spt.value) sd.progressText = spt.value;
+        if (spd && spd.value) sd.progressDate = spd.value;
+        if (spef && spef.value) sd.progressEffort = spef.value;
+        if (spc) sd.progressCategories = getSelectedCategoriesFromWrap(spc);
+        drafts.subtasks[tid + ':' + sid] = sd;
+      });
+
+      var nt = {};
+      var nTitle = card.querySelector('.new-subtask-title-in');
+      var nDesc = card.querySelector('.new-subtask-desc-in');
+      var nPri = card.querySelector('.new-subtask-priority-in');
+      var nAsg = card.querySelector('.new-subtask-assigned-in');
+      var nEff = card.querySelector('.new-subtask-effort-in');
+      var nDiff = card.querySelector('.new-subtask-block .task-difficulty-select');
+      var nCat = card.querySelector('.new-subtask-block .category-dropdown-wrap');
+      var nProj = card.querySelector('.new-subtask-block .task-project-select');
+      if (nTitle) nt.title = nTitle.value;
+      if (nDesc) nt.description = nDesc.value;
+      if (nPri) nt.priority = nPri.value;
+      if (nAsg) nt.assigned = nAsg.value;
+      if (nEff) nt.effort = nEff.value;
+      if (nDiff) nt.difficulty = nDiff.value;
+      if (nProj) nt.project = nProj.value;
+      if (nCat) nt.categories = getSelectedCategoriesFromWrap(nCat);
+      var ntHas = nt.title || nt.description || (nt.priority && nt.priority !== '1') || nt.assigned || nt.effort ||
+        nt.difficulty || (nt.project && String(nt.project).trim()) || (nt.categories && nt.categories.length);
+      if (ntHas) drafts.newSubtask[taskId] = nt;
+      else delete drafts.newSubtask[taskId];
+    });
+    captureEditorPanelStateFromDom();
+    persistEditorSessionToStorage();
+  }
+
   function renderList() {
+    captureTaskListEditorDrafts();
     var tasks = getTasks();
     var filter = state.listFilter || 'all';
     var addSection = document.querySelector('.add-new-task-section');
@@ -3696,18 +4889,88 @@
     }
   }
 
+  function syncDayOffBrowseUi() {
+    var modeSel = $('calendar-dayoff-view-mode');
+    var nav = $('calendar-dayoff-nav');
+    var labelEl = $('calendar-dayoff-period-label');
+    var mode = state.dayOffBrowseMode || 'all';
+    if (modeSel) modeSel.value = mode;
+    if (nav) {
+      if (mode === 'month' || mode === 'year') {
+        nav.hidden = false;
+      } else {
+        nav.hidden = true;
+      }
+    }
+    if (labelEl) {
+      if (mode === 'month') {
+        var ym = state.dayOffBrowseYM || state.calendarFocusDate.slice(0, 7);
+        var parts = ym.split('-');
+        if (parts.length >= 2) {
+          var md = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+          labelEl.textContent = md.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        } else labelEl.textContent = '';
+      } else if (mode === 'year') {
+        labelEl.textContent = String(state.dayOffBrowseYear != null ? state.dayOffBrowseYear : new Date().getFullYear());
+      } else {
+        labelEl.textContent = '';
+      }
+    }
+  }
+
+  function shiftDayOffBrowseMonth(delta) {
+    var ym = state.dayOffBrowseYM || state.calendarFocusDate.slice(0, 7);
+    var p = ym.split('-');
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10) - 1;
+    if (isNaN(y) || isNaN(m)) {
+      var now = new Date();
+      y = now.getFullYear();
+      m = now.getMonth();
+    }
+    var d = new Date(y, m + delta, 1);
+    state.dayOffBrowseYM = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function shiftDayOffBrowseYear(delta) {
+    var y = state.dayOffBrowseYear;
+    if (y == null || isNaN(y)) {
+      y = parseInt(state.calendarFocusDate.slice(0, 4), 10);
+      if (isNaN(y)) y = new Date().getFullYear();
+    }
+    state.dayOffBrowseYear = y + delta;
+  }
+
   function refreshCalendarDayOffList() {
     var ul = $('calendar-dayoff-list');
     if (!ul) return;
-    var offs = getSettings().dayOffs || [];
-    if (!offs.length) {
+    syncDayOffBrowseUi();
+    var raw = getSettings().dayOffs || [];
+    if (!raw.length) {
       ul.innerHTML = '<li class="muted">No day offs logged.</li>';
       return;
     }
-    ul.innerHTML = offs.map(function (o) {
+    var mode = state.dayOffBrowseMode || 'all';
+    var filtered = raw.slice();
+    if (mode === 'month') {
+      var ym = state.dayOffBrowseYM || state.calendarFocusDate.slice(0, 7);
+      filtered = filtered.filter(function (o) { return o && o.date && o.date.slice(0, 7) === ym; });
+    } else if (mode === 'year') {
+      var yy = String(state.dayOffBrowseYear != null ? state.dayOffBrowseYear : parseInt(state.calendarFocusDate.slice(0, 4), 10));
+      filtered = filtered.filter(function (o) { return o && o.date && o.date.slice(0, 4) === yy; });
+    }
+    filtered.sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
+    if (!filtered.length) {
+      ul.innerHTML = '<li class="muted">No day offs in this period.</li>';
+      return;
+    }
+    ul.innerHTML = filtered.map(function (o) {
       var typ = (o.type === 'full' || o.type === 'Full') ? 'Full day' : ('Partial · ' + (o.hoursOff != null ? o.hoursOff + 'h off' : ''));
+      var wd = weekdayShortFromYMD(o.date);
+      var dateBit = escapeHtml(o.date);
+      if (wd) dateBit = escapeHtml(wd) + ' · ' + dateBit;
       return '<li class="calendar-dayoff-item"><span class="calendar-dayoff-item-text">' +
-        escapeHtml(o.date) + ' · ' + escapeHtml(o.reason || 'Other') + ' · ' + escapeHtml(typ) +
+        dateBit + ' · ' + escapeHtml(o.reason || 'Other') + ' · ' + escapeHtml(typ) +
         '</span> <button type="button" class="btn-small calendar-dayoff-remove" data-dayoff-id="' + escapeHtml(o.id) + '">Remove</button></li>';
     }).join('');
   }
@@ -3724,6 +4987,9 @@
     });
     var filterRow = document.getElementById('calendar-filter-row');
     if (filterRow) filterRow.style.display = chartStyle === 'gantt' ? 'none' : '';
+
+    var viewCalPanel = document.getElementById('view-calendar');
+    if (viewCalPanel) viewCalPanel.classList.toggle('calendar-basic-fill', chartStyle === 'basic');
 
     var tasks = getTasks();
     var focus = state.calendarFocusDate || new Date().toISOString().slice(0, 10);
@@ -4135,16 +5401,18 @@
     bwRowsHtml += '<tr><td>OOO</td><td class="export-td-num">' + formatExportDays(oooDaysTotal) + '</td></tr>';
 
     function formatOooExportDetailLine(entry) {
+      var wd = weekdayShortFromYMD(entry.date);
+      var wdHtml = wd ? escapeHtml(wd) + ' · ' : '';
       var datePart = formatDateDMY(entry.date);
       var reasonPart = escapeHtml(entry.reason || 'Other');
       var typ = (entry.type || '').toLowerCase();
       if (typ === 'full') {
-        return datePart + ' — <span class="export-bw-ooo-reason">' + reasonPart + '</span> <span class="export-bw-ooo-meta">(full day)</span>';
+        return wdHtml + datePart + ' — <span class="export-bw-ooo-reason">' + reasonPart + '</span> <span class="export-bw-ooo-meta">(full day)</span>';
       }
       var h = parseFloat(entry.hoursOff);
       if (isNaN(h)) h = 0;
       var hStr = String(h).replace(/\.0$/, '');
-      return datePart + ' — <span class="export-bw-ooo-reason">' + reasonPart + '</span> <span class="export-bw-ooo-meta">(' + escapeHtml(hStr) + ' h off)</span>';
+      return wdHtml + datePart + ' — <span class="export-bw-ooo-reason">' + reasonPart + '</span> <span class="export-bw-ooo-meta">(' + escapeHtml(hStr) + ' h off)</span>';
     }
     var oooBreakdownHtml = '';
     if (oooEntriesInRange.length) {
@@ -4214,7 +5482,14 @@
         var mergeAttr = mergeBlockRows > 1 ? ' rowspan="' + mergeBlockRows + '"' : '';
         var mergeNum = includedSubs.length > 0 ? 'export-td-num export-td-merge' : 'export-td-num';
 
-        var plannedTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-planned">' + (noEffortMain ? '—' : buildPlannedEffortHtml(t)) + '</td>';
+        var plannedTd =
+          '<td' +
+          mergeAttr +
+          ' class="' +
+          mergeNum +
+          ' export-td-eff-planned">' +
+          (noEffortMain ? escapeHtml(mainTaskEffortChipValueWhenExempt(t)) : buildPlannedEffortHtml(t)) +
+          '</td>';
         var cumTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-cumulative">' + cumulativeOutsideRange + '</td>';
         var newMainTd = '<td class="export-td-num export-td-eff-new">' + mainRangeEffort + '</td>';
         var remTd = '<td' + mergeAttr + ' class="' + mergeNum + ' export-td-eff-remaining' + (remainingMainOnly < 0 ? ' negative' : '') + '">' + (noEffortMain ? '—' : remainingMainOnly) + '</td>';
@@ -4395,7 +5670,10 @@
 
         acc.statusChars = Math.max(acc.statusChars, String(t.status || 'Open').length);
 
-        acc.effPlannedChars = Math.max(acc.effPlannedChars, plainEffortStackMaxLineCharLen(t));
+        var mainPlannedCharLen = isTruthyFlag(t.no_effort_needed)
+          ? mainTaskEffortChipValueWhenExempt(t).length
+          : plainEffortStackMaxLineCharLen(t);
+        acc.effPlannedChars = Math.max(acc.effPlannedChars, mainPlannedCharLen);
         acc.effCumChars = Math.max(acc.effCumChars, String(taskEffortOutsideRangeMainAttributed(t, from, to)).length);
         if (!omitNewEffort) {
           acc.effNewChars = Math.max(acc.effNewChars, String(taskEffortInRangeMainAttributed(t, from, to)).length);
@@ -5042,6 +6320,7 @@
     var ptoAgg = 0;
     var sickAgg = 0;
     var otherAgg = 0;
+    var oooEntriesMd = [];
     (exportSettings.dayOffs || []).forEach(function (off) {
       if (!off || !off.date || off.date < from || off.date > to) return;
       var eq = oooEntryDayEquivalent(off);
@@ -5049,7 +6328,14 @@
       if (reason === 'PTO') ptoAgg += eq;
       else if (reason === 'Sick') sickAgg += eq;
       else otherAgg += eq;
+      oooEntriesMd.push({
+        date: off.date,
+        reason: reason,
+        type: off.type,
+        hoursOff: off.hoursOff
+      });
     });
+    oooEntriesMd.sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
     var oooDaysTotal = ptoAgg + sickAgg + otherAgg;
     var miscHours = projectHours.Miscellaneous || 0;
     var projKeys = Object.keys(projectHours).filter(function (k) { return k !== 'Miscellaneous'; }).sort(function (a, b) { return a.localeCompare(b); });
@@ -5122,7 +6408,7 @@
 
         var projectLabel = linkifyConfluenceCell(t.project || 'Miscellaneous');
         var taskTitle = confluenceTitleWithProject(t.project, t.title || '(no title)');
-        var plannedMd = noEffortMain ? '—' : buildPlannedEffortMd(t);
+        var plannedMd = noEffortMain ? mainTaskEffortChipValueWhenExempt(t) : buildPlannedEffortMd(t);
         var cumMd = String(cumulativeOutsideRange);
         var newMainStr = String(mainRangeEffort);
         var remMd = String(remainingMainOnly);
@@ -5197,6 +6483,23 @@
     });
     lines.push('- **Miscellaneous:** ' + formatExportDays(miscHours / exportHpd));
     lines.push('- **OOO:** ' + formatExportDays(oooDaysTotal));
+    if (oooEntriesMd.length) {
+      lines.push('');
+      lines.push('*OOO entries (same export date range):*');
+      oooEntriesMd.forEach(function (e) {
+        var wd = weekdayShortFromYMD(e.date);
+        var ds = formatDateDMYPlain(e.date);
+        var typ = (e.type || '').toLowerCase();
+        var detail;
+        if (typ === 'full') detail = 'full day';
+        else {
+          var ph = parseFloat(e.hoursOff);
+          if (isNaN(ph)) ph = 0;
+          detail = String(ph).replace(/\.0$/, '') + ' h off';
+        }
+        lines.push('- ' + wd + ' · ' + ds + ' · **' + cfPlainForTable(e.reason || 'Other') + '** · ' + detail);
+      });
+    }
     lines.push('');
 
     lines.push('## Tasks with progress in range');
@@ -5886,7 +7189,9 @@
           ((t.project != null && String(t.project).trim()) ? escapeHtml(String(t.project).trim()) : '—') +
           '</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">ETA</span><span class="summary-meta-value">' + escapeHtml(etaLabel) + '</span></span>' +
-          '<span class="summary-meta"><span class="summary-meta-label">Total Planned Effort</span><span class="summary-meta-value">' + (noEffortMain ? '—' : effortReq + ' hrs') + '</span></span>' +
+          '<span class="summary-meta"><span class="summary-meta-label">Total Planned Effort</span><span class="summary-meta-value">' +
+          (noEffortMain ? escapeHtml(mainTaskEffortChipValueWhenExempt(t)) : effortReq + ' hrs') +
+          '</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">Cumulative Effort</span><span class="summary-meta-value">' + cumulativeOutsideMain + ' hrs</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">New Effort Spent</span><span class="summary-meta-value">' + mainAttrInRange + ' hrs</span></span>' +
           '<span class="summary-meta"><span class="summary-meta-label">Total Remaining Effort</span><span class="summary-meta-value ' + remainingMainClass + '">' + (noEffortMain ? '—' : remainingMainOnly + ' hrs') + '</span></span>' +
@@ -6182,6 +7487,8 @@
     if (state.view === 'list') renderList();
     else if (state.view === 'calendar') renderCalendar();
     else if (state.view === 'summary') renderSummary();
+    wireNotesToolbar();
+    renderNotes();
     if (state.progressHistoryOpen) refreshProgressHistoryModal();
     refreshNotifications();
   }
@@ -6251,7 +7558,7 @@
   function updateTopBarViewButtonLabel() {
     var btn = document.getElementById('top-bar-view-btn');
     if (!btn) return;
-    var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary' };
+    var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary', notes: 'Notes' };
     var v = labels[state.view] || state.view || 'List';
     btn.innerHTML = 'View &middot; ' + v + ' ' + SVG_ICON_CHEVRON_DOWN;
   }
@@ -6271,6 +7578,7 @@
   }
 
   function setView(view) {
+    if (state.view === 'notes' && view !== 'notes') closeNotesModal(false);
     state.view = view;
     document.querySelectorAll('.view-panel').forEach(function (p) {
       p.classList.toggle('active', p.id === 'view-' + view);
@@ -6634,6 +7942,35 @@
         dayoffToggle.classList.toggle('active', !dayoffPanel.classList.contains('task-block-collapsed'));
       });
     }
+    var dayoffViewMode = $('calendar-dayoff-view-mode');
+    var dayoffPrev = $('calendar-dayoff-prev');
+    var dayoffNext = $('calendar-dayoff-next');
+    if (dayoffViewMode) {
+      dayoffViewMode.addEventListener('change', function () {
+        state.dayOffBrowseMode = dayoffViewMode.value || 'all';
+        if (state.dayOffBrowseMode === 'month') {
+          state.dayOffBrowseYM = state.calendarFocusDate.slice(0, 7);
+        } else if (state.dayOffBrowseMode === 'year') {
+          var y = parseInt(state.calendarFocusDate.slice(0, 4), 10);
+          state.dayOffBrowseYear = isNaN(y) ? new Date().getFullYear() : y;
+        }
+        refreshCalendarDayOffList();
+      });
+    }
+    if (dayoffPrev) {
+      dayoffPrev.addEventListener('click', function () {
+        if (state.dayOffBrowseMode === 'month') shiftDayOffBrowseMonth(-1);
+        else if (state.dayOffBrowseMode === 'year') shiftDayOffBrowseYear(-1);
+        refreshCalendarDayOffList();
+      });
+    }
+    if (dayoffNext) {
+      dayoffNext.addEventListener('click', function () {
+        if (state.dayOffBrowseMode === 'month') shiftDayOffBrowseMonth(1);
+        else if (state.dayOffBrowseMode === 'year') shiftDayOffBrowseYear(1);
+        refreshCalendarDayOffList();
+      });
+    }
     var dayoffType = $('dayoff-type');
     var dayoffHoursRow = $('dayoff-hours-row');
     function syncDayoffHoursRow() {
@@ -6831,6 +8168,8 @@
         }
       });
     }
+
+    wireNotesToolbar();
 
     load().then(function () {
       applyTheme(getSettings().theme);

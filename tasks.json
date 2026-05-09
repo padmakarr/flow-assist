@@ -1921,6 +1921,195 @@
       "difficulty": "Easy",
       "done_date": "2026-03-28",
       "archived": false
+    },
+    {
+      "id": "ai-1778302001001-noeff-parent",
+      "title": "[Fixture] Release checklist — parent exempt from effort",
+      "description": "Parent has No Effort Needed; ribbon should show only sub-task effort spent (main progress below should not inflate the parent ribbon).",
+      "priority": 3,
+      "tags": [
+        "#qa",
+        "#fixture"
+      ],
+      "assigned_date": "2026-05-01",
+      "eta": "2026-05-16",
+      "effort_required_hours": 40,
+      "bug_numbers": [],
+      "status": "Ongoing",
+      "created_at": "2026-05-01T10:00:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-1778302001002-mainprog",
+          "text": "Decoy entry on parent (should not count toward parent Effort spent chip when parent is exempt).",
+          "date_added": "2026-05-02",
+          "effort_consumed_hours": 12,
+          "categories": []
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [],
+      "no_effort_needed": true,
+      "exclude_from_summary": false,
+      "exclude_from_export": false,
+      "subtasks": [
+        {
+          "id": "ai-1778302001010-sub-api",
+          "title": "API regression slice (tracked)",
+          "description": "Normal sub-task with planned and logged effort.",
+          "status": "Ongoing",
+          "priority": 4,
+          "assigned_date": "2026-05-02",
+          "eta": "2026-05-11",
+          "effort_required_hours": 12,
+          "progress_updates": [
+            {
+              "id": "ai-1778302001011-p1",
+              "text": "Dry-run complete; two failures triaged.",
+              "date_added": "2026-05-04",
+              "effort_consumed_hours": 4,
+              "categories": [
+                "DV"
+              ]
+            },
+            {
+              "id": "ai-1778302001012-p2",
+              "text": "Fixed clk skew assertion in testbench.",
+              "date_added": "2026-05-07",
+              "effort_consumed_hours": 3.5,
+              "categories": [
+                "Debug"
+              ]
+            }
+          ],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "R0X",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Moderate",
+          "no_effort_needed": false,
+          "exclude_from_summary": false,
+          "exclude_from_export": false
+        },
+        {
+          "id": "ai-1778302001020-sub-doc",
+          "title": "Coordination notes (sub exempt — stale hours ignored)",
+          "description": "Marked No Effort Needed; legacy effort_required_hours kept on purpose for rollup tests.",
+          "status": "Open",
+          "priority": 2,
+          "assigned_date": "2026-05-05",
+          "eta": "2026-05-09",
+          "effort_required_hours": 8,
+          "progress_updates": [
+            {
+              "id": "ai-1778302001021-p1",
+              "text": "Quick sync with PD — optional paper trail.",
+              "date_added": "2026-05-06",
+              "effort_consumed_hours": 1,
+              "categories": [
+                "Meeting"
+              ]
+            }
+          ],
+          "categories": [
+            "Meeting"
+          ],
+          "concerns": [],
+          "project": "",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Easy",
+          "no_effort_needed": true,
+          "exclude_from_summary": false,
+          "exclude_from_export": false
+        }
+      ],
+      "categories": [
+        "DV",
+        "Meeting"
+      ],
+      "concerns": [],
+      "project": "R0X",
+      "difficulty": "Moderate"
+    },
+    {
+      "id": "ai-1778302002001-may-sprint",
+      "title": "May sprint — bandwidth smoke tasks",
+      "description": "Recent dates for calendar / summary ranges; no special flags.",
+      "priority": 6,
+      "tags": [
+        "#default",
+        "#may"
+      ],
+      "assigned_date": "2026-05-05",
+      "eta": "2026-05-20",
+      "effort_required_hours": 24,
+      "bug_numbers": [
+        4410,
+        4412
+      ],
+      "status": "Open",
+      "created_at": "2026-05-05T14:30:00.000Z",
+      "progress_updates": [
+        {
+          "id": "ai-1778302002002-p1",
+          "text": "Scope agreed with leads; WBS drafted.",
+          "date_added": "2026-05-06",
+          "effort_consumed_hours": 2,
+          "categories": [
+            "Meeting"
+          ]
+        },
+        {
+          "id": "ai-1778302002003-p2",
+          "text": "Prototype harness wired; first pass green.",
+          "date_added": "2026-05-08",
+          "effort_consumed_hours": 5,
+          "categories": [
+            "DV",
+            "Skillup"
+          ]
+        }
+      ],
+      "eta_updates": [],
+      "effort_updates": [
+        {
+          "id": "ai-1778302002004-e1",
+          "date_recorded": "2026-05-07",
+          "old_effort_hours": 24,
+          "new_effort_hours": 28
+        }
+      ],
+      "subtasks": [
+        {
+          "id": "ai-1778302002010-st",
+          "title": "Cover cross-clock CDC assertions",
+          "description": "",
+          "status": "Open",
+          "priority": 7,
+          "assigned_date": "2026-05-06",
+          "eta": "2026-05-14",
+          "effort_required_hours": 10,
+          "progress_updates": [],
+          "categories": [
+            "DV"
+          ],
+          "concerns": [],
+          "project": "SR100",
+          "effort_updates": [],
+          "done_date": "",
+          "difficulty": "Hard"
+        }
+      ],
+      "categories": [
+        "DV",
+        "Meeting"
+      ],
+      "concerns": [],
+      "project": "SR100",
+      "difficulty": "Hard"
     }
   ],
   "settings": {

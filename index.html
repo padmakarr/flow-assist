@@ -22,6 +22,7 @@
       <button type="button" class="nav-btn active" data-view="list"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 3.25a.25.25 0 01.25-.25h3.5a.25.25 0 01.25.25v.5a.25.25 0 01-.25.25h-3.5A.25.25 0 015 3.75v-.5zM5.25 5a.25.25 0 00-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 00.25-.25v-.5a.25.25 0 00-.25-.25h-5.5z"/></svg></span><span class="nav-btn-text">List</span></button>
       <button type="button" class="nav-btn" data-view="calendar"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 01.75.75V2h5V.75a.75.75 0 011.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0113.25 16H2.75A1.75 1.75 0 011 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 014.75 0zM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25V7.5zm0-3.75V6h11V3.75a.25.25 0 00-.25-.25H2.75a.25.25 0 00-.25.25z"/></svg></span><span class="nav-btn-text">Calendar</span></button>
       <button type="button" class="nav-btn" data-view="summary"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 010 1.5H.75a.75.75 0 01-.75-.75V1.75a.75.75 0 011.5 0zm14.28 2.53a.75.75 0 00-1.06-1.06L10 7.94 7.53 5.47a.75.75 0 00-1.06 0L3.22 8.72a.75.75 0 001.06 1.06L7 7.06l2.47 2.47a.75.75 0 001.06 0l5.25-5.25z"/></svg></span><span class="nav-btn-text">Summary</span></button>
+      <button type="button" class="nav-btn" data-view="notes"><span class="nav-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2.25h5.35l3.9 3.9v7.6a1.25 1.25 0 01-1.25 1.25H4a1.25 1.25 0 01-1.25-1.25v-9.5c0-.69.56-1.25 1.25-1.25z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="currentColor" fill-opacity="0.14"/><path d="M9.35 2.25 L13.25 6.15 H9.35 V2.25 z" fill="currentColor" fill-opacity="0.4"/></svg></span><span class="nav-btn-text">Notes</span></button>
     </nav>
     <div class="sidebar-settings">
       <button type="button" id="settings-btn" class="settings-btn" title="Settings"><span class="settings-btn-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M7.429 1.525a3.5 3.5 0 011.142 0 .75.75 0 01.57.504l.345 1.19a5.46 5.46 0 01.986.57l1.19-.346a.75.75 0 01.732.198 3.5 3.5 0 01.571.989.75.75 0 01-.163.756l-.844.845a5.46 5.46 0 010 1.138l.844.845a.75.75 0 01.163.756 3.5 3.5 0 01-.57.99.75.75 0 01-.733.196l-1.19-.345a5.46 5.46 0 01-.986.57l-.345 1.19a.75.75 0 01-.57.503 3.5 3.5 0 01-1.142 0 .75.75 0 01-.57-.504l-.345-1.19a5.46 5.46 0 01-.986-.57l-1.19.346a.75.75 0 01-.732-.198 3.5 3.5 0 01-.571-.989.75.75 0 01.163-.756l.844-.845a5.46 5.46 0 010-1.138l-.844-.845a.75.75 0 01-.163-.756 3.5 3.5 0 01.57-.99.75.75 0 01.733-.196l1.19.345a5.46 5.46 0 01.986-.57l.345-1.19a.75.75 0 01.57-.503zM8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg></span><span class="settings-btn-text">Settings</span></button>
@@ -162,6 +163,14 @@
       </div>
     </div>
 
+    <div id="notes-modal" class="modal notes-modal" aria-hidden="true">
+      <div class="modal-backdrop notes-modal-backdrop"></div>
+      <div class="modal-content notes-modal-content" role="dialog" aria-modal="true" aria-labelledby="notes-modal-title">
+        <h3 id="notes-modal-title" class="visually-hidden">Note or to-do editor</h3>
+        <div id="notes-modal-body" class="notes-modal-body"></div>
+      </div>
+    </div>
+
     <header class="app-top-bar">
       <div class="top-bar-start">
         <div class="filter-dropdown-wrap top-bar-view-wrap" id="top-bar-view-wrap">
@@ -171,6 +180,7 @@
             <button type="button" class="filter-option top-bar-view-screen" data-view="list" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 010-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 3.25a.25.25 0 01.25-.25h3.5a.25.25 0 01.25.25v.5a.25.25 0 01-.25.25h-3.5A.25.25 0 015 3.75v-.5zM5.25 5a.25.25 0 00-.25.25v.5c0 .138.112.25.25.25h5.5a.25.25 0 00.25-.25v-.5a.25.25 0 00-.25-.25h-5.5z"/></svg> List</button>
             <button type="button" class="filter-option top-bar-view-screen" data-view="calendar" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 01.75.75V2h5V.75a.75.75 0 011.5 0V2h1.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 0113.25 16H2.75A1.75 1.75 0 011 14.25V3.75C1 2.784 1.784 2 2.75 2H4V.75A.75.75 0 014.75 0zM2.5 7.5v6.75c0 .138.112.25.25.25h10.5a.25.25 0 00.25-.25V7.5zm0-3.75V6h11V3.75a.25.25 0 00-.25-.25H2.75a.25.25 0 00-.25.25z"/></svg> Calendar</button>
             <button type="button" class="filter-option top-bar-view-screen" data-view="summary" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.75V13.5h13.75a.75.75 0 010 1.5H.75a.75.75 0 01-.75-.75V1.75a.75.75 0 011.5 0zm14.28 2.53a.75.75 0 00-1.06-1.06L10 7.94 7.53 5.47a.75.75 0 00-1.06 0L3.22 8.72a.75.75 0 001.06 1.06L7 7.06l2.47 2.47a.75.75 0 001.06 0l5.25-5.25z"/></svg> Summary</button>
+            <button type="button" class="filter-option top-bar-view-screen" data-view="notes" role="menuitem"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 2.25h5.35l3.9 3.9v7.6a1.25 1.25 0 01-1.25 1.25H4a1.25 1.25 0 01-1.25-1.25v-9.5c0-.69.56-1.25 1.25-1.25z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="currentColor" fill-opacity="0.14"/><path d="M9.35 2.25 L13.25 6.15 H9.35 V2.25 z" fill="currentColor" fill-opacity="0.4"/></svg> Notes</button>
             <hr class="top-bar-menu-sep" role="separator">
             <div class="top-bar-menu-group-label" role="presentation">Sidebar width</div>
             <button type="button" class="filter-option top-bar-sidebar-opt" data-sidebar-mode="full" role="menuitem">Full width</button>
@@ -360,7 +370,23 @@
             </span>
             <button type="button" id="calendar-dayoff-add-btn" class="btn-small btn-primary">Log day off</button>
           </div>
-          <ul id="calendar-dayoff-list" class="calendar-dayoff-list"></ul>
+          <div class="calendar-dayoff-browse-row">
+            <label class="calendar-dayoff-browse-label">Show
+              <select id="calendar-dayoff-view-mode" class="calendar-dayoff-select">
+                <option value="all">All</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+              </select>
+            </label>
+            <div id="calendar-dayoff-nav" class="calendar-dayoff-nav" hidden>
+              <button type="button" id="calendar-dayoff-prev" class="calendar-nav-btn" title="Previous period" aria-label="Previous period"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M9.78 4.22a.75.75 0 010 1.06L7.06 8l2.72 2.72a.75.75 0 11-1.06 1.06L5.47 8.53a.75.75 0 010-1.06l3.25-3.25a.75.75 0 011.06 0z"/></svg></button>
+              <span id="calendar-dayoff-period-label" class="calendar-dayoff-period-label"></span>
+              <button type="button" id="calendar-dayoff-next" class="calendar-nav-btn" title="Next period" aria-label="Next period"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 4.22a.75.75 0 011.06 0l3.25 3.25a.75.75 0 010 1.06l-3.25 3.25a.75.75 0 01-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 010-1.06z"/></svg></button>
+            </div>
+          </div>
+          <div id="calendar-dayoff-list-scroll" class="calendar-dayoff-list-scroll">
+            <ul id="calendar-dayoff-list" class="calendar-dayoff-list"></ul>
+          </div>
         </div>
       </div>
       <div id="calendar-container"></div>
@@ -380,6 +406,30 @@
         <button type="button" id="export-summary-btn" class="btn-primary summary-export-btn" disabled>Export Summary</button>
       </div>
       <div id="summary-output" class="summary-output"></div>
+    </div>
+
+    <div id="view-notes" class="view-panel">
+      <div class="notes-toolbar">
+        <div class="notes-toolbar-lede">
+          <h3 class="notes-toolbar-title">Notes</h3>
+          <p class="notes-toolbar-sub">Quick thoughts and checklists — click a card to expand.</p>
+        </div>
+        <div class="notes-toolbar-actions">
+          <label class="notes-toolbar-grid-label" for="notes-grid-columns-select">
+            <span class="notes-toolbar-grid-label-text">Per row</span>
+            <select id="notes-grid-columns-select" class="notes-grid-columns-select" title="Columns when the Notes panel is wide enough" aria-label="Default number of notes per row">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5" selected>5</option>
+            </select>
+          </label>
+          <button type="button" id="notes-add-note-btn" class="notes-toolbar-btn notes-toolbar-btn--note">New note</button>
+          <button type="button" id="notes-add-todo-btn" class="notes-toolbar-btn notes-toolbar-btn--todo">New list</button>
+        </div>
+      </div>
+      <div id="notes-board" class="notes-board" aria-live="polite"></div>
     </div>
     </div>
   </main>

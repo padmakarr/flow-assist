@@ -18,5 +18,12 @@ contextBridge.exposeInMainWorld('taskAPI', {
     ipcRenderer.on('file-menu', function (_event, action) {
       callback(action);
     });
+  },
+  syncNoteReminders: (list) => ipcRenderer.invoke('sync-note-reminders', list),
+  reminderPopupAction: (payload) => ipcRenderer.invoke('reminder-popup-action', payload),
+  onNoteReminderAction: (callback) => {
+    ipcRenderer.on('note-reminder-action', function (_event, actionPayload) {
+      callback(actionPayload);
+    });
   }
 });

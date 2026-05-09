@@ -22,6 +22,7 @@
       "preload.js",
       "renderer.js",
       "index.html",
+      "reminder.html",
       "styles.css",
       "tasks.json",
       "data-schema.js",

@@ -1,6 +1,21 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+let mainWindow = null;
+
+/* One main process only (especially on Windows): a second launch exits immediately and focuses the running app. */
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+app.on('second-instance', function () {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
 
 const PREFS_FILENAME = 'flowassist-profile.json';
 
@@ -11,7 +26,8 @@ function getLegacyTasksPath() {
   return path.join(__dirname, 'tasks.json');
 }
 
-let mainWindow = null;
+let reminderPopupWindow = null;
+let reminderTimerId = null;
 
 function getPrefsPath() {
   return path.join(app.getPath('userData'), PREFS_FILENAME);
@@ -68,6 +84,122 @@ function ensureFaJsonPath(userPath) {
     return trimmed.replace(/\.json$/i, '.fa.json');
   }
   return trimmed + '.fa.json';
+}
+
+function clearReminderSchedule() {
+  if (reminderTimerId) {
+    clearTimeout(reminderTimerId);
+    reminderTimerId = null;
+  }
+}
+
+function closeReminderPopupWindow() {
+  if (reminderPopupWindow && !reminderPopupWindow.isDestroyed()) {
+    reminderPopupWindow.close();
+  }
+  reminderPopupWindow = null;
+}
+
+function showReminderOsNotification(payload) {
+  try {
+    if (!Notification.isSupported()) return;
+    const n = new Notification({
+      title: 'FlowAssist',
+      body: payload.title || 'Reminder',
+      silent: false
+    });
+    n.show();
+    n.on('click', function () {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+  } catch (e) {
+    /* ignore */
+  }
+}
+
+function openReminderPopupWindow(payload) {
+  closeReminderPopupWindow();
+  const win = new BrowserWindow({
+    width: 400,
+    height: 300,
+    show: true,
+    alwaysOnTop: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    title: 'Reminder',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+  reminderPopupWindow = win;
+  win.loadFile(path.join(__dirname, 'reminder.html'), {
+    query: {
+      noteId: String(payload.noteId || ''),
+      reminderId: String(payload.reminderId || ''),
+      title: String(payload.title || 'Reminder')
+    }
+  });
+  win.on('closed', function () {
+    reminderPopupWindow = null;
+  });
+}
+
+function fireReminderPayload(payload) {
+  if (!payload || !mainWindow || mainWindow.isDestroyed()) return;
+  var minimized = mainWindow.isMinimized();
+  var vis = mainWindow.isVisible();
+  if (minimized || !vis) {
+    showReminderOsNotification(payload);
+  }
+  openReminderPopupWindow(payload);
+}
+
+function scheduleNoteReminders(list) {
+  clearReminderSchedule();
+  if (!Array.isArray(list) || list.length === 0) return;
+  var now = Date.now();
+  var enriched = [];
+  for (var i = 0; i < list.length; i++) {
+    var e = list[i];
+    if (!e || !e.fireAt) continue;
+    var t = new Date(e.fireAt).getTime();
+    if (isNaN(t)) continue;
+    enriched.push({
+      noteId: e.noteId,
+      reminderId: e.reminderId,
+      fireAt: e.fireAt,
+      title: e.title || 'Reminder',
+      t: t
+    });
+  }
+  if (!enriched.length) return;
+  var overdue = enriched.filter(function (x) {
+    return x.t <= now;
+  });
+  if (overdue.length) {
+    overdue.sort(function (a, b) {
+      return a.t - b.t;
+    });
+    fireReminderPayload(overdue[0]);
+    return;
+  }
+  enriched.sort(function (a, b) {
+    return a.t - b.t;
+  });
+  var next = enriched[0];
+  var delay = Math.min(Math.max(0, next.t - now), 2147483647);
+  reminderTimerId = setTimeout(function () {
+    reminderTimerId = null;
+    fireReminderPayload(next);
+  }, delay);
 }
 
 function profileFilter() {
@@ -382,6 +514,21 @@ ipcMain.handle('open-html-in-browser', async (event, payload) => {
 });
 
 app.whenReady().then(function () {
+  /* Register reminder IPC before any window loads so invoke() never races missing handlers. */
+  ipcMain.handle('sync-note-reminders', async (event, list) => {
+    scheduleNoteReminders(Array.isArray(list) ? list : []);
+    return { ok: true };
+  });
+
+  ipcMain.handle('reminder-popup-action', async (event, payload) => {
+    const p = payload && typeof payload === 'object' ? payload : {};
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('note-reminder-action', p);
+    }
+    closeReminderPopupWindow();
+    return { ok: true };
+  });
+
   createAppMenu();
   createWindow();
 });

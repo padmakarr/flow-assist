@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reminder</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .reminder-popup-page {
+      box-sizing: border-box;
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px 22px 24px;
+      background: linear-gradient(165deg, var(--bg-surface-raised) 0%, var(--bg-content) 100%);
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    .reminder-popup-title {
+      margin: 0 0 6px;
+      font-size: 1.2rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .reminder-popup-sub {
+      margin: 0 0 18px;
+      font-size: var(--font-sm);
+      color: var(--text-muted);
+    }
+    .reminder-popup-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .reminder-popup-actions .btn-small,
+    .reminder-popup-actions .btn-primary {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="reminder-popup-page">
+  <h1 class="reminder-popup-title" id="reminder-title">Reminder</h1>
+  <p class="reminder-popup-sub">Note reminder from FlowAssist</p>
+  <div class="reminder-popup-actions">
+    <button type="button" class="btn-primary" id="reminder-btn-open">Open note</button>
+    <button type="button" class="btn-small" id="reminder-btn-dismiss">Dismiss</button>
+    <button type="button" class="btn-small" data-snooze="5">Snooze 5m</button>
+    <button type="button" class="btn-small" data-snooze="15">Snooze 15m</button>
+    <button type="button" class="btn-small" data-snooze="60">Snooze 1h</button>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var noteId = params.get('noteId') || '';
+      var reminderId = params.get('reminderId') || '';
+      var title = params.get('title') || 'Reminder';
+      var titleEl = document.getElementById('reminder-title');
+      if (titleEl) titleEl.textContent = title;
+      function send(action, extras) {
+        var p = Object.assign({ action: action, noteId: noteId, reminderId: reminderId }, extras || {});
+        if (window.taskAPI && window.taskAPI.reminderPopupAction) {
+          window.taskAPI.reminderPopupAction(p);
+        }
+      }
+      document.getElementById('reminder-btn-dismiss').addEventListener('click', function () {
+        send('dismiss');
+      });
+      document.getElementById('reminder-btn-open').addEventListener('click', function () {
+        send('open');
+      });
+      document.querySelectorAll('[data-snooze]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var m = parseInt(btn.getAttribute('data-snooze'), 10);
+          send('snooze', { minutes: isNaN(m) ? 15 : m });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

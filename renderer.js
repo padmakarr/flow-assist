@@ -36,7 +36,14 @@
     dayOffs: [],
     theme: 'classic',
     /** Notes board: how many columns when the Notes panel is wide (1–5). Narrow layouts still collapse to one column. */
-    notesGridColumns: 5
+    notesGridColumns: 5,
+    /** Relax tab defaults (wellbeing / break timers). */
+    relax: {
+      breakPresetMinutes: 10,
+      workPresetMinutes: 25,
+      soundEnabled: false,
+      tipIndex: 0
+    }
   };
 
   var TASK_DIFFICULTY_LEVELS = ['Very Easy', 'Easy', 'Moderate', 'Hard', 'Very Hard'];
@@ -1533,6 +1540,24 @@
     if (!state.data.notes || typeof state.data.notes !== 'object') state.data.notes = { items: [] };
     if (!Array.isArray(state.data.notes.items)) state.data.notes.items = [];
     state.data.notes.items = state.data.notes.items.map(normalizeNoteItem);
+    mergeRelaxSettingsInto(state.data.settings);
+  }
+
+  function mergeRelaxSettingsInto(settingsObj) {
+    if (!settingsObj) return;
+    var d = DEFAULT_SETTINGS.relax;
+    if (!settingsObj.relax || typeof settingsObj.relax !== 'object') {
+      settingsObj.relax = { breakPresetMinutes: d.breakPresetMinutes, workPresetMinutes: d.workPresetMinutes, soundEnabled: d.soundEnabled, tipIndex: d.tipIndex };
+      return;
+    }
+    var r = settingsObj.relax;
+    var bp = parseInt(r.breakPresetMinutes, 10);
+    var wp = parseInt(r.workPresetMinutes, 10);
+    r.breakPresetMinutes = !isNaN(bp) && bp > 0 && bp <= 180 ? bp : d.breakPresetMinutes;
+    r.workPresetMinutes = !isNaN(wp) && wp > 0 && wp <= 240 ? wp : d.workPresetMinutes;
+    r.soundEnabled = !!r.soundEnabled;
+    var ti = parseInt(r.tipIndex, 10);
+    r.tipIndex = !isNaN(ti) && ti >= 0 ? ti : 0;
   }
 
   function getNotesGridColumns() {
@@ -1578,6 +1603,7 @@
     } else {
       createdAt = nowIso;
     }
+    var reminders = normalizeRemindersArray(raw && raw.reminders);
     return {
       id: id,
       kind: kind,
@@ -1586,8 +1612,130 @@
       color: color,
       checklist: checklist,
       createdAt: createdAt,
-      updatedAt: updatedAt
+      updatedAt: updatedAt,
+      reminders: reminders
     };
+  }
+
+  function normalizeReminderEntry(raw) {
+    raw = raw || {};
+    var id = raw.id ? String(raw.id) : generateId();
+    var fireAt = raw.fireAt != null ? String(raw.fireAt) : '';
+    if (fireAt) {
+      var fd = new Date(fireAt);
+      if (isNaN(fd.getTime())) fireAt = '';
+    }
+    var mode = raw.mode === 'relative' ? 'relative' : 'absolute';
+    var label = raw.label != null ? String(raw.label) : '';
+    var dismissedAt = raw.dismissedAt ? String(raw.dismissedAt) : '';
+    return {
+      id: id,
+      fireAt: fireAt,
+      mode: mode,
+      label: label,
+      dismissedAt: dismissedAt
+    };
+  }
+
+  function normalizeRemindersArray(arr) {
+    if (!Array.isArray(arr)) return [];
+    var out = [];
+    arr.forEach(function (raw) {
+      var r = normalizeReminderEntry(raw);
+      if (r.fireAt) out.push(r);
+    });
+    return out;
+  }
+
+  function isNoteReminderScheduled(r) {
+    if (!r || !r.fireAt || r.dismissedAt) return false;
+    var t = new Date(r.fireAt).getTime();
+    return !isNaN(t) && t > Date.now();
+  }
+
+  function getNextNoteReminder(item) {
+    var list = item && Array.isArray(item.reminders) ? item.reminders : [];
+    var best = null;
+    var bestT = Infinity;
+    list.forEach(function (r) {
+      if (!isNoteReminderScheduled(r)) return;
+      var t = new Date(r.fireAt).getTime();
+      if (t < bestT) {
+        bestT = t;
+        best = r;
+      }
+    });
+    return best;
+  }
+
+  function formatNoteReminderShort(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function collectNoteRemindersSchedulePayload() {
+    var items = state.data.notes && state.data.notes.items ? state.data.notes.items : [];
+    var list = [];
+    items.forEach(function (item) {
+      var reminders = Array.isArray(item.reminders) ? item.reminders : [];
+      reminders.forEach(function (r) {
+        if (!isNoteReminderScheduled(r)) return;
+        list.push({
+          noteId: item.id,
+          reminderId: r.id,
+          fireAt: r.fireAt,
+          title: (item.title && String(item.title).trim()) ? String(item.title).trim() : 'Reminder'
+        });
+      });
+    });
+    list.sort(function (a, b) {
+      return new Date(a.fireAt) - new Date(b.fireAt);
+    });
+    return list;
+  }
+
+  function syncNoteRemindersToMain() {
+    if (!window.taskAPI || typeof window.taskAPI.syncNoteReminders !== 'function') return;
+    var payload = collectNoteRemindersSchedulePayload();
+    window.taskAPI.syncNoteReminders(payload).catch(function () { /* ignore */ });
+  }
+
+  function applyNoteReminderRemoteAction(payload) {
+    if (!payload || typeof payload !== 'object') return;
+    var action = payload.action;
+    var noteId = payload.noteId != null ? String(payload.noteId) : '';
+    var reminderId = payload.reminderId != null ? String(payload.reminderId) : '';
+    if (!noteId || !reminderId) return;
+    var item = findNoteItemById(noteId);
+    if (!item || !Array.isArray(item.reminders)) return;
+    var r = item.reminders.find(function (x) { return x.id === reminderId; });
+    if (!r) return;
+    if (action === 'dismiss') {
+      r.dismissedAt = new Date().toISOString();
+    } else if (action === 'snooze') {
+      var mins = parseInt(payload.minutes, 10);
+      if (isNaN(mins) || mins <= 0) mins = 15;
+      r.dismissedAt = '';
+      r.fireAt = new Date(Date.now() + mins * 60000).toISOString();
+    } else if (action === 'open') {
+      r.dismissedAt = new Date().toISOString();
+    }
+    item.updatedAt = new Date().toISOString();
+    var doOpen = action === 'open';
+    save().then(function () {
+      render();
+      syncNoteRemindersToMain();
+      if (doOpen) {
+        setView('notes');
+        openNotesModal(noteId);
+      }
+    });
   }
 
   function getNoteCreatedDateKey(item) {
@@ -1746,6 +1894,12 @@
     body.querySelectorAll('textarea.notes-card-body.auto-resize').forEach(function (ta) {
       autoResizeTextarea(ta);
     });
+    body.querySelectorAll('.notes-card-reminders').forEach(function (wrap) {
+      var dt = wrap.querySelector('.notes-reminder-datetime');
+      if (dt && !dt.value) {
+        dt.value = localInputValueFromDate(new Date(Date.now() + 60 * 60000));
+      }
+    });
   }
 
   function openNotesModal(id, focusOpts) {
@@ -1870,6 +2024,172 @@
     });
   }
 
+  function renderNoteRemindersSection(item, opts) {
+    opts = opts || {};
+    var compact = opts.compact !== false;
+    var isModal = opts.modal === true;
+    var readonlyPreview = compact && !isModal;
+    var nid = escapeHtml(item.id);
+    var next = getNextNoteReminder(item);
+    var nextTxt = next ? formatNoteReminderShort(next.fireAt) : '';
+    if (readonlyPreview) {
+      var line = next
+        ? '<span class="notes-reminder-summary-line" title="Open for reminders"><span class="notes-reminder-bell" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span> ' + escapeHtml(nextTxt) + '</span>'
+        : '<span class="notes-reminder-summary-line notes-reminder-summary-line--empty muted">No reminder</span>';
+      return '<div class="notes-card-reminders notes-card-reminders--compact">' + line + '</div>';
+    }
+    var listRows = (item.reminders || []).map(function (r) {
+      var active = isNoteReminderScheduled(r);
+      var lbl = formatNoteReminderShort(r.fireAt) || r.fireAt.slice(0, 16);
+      return '<li class="notes-reminder-item' + (active ? '' : ' notes-reminder-item--inactive') + '">' +
+        '<span class="notes-reminder-when">' + escapeHtml(lbl) + (r.dismissedAt ? ' · dismissed' : '') + '</span>' +
+        (isModal
+          ? '<button type="button" class="btn-small notes-reminder-remove" data-note-id="' + nid + '" data-reminder-id="' + escapeHtml(r.id) + '">Remove</button>'
+          : '') +
+        '</li>';
+    }).join('');
+    if (!isModal) return '';
+    return '<div class="notes-card-reminders" data-note-id="' + nid + '">' +
+      '<div class="notes-reminder-head"><span class="notes-reminder-title">Reminders</span></div>' +
+      (listRows ? '<ul class="notes-reminder-list">' + listRows + '</ul>' : '<p class="muted notes-reminder-empty">No reminders yet.</p>') +
+      '<div class="notes-reminder-add">' +
+      '<div class="notes-reminder-mode-row">' +
+      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="absolute" checked> Date &amp; time</label>' +
+      '<label class="notes-reminder-mode-label"><input type="radio" name="nr-mode-' + nid + '" class="notes-reminder-mode" value="relative"> In …</label>' +
+      '</div>' +
+      '<div class="notes-reminder-abs">' +
+      '<input type="datetime-local" class="notes-reminder-datetime add-task-input" aria-label="Reminder date and time">' +
+      '</div>' +
+      '<div class="notes-reminder-rel" hidden>' +
+      '<input type="number" class="notes-reminder-rel-num add-task-input" min="1" max="999" value="15" aria-label="Duration value">' +
+      '<select class="notes-reminder-rel-unit add-task-input" aria-label="Duration unit">' +
+      '<option value="minutes" selected>minutes</option><option value="hours">hours</option></select>' +
+      '<div class="notes-reminder-presets">' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="5">5m</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="15">15m</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="30">30m</button>' +
+      '<button type="button" class="btn-small notes-reminder-preset" data-min="60">1h</button>' +
+      '</div></div>' +
+      '<button type="button" class="btn-small notes-reminder-add-btn" data-note-id="' + nid + '">Add reminder</button>' +
+      '</div></div>';
+  }
+
+  function localInputValueFromDate(d) {
+    if (!d || isNaN(d.getTime())) return '';
+    var pad = function (n) { return n < 10 ? '0' + n : String(n); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function addNoteReminderForNoteId(noteId, options) {
+    options = options || {};
+    var item = findNoteItemById(noteId);
+    if (!item) return;
+    if (!Array.isArray(item.reminders)) item.reminders = [];
+    var fireAtIso = options.fireAtIso;
+    var mode = options.mode === 'relative' ? 'relative' : 'absolute';
+    if (!fireAtIso) return;
+    item.reminders.push({
+      id: generateId(),
+      fireAt: fireAtIso,
+      mode: mode,
+      label: '',
+      dismissedAt: ''
+    });
+    item.updatedAt = new Date().toISOString();
+    renderNotes();
+    if (state.notesModalNoteId === noteId) renderNotesModal();
+    flushNotesSave(true);
+    syncNoteRemindersToMain();
+  }
+
+  function removeNoteReminder(noteId, reminderId) {
+    var item = findNoteItemById(noteId);
+    if (!item || !Array.isArray(item.reminders)) return;
+    item.reminders = item.reminders.filter(function (r) { return r.id !== reminderId; });
+    item.updatedAt = new Date().toISOString();
+    renderNotes();
+    if (state.notesModalNoteId === noteId) renderNotesModal();
+    flushNotesSave(true);
+    syncNoteRemindersToMain();
+  }
+
+  function wireNotesReminderModalEventsOnce() {
+    var modal = document.getElementById('notes-modal');
+    if (!modal || modal.dataset.boundReminders === '1') return;
+    modal.dataset.boundReminders = '1';
+    modal.addEventListener('change', function (e) {
+      if (state.view !== 'notes') return;
+      var modeEl = e.target.closest('.notes-reminder-mode');
+      if (!modeEl || !modal.contains(modeEl)) return;
+      var wrap = modeEl.closest('.notes-card-reminders');
+      if (!wrap) return;
+      var abs = wrap.querySelector('.notes-reminder-abs');
+      var rel = wrap.querySelector('.notes-reminder-rel');
+      var relMode = wrap.querySelector('.notes-reminder-mode[value="relative"]');
+      if (relMode && relMode.checked) {
+        if (abs) abs.hidden = true;
+        if (rel) rel.hidden = false;
+      } else {
+        if (abs) abs.hidden = false;
+        if (rel) rel.hidden = true;
+      }
+    });
+    modal.addEventListener('click', function (e) {
+      if (state.view !== 'notes') return;
+      var body = document.getElementById('notes-modal-body');
+      if (!body || !body.contains(e.target)) return;
+      var preset = e.target.closest('.notes-reminder-preset');
+      if (preset) {
+        e.preventDefault();
+        var min = parseInt(preset.getAttribute('data-min'), 10);
+        if (isNaN(min)) return;
+        var wrap = preset.closest('.notes-card-reminders');
+        if (!wrap) return;
+        var num = wrap.querySelector('.notes-reminder-rel-num');
+        if (num) num.value = String(min);
+        var rRel = wrap.querySelector('.notes-reminder-mode[value="relative"]');
+        if (rRel) {
+          rRel.checked = true;
+          rRel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return;
+      }
+      var addBtn = e.target.closest('.notes-reminder-add-btn');
+      if (addBtn) {
+        e.preventDefault();
+        var nid = addBtn.getAttribute('data-note-id');
+        var wrap2 = addBtn.closest('.notes-card-reminders');
+        if (!nid || !wrap2) return;
+        var useRel = wrap2.querySelector('.notes-reminder-mode[value="relative"]');
+        var fireAtIso = '';
+        var mode = 'absolute';
+        if (useRel && useRel.checked) {
+          mode = 'relative';
+          var n = parseInt((wrap2.querySelector('.notes-reminder-rel-num') || {}).value, 10);
+          var unit = (wrap2.querySelector('.notes-reminder-rel-unit') || {}).value || 'minutes';
+          if (isNaN(n) || n <= 0) n = 15;
+          var ms = unit === 'hours' ? n * 3600000 : n * 60000;
+          fireAtIso = new Date(Date.now() + ms).toISOString();
+        } else {
+          var dt = (wrap2.querySelector('.notes-reminder-datetime') || {}).value;
+          if (!dt) return;
+          var d = new Date(dt);
+          if (isNaN(d.getTime())) return;
+          fireAtIso = d.toISOString();
+        }
+        addNoteReminderForNoteId(nid, { fireAtIso: fireAtIso, mode: mode });
+        return;
+      }
+      var remBtn = e.target.closest('.notes-reminder-remove');
+      if (remBtn) {
+        e.preventDefault();
+        var rnid = remBtn.getAttribute('data-note-id');
+        var rid = remBtn.getAttribute('data-reminder-id');
+        if (rnid && rid) removeNoteReminder(rnid, rid);
+      }
+    });
+  }
+
   function renderNoteCardHtml(item, opts) {
     opts = opts || {};
     var compact = opts.compact !== false;
@@ -1899,6 +2219,7 @@
       ? '<span class="notes-card-date-pill" title="Created">' + escapeHtml(pillLabel) + '</span>'
       : '';
     var headInner = '<div class="notes-card-head-inner">' + titleBlock + datePillHtml + '</div>';
+    var remindersHtml = renderNoteRemindersSection(item, { compact: compact, modal: isModal });
     if (item.kind === 'todo') {
       var fullList = item.checklist || [];
       var rowSource = compact ? fullList.slice(0, 5) : fullList;
@@ -1926,6 +2247,7 @@
       var addBtnHtml = readonlyPreview ? '' : '<button type="button" class="btn-small notes-checklist-add">Add item</button>';
       return '<article class="notes-card notes-card--todo notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
         '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
+        remindersHtml +
         '<ul class="notes-checklist">' + rows + '</ul>' +
         truncatedHint +
         addBtnHtml +
@@ -1939,11 +2261,13 @@
       var bodyClass = 'notes-card-body-display' + (bodyIsEmpty ? ' notes-card-body-display--empty' : '');
       return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
         '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
+        remindersHtml +
         '<div class="' + bodyClass + '">' + bodyInner + '</div>' +
         '</article>';
     }
     return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
       '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
+      remindersHtml +
       '<textarea class="notes-card-body auto-resize" rows="4" placeholder="Take a note…"' + (isModal ? ' readonly' : '') + '>' + bodyEsc + '</textarea>' +
       '</article>';
   }
@@ -2182,6 +2506,7 @@
     wireNotesFilterControls();
     bindNotesEventsOnce();
     bindNotesModalEventsOnce();
+    wireNotesReminderModalEventsOnce();
   }
 
   function updateDocumentTitleFromPath(fullPath) {
@@ -2210,6 +2535,7 @@
   function save() {
     return window.taskAPI.saveTasks(state.data).then(function (result) {
       if (result && !result.success) console.error('Save failed:', result.error);
+      else syncNoteRemindersToMain();
       return result;
     });
   }
@@ -2230,6 +2556,7 @@
       updateDocumentTitleFromPath(res.path);
       loadEditorSessionFromStorage();
       render();
+      syncNoteRemindersToMain();
       return res.data;
     });
   }
@@ -7624,10 +7951,199 @@
     });
   }
 
+  var relaxSession = { breakEndMs: 0, workEndMs: 0, tickId: null };
+
+  var RELAX_TIPS = [
+    { title: 'Hydrate', body: 'Drink a glass of water — even a few sips helps focus and energy.' },
+    { title: 'Move', body: 'Stand up, roll your shoulders, and take a short walk if you can.' },
+    { title: 'Eyes', body: 'Follow the 20-20-20 rule: every 20 minutes, look ~20 feet away for 20 seconds.' },
+    { title: 'Breath', body: 'Take four slow breaths in through the nose and out through the mouth.' },
+    { title: 'Posture', body: 'Drop your shoulders, unclench your jaw, and lengthen your spine.' },
+    { title: 'Micro-reset', body: 'Name three things you can see and two you can hear — ground in the present.' }
+  ];
+
+  function stopRelaxTick() {
+    if (relaxSession.tickId) {
+      clearInterval(relaxSession.tickId);
+      relaxSession.tickId = null;
+    }
+  }
+
+  function formatRelaxCountdown(endMs) {
+    if (!endMs || endMs <= Date.now()) return '0:00';
+    var sec = Math.ceil((endMs - Date.now()) / 1000);
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function relaxPlayChime() {
+    var s = getSettings();
+    if (!s.relax || !s.relax.soundEnabled) return;
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.frequency.value = 880;
+      o.type = 'sine';
+      g.gain.value = 0.08;
+      o.start();
+      setTimeout(function () {
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        o.stop(ctx.currentTime + 0.45);
+        ctx.close();
+      }, 350);
+    } catch (e) { /* ignore */ }
+  }
+
+  function updateRelaxTimerDisplays() {
+    var now = Date.now();
+    if (relaxSession.breakEndMs > 0 && relaxSession.breakEndMs <= now) {
+      relaxSession.breakEndMs = 0;
+      relaxPlayChime();
+    }
+    if (relaxSession.workEndMs > 0 && relaxSession.workEndMs <= now) {
+      relaxSession.workEndMs = 0;
+      relaxPlayChime();
+    }
+    var bd = document.getElementById('relax-break-display');
+    var wd = document.getElementById('relax-work-display');
+    if (bd) {
+      if (relaxSession.breakEndMs > now) bd.textContent = formatRelaxCountdown(relaxSession.breakEndMs);
+      else bd.textContent = '—';
+    }
+    if (wd) {
+      if (relaxSession.workEndMs > now) wd.textContent = formatRelaxCountdown(relaxSession.workEndMs);
+      else wd.textContent = '—';
+    }
+  }
+
+  function startRelaxTickIfNeeded() {
+    stopRelaxTick();
+    relaxSession.tickId = setInterval(function () {
+      var now = Date.now();
+      var b = relaxSession.breakEndMs > now;
+      var w = relaxSession.workEndMs > now;
+      updateRelaxTimerDisplays();
+      if (!b && !w) stopRelaxTick();
+    }, 500);
+  }
+
+  function showRelaxTip(index) {
+    var elTitle = document.getElementById('relax-tip-title');
+    var elBody = document.getElementById('relax-tip-body');
+    var card = document.getElementById('relax-tip-card');
+    if (!elTitle || !elBody) return;
+    var tips = RELAX_TIPS;
+    var i = ((index % tips.length) + tips.length) % tips.length;
+    var tip = tips[i];
+    elTitle.textContent = tip.title;
+    elBody.textContent = tip.body;
+    if (card) {
+      card.classList.remove('relax-tip-card--enter');
+      void card.offsetWidth;
+      card.classList.add('relax-tip-card--enter');
+    }
+    if (!state.data.settings.relax) state.data.settings.relax = {};
+    state.data.settings.relax.tipIndex = i;
+  }
+
+  function wireRelaxTabOnce() {
+    var root = document.getElementById('view-relax');
+    if (!root || root.dataset.relaxWired === '1') return;
+    root.dataset.relaxWired = '1';
+    var soundCb = document.getElementById('relax-sound-enabled');
+    if (soundCb) {
+      soundCb.checked = !!(getSettings().relax && getSettings().relax.soundEnabled);
+      soundCb.addEventListener('change', function () {
+        if (!state.data.settings.relax) state.data.settings.relax = {};
+        state.data.settings.relax.soundEnabled = !!soundCb.checked;
+        save().catch(function () {});
+      });
+    }
+    root.addEventListener('click', function (e) {
+      var pr = e.target.closest('.relax-preset-btn');
+      if (pr) {
+        var min = parseInt(pr.getAttribute('data-relax-break-min'), 10);
+        var inp = document.getElementById('relax-break-custom');
+        if (inp && !isNaN(min)) inp.value = String(min);
+        return;
+      }
+      var pw = e.target.closest('.relax-work-preset-btn');
+      if (pw) {
+        var wm = parseInt(pw.getAttribute('data-relax-work-min'), 10);
+        var winp = document.getElementById('relax-work-custom');
+        if (winp && !isNaN(wm)) winp.value = String(wm);
+      }
+    });
+    var breakStart = document.getElementById('relax-break-start');
+    if (breakStart) {
+      breakStart.addEventListener('click', function () {
+        var inp = document.getElementById('relax-break-custom');
+        var min = inp ? parseInt(inp.value, 10) : 10;
+        if (isNaN(min) || min < 1) min = 10;
+        relaxSession.breakEndMs = Date.now() + min * 60000;
+        startRelaxTickIfNeeded();
+        updateRelaxTimerDisplays();
+      });
+    }
+    var breakReset = document.getElementById('relax-break-reset');
+    if (breakReset) {
+      breakReset.addEventListener('click', function () {
+        relaxSession.breakEndMs = 0;
+        updateRelaxTimerDisplays();
+      });
+    }
+    var workStart = document.getElementById('relax-work-start');
+    if (workStart) {
+      workStart.addEventListener('click', function () {
+        var inp = document.getElementById('relax-work-custom');
+        var min = inp ? parseInt(inp.value, 10) : 25;
+        if (isNaN(min) || min < 1) min = 25;
+        relaxSession.workEndMs = Date.now() + min * 60000;
+        startRelaxTickIfNeeded();
+        updateRelaxTimerDisplays();
+      });
+    }
+    var workReset = document.getElementById('relax-work-reset');
+    if (workReset) {
+      workReset.addEventListener('click', function () {
+        relaxSession.workEndMs = 0;
+        updateRelaxTimerDisplays();
+      });
+    }
+    var nextTip = document.getElementById('relax-tip-next');
+    if (nextTip) {
+      nextTip.addEventListener('click', function () {
+        var cur = (getSettings().relax && getSettings().relax.tipIndex) || 0;
+        showRelaxTip(cur + 1);
+        save().catch(function () {});
+      });
+    }
+  }
+
+  function renderRelax() {
+    wireRelaxTabOnce();
+    var tipIx = (getSettings().relax && getSettings().relax.tipIndex) || 0;
+    showRelaxTip(tipIx);
+    var bci = document.getElementById('relax-break-custom');
+    var wci = document.getElementById('relax-work-custom');
+    var rs = getSettings().relax || {};
+    if (bci && rs.breakPresetMinutes) bci.value = String(rs.breakPresetMinutes);
+    if (wci && rs.workPresetMinutes) wci.value = String(rs.workPresetMinutes);
+    updateRelaxTimerDisplays();
+    if (relaxSession.breakEndMs > Date.now() || relaxSession.workEndMs > Date.now()) startRelaxTickIfNeeded();
+  }
+
   function render() {
     if (state.view === 'list') renderList();
     else if (state.view === 'calendar') renderCalendar();
     else if (state.view === 'summary') renderSummary();
+    else if (state.view === 'relax') renderRelax();
     wireNotesToolbar();
     renderNotes();
     if (state.progressHistoryOpen) refreshProgressHistoryModal();
@@ -7699,7 +8215,7 @@
   function updateTopBarViewButtonLabel() {
     var btn = document.getElementById('top-bar-view-btn');
     if (!btn) return;
-    var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary', notes: 'Notes' };
+    var labels = { list: 'List', calendar: 'Calendar', summary: 'Summary', notes: 'Notes', relax: 'Relax' };
     var v = labels[state.view] || state.view || 'List';
     btn.innerHTML = 'View &middot; ' + v + ' ' + SVG_ICON_CHEVRON_DOWN;
   }
@@ -7719,6 +8235,7 @@
   }
 
   function setView(view) {
+    if (state.view === 'relax' && view !== 'relax') stopRelaxTick();
     if (state.view === 'notes' && view !== 'notes') closeNotesModal(false);
     state.view = view;
     document.querySelectorAll('.view-panel').forEach(function (p) {
@@ -8311,6 +8828,12 @@
     }
 
     wireNotesToolbar();
+
+    if (window.taskAPI && typeof window.taskAPI.onNoteReminderAction === 'function') {
+      window.taskAPI.onNoteReminderAction(function (payload) {
+        applyNoteReminderRemoteAction(payload);
+      });
+    }
 
     load().then(function () {
       applyTheme(getSettings().theme);

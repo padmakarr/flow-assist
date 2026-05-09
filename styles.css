@@ -6067,3 +6067,300 @@ a.auto-link:hover {
   margin: 8px 0 12px;
   font-size: var(--font-sm);
 }
+
+/* ── Notes reminders ───────────────────────────────────────── */
+.notes-card-reminders {
+  margin-bottom: 10px;
+}
+
+.notes-card-reminders--compact {
+  font-size: var(--font-sm);
+}
+
+.notes-reminder-summary-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.notes-reminder-bell svg {
+  vertical-align: -2px;
+  opacity: 0.85;
+}
+
+.notes-reminder-head {
+  margin-bottom: 8px;
+}
+
+.notes-reminder-title {
+  font-size: var(--font-sm);
+  font-weight: 650;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.notes-reminder-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.notes-reminder-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-muted);
+  font-size: var(--font-sm);
+}
+
+.notes-reminder-item--inactive {
+  opacity: 0.65;
+}
+
+.notes-reminder-add {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-muted);
+}
+
+.notes-reminder-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.notes-reminder-mode-label {
+  font-size: var(--font-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notes-reminder-abs .notes-reminder-datetime {
+  width: 100%;
+  max-width: 16rem;
+}
+
+.notes-reminder-rel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.notes-reminder-rel-num {
+  width: 4rem;
+}
+
+.notes-reminder-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* ── Relax tab & nav (sapling green) ─────────────────────── */
+.nav-btn.nav-btn--relax {
+  color: var(--accent-green-bright);
+}
+
+.nav-btn.nav-btn--relax:hover {
+  color: var(--accent-green-bright);
+  background: rgba(63, 185, 80, 0.12);
+}
+
+.nav-btn.nav-btn--relax.active {
+  color: #86efac;
+  background: rgba(63, 185, 80, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(63, 185, 80, 0.35);
+}
+
+.filter-option.top-bar-view-screen--relax {
+  color: var(--accent-green-bright);
+}
+
+.filter-option.top-bar-view-screen--relax:hover {
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.filter-option.top-bar-view-screen--relax.top-bar-option-active {
+  color: #86efac;
+  background: rgba(63, 185, 80, 0.18);
+}
+
+.relax-toolbar {
+  margin-bottom: 18px;
+}
+
+.relax-toolbar-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.relax-toolbar-sub {
+  margin: 6px 0 0;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  max-width: 40rem;
+}
+
+.relax-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.relax-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-muted);
+  padding: 16px 18px 18px;
+  background: linear-gradient(165deg, var(--bg-surface-raised) 0%, var(--bg-surface) 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+.relax-card--wide {
+  grid-column: 1 / -1;
+}
+
+.relax-card-title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.relax-card-hint {
+  margin: 0 0 12px;
+  font-size: var(--font-sm);
+  line-height: 1.45;
+}
+
+.relax-timer-display {
+  font-variant-numeric: tabular-nums;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent-green-bright);
+  margin-bottom: 12px;
+  text-shadow: 0 0 24px rgba(63, 185, 80, 0.25);
+}
+
+.relax-timer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.relax-custom-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.relax-num-input {
+  width: 4.5rem;
+}
+
+.relax-tip-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-muted);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: rgba(63, 185, 80, 0.06);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.relax-tip-card--enter {
+  animation: relaxTipIn 0.45s ease forwards;
+}
+
+@keyframes relaxTipIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.relax-tip-title {
+  margin: 0 0 6px;
+  font-weight: 650;
+  font-size: 1.05rem;
+  color: var(--accent-green-bright);
+}
+
+.relax-tip-body {
+  margin: 0;
+  font-size: var(--font-sm);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.relax-tip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.relax-sound-label {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.relax-sapling-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+  padding-bottom: 8px;
+  color: var(--accent-green-bright);
+  opacity: 0.85;
+}
+
+.relax-sapling-svg {
+  animation: relaxSaplingSway 5s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+@keyframes relaxSaplingSway {
+  0%,
+  100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relax-sapling-svg {
+    animation: none;
+  }
+
+  .relax-tip-card--enter {
+    animation: none;
+  }
+}

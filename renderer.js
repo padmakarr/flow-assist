@@ -1160,8 +1160,8 @@
         '<div class="progress-text">' + (formatRichDescription(p.text || '') || '') + '</div>' +
       '</div>' +
       '<div class="progress-item-edit hidden">' +
-        '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-        '<textarea class="progress-edit-text auto-resize rich-text-target" rows="2" placeholder="Note"></textarea></div>' +
+        '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+        '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="progress-edit-text rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Progress here…"><br></div></div>' +
         '<input type="date" class="progress-edit-date">' +
         '<input type="number" class="progress-edit-effort" placeholder="Hrs" min="0" step="0.5">' +
         renderProgressCategoryRowHtml(pCats, 'progress-edit-cat-' + p.id) +
@@ -1876,6 +1876,9 @@
 
   function notesModalUnlockLazyFields(card) {
     if (!card) return;
+    card.querySelectorAll('.notes-card-body.rich-markdown-wysiwyg[contenteditable="false"], .notes-todo-text.rich-markdown-wysiwyg[contenteditable="false"]').forEach(function (el) {
+      el.setAttribute('contenteditable', 'true');
+    });
     card.querySelectorAll('.notes-card-title[readonly], textarea.notes-card-body[readonly], .notes-todo-text[readonly]').forEach(function (el) {
       el.removeAttribute('readonly');
     });
@@ -1891,9 +1894,7 @@
       return;
     }
     body.innerHTML = renderNoteCardHtml(item, { compact: false, modal: true });
-    body.querySelectorAll('textarea.notes-card-body.auto-resize').forEach(function (ta) {
-      autoResizeTextarea(ta);
-    });
+    bindRichFormatToolbars(body);
     body.querySelectorAll('.notes-card-reminders').forEach(function (wrap) {
       var dt = wrap.querySelector('.notes-reminder-datetime');
       if (dt && !dt.value) {
@@ -2006,8 +2007,12 @@
     if (titleInput) item.title = titleInput.value;
     item.updatedAt = new Date().toISOString();
     if (item.kind === 'note') {
-      var bodyEl = card.querySelector('textarea.notes-card-body');
-      if (bodyEl) item.body = bodyEl.value;
+      var bodyWys = card.querySelector('.notes-card-body.rich-markdown-wysiwyg');
+      if (bodyWys) item.body = getRichWysiwygMarkdown(bodyWys);
+      else {
+        var bodyTa = card.querySelector('textarea.notes-card-body');
+        if (bodyTa) item.body = bodyTa.value;
+      }
       return;
     }
     card.querySelectorAll('.notes-checklist-item').forEach(function (row) {
@@ -2017,7 +2022,13 @@
       for (var i = 0; i < item.checklist.length; i++) {
         if (item.checklist[i].id === itemId) {
           if (chk) item.checklist[i].done = chk.checked;
-          if (txt) item.checklist[i].text = txt.value;
+          if (txt) {
+            if (txt.classList && txt.classList.contains('rich-markdown-wysiwyg')) {
+              item.checklist[i].text = getRichWysiwygMarkdown(txt);
+            } else {
+              item.checklist[i].text = txt.value;
+            }
+          }
           break;
         }
       }
@@ -2046,7 +2057,8 @@
     }
     if (!isModal) return '';
     var scheduledRows = (item.reminders || []).filter(isNoteReminderScheduled);
-    var activeRow = scheduledRows.length
+    var hasReminder = scheduledRows.length > 0;
+    var listHtml = hasReminder
       ? '<ul class="notes-reminder-list notes-reminder-list--single">' + scheduledRows.map(function (r) {
         var lbl = formatNoteReminderShort(r.fireAt) || r.fireAt.slice(0, 16);
         return '<li class="notes-reminder-item">' +
@@ -2054,17 +2066,20 @@
           '<button type="button" class="btn-small notes-reminder-remove" data-note-id="' + nid + '" data-reminder-id="' + escapeHtml(r.id) + '">Remove</button>' +
           '</li>';
       }).join('') + '</ul>'
-      : '<p class="notes-reminder-hint muted">No reminder scheduled yet.</p>';
-    return '<div class="notes-card-reminders notes-card-reminders--modal" data-note-id="' + nid + '">' +
-      '<div class="notes-reminder-section-head">' +
-      '<span class="notes-reminder-section-title">Reminder</span>' +
-      '<span class="notes-reminder-section-sub muted">One schedule per note: choose a date and time, or a countdown.</span>' +
-      '</div>' +
-      activeRow +
+      : '';
+    var sectionHeadHtml = hasReminder
+      ? '<div class="notes-reminder-section-head">' +
+        '<span class="notes-reminder-section-title">Reminder</span>' +
+        '</div>'
+      : '';
+    var wrapperMods = 'notes-card-reminders notes-card-reminders--modal' +
+      (hasReminder ? '' : ' notes-card-reminders--modal-empty');
+    var toolbarHtml =
       '<div class="notes-reminder-toolbar">' +
       '<button type="button" class="btn-secondary notes-reminder-dropdown-toggle" data-note-id="' + nid + '" aria-expanded="false" aria-haspopup="true">' +
-      (scheduledRows.length ? 'Change reminder' : 'Add reminder') +
-      '</button></div>' +
+      (hasReminder ? 'Change reminder' : 'Add reminder') +
+      '</button></div>';
+    var dropdownHtml =
       '<div class="notes-reminder-dropdown" hidden>' +
       '<fieldset class="notes-reminder-fieldset">' +
       '<legend class="notes-reminder-legend">How should we remind you?</legend>' +
@@ -2093,7 +2108,13 @@
       '<div class="notes-reminder-dropdown-actions">' +
       '<button type="button" class="btn-primary notes-reminder-save-btn" data-note-id="' + nid + '">Save reminder</button>' +
       '<button type="button" class="btn-secondary notes-reminder-cancel-dropdown">Cancel</button>' +
-      '</div></div></div>';
+      '</div></div>';
+    return '<div class="' + wrapperMods + '" data-note-id="' + nid + '">' +
+      sectionHeadHtml +
+      listHtml +
+      toolbarHtml +
+      dropdownHtml +
+      '</div>';
   }
 
   function localInputValueFromDate(d) {
@@ -2290,20 +2311,30 @@
       var moreCount = compact && fullList.length > 5 ? fullList.length - 5 : 0;
       var rows = rowSource.map(function (row) {
         var done = row.done ? ' checked' : '';
-        var t = escapeHtml(row.text || '');
         var liClass = 'notes-checklist-item' + (row.done ? ' notes-checklist-item--done' : '');
         if (readonlyPreview) {
+          var rawTx = row.text != null ? String(row.text) : '';
+          var todoDisp = rawTx.trim()
+            ? formatRichDescription(rawTx)
+            : '';
           return '<li class="' + liClass + '" data-item-id="' + escapeHtml(row.id) + '">' +
             '<div class="notes-checklist-row notes-checklist-row--readonly">' +
             '<input type="checkbox" class="notes-todo-done"' + done + ' title="Done">' +
-            '<span class="notes-todo-text-display">' + t + '</span>' +
+            '<span class="notes-todo-text-display">' + todoDisp + '</span>' +
             '</div></li>';
         }
+        var rawTodo = row.text != null ? String(row.text) : '';
+        var todoInner = rawTodo.trim() ? formatRichDescription(rawTodo) : '<br>';
+        var ceTodo = isModal ? 'false' : 'true';
         return '<li class="' + liClass + '" data-item-id="' + escapeHtml(row.id) + '">' +
-          '<label class="notes-checklist-row">' +
+          '<div class="notes-checklist-row notes-checklist-row--rich">' +
           '<input type="checkbox" class="notes-todo-done"' + done + '>' +
-          '<input type="text" class="notes-todo-text"' + (isModal ? ' readonly' : '') + ' value="' + t + '" placeholder="Item…" autocomplete="off">' +
-          '</label></li>';
+          '<div class="notes-todo-rich-column">' +
+          '<div class="rich-textarea-wrap notes-todo-rich-wrap" data-rich-wysiwyg="1">' +
+          renderRichFormatToolbarHtml() +
+          '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="' + ceTodo + '"' +
+          ' class="notes-todo-text rich-markdown-wysiwyg auto-resize" data-placeholder="Item…">' +
+          todoInner + '</div></div></div></div></li>';
       }).join('');
       var truncatedHint = moreCount > 0
         ? '<p class="notes-checklist-truncated muted">+' + moreCount + ' more — open to view</p>'
@@ -2318,21 +2349,28 @@
         '</article>';
     }
     var rawBody = item.body != null ? String(item.body) : '';
-    var bodyEsc = escapeHtml(rawBody);
     var bodyIsEmpty = !rawBody.trim();
     if (readonlyPreview) {
-      var bodyInner = bodyIsEmpty ? 'No content' : bodyEsc;
+      var bodyInnerRo = bodyIsEmpty ? 'No content' : formatRichDescription(rawBody);
       var bodyClass = 'notes-card-body-display' + (bodyIsEmpty ? ' notes-card-body-display--empty' : '');
       return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
         '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
         remindersHtml +
-        '<div class="' + bodyClass + '">' + bodyInner + '</div>' +
+        '<div class="' + bodyClass + '">' + bodyInnerRo + '</div>' +
         '</article>';
     }
+    var bodyWysiwygInner = rawBody.trim() ? formatRichDescription(rawBody) : '<br>';
+    var ceNote = isModal ? 'false' : 'true';
+    var noteBodyBlock =
+      '<div class="rich-textarea-wrap notes-note-body-wrap" data-rich-wysiwyg="1">' +
+      renderRichFormatToolbarHtml() +
+      '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="' + ceNote + '"' +
+      ' class="notes-card-body rich-markdown-wysiwyg auto-resize" data-placeholder="Take a note…">' +
+      bodyWysiwygInner + '</div></div>';
     return '<article class="notes-card notes-card--note notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
       '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
       remindersHtml +
-      '<textarea class="notes-card-body auto-resize" rows="4" placeholder="Take a note…"' + (isModal ? ' readonly' : '') + '>' + bodyEsc + '</textarea>' +
+      noteBodyBlock +
       '</article>';
   }
 
@@ -2353,6 +2391,7 @@
     board.innerHTML = items.map(function (it) {
       return renderNoteCardHtml(it, { compact: true });
     }).join('');
+    bindRichFormatToolbars(board);
   }
 
   function bindNotesEventsOnce() {
@@ -2391,6 +2430,7 @@
       if (cardHit && board.contains(cardHit)) {
         if (e.target.closest('input.notes-todo-done')) return;
         if (e.target.closest('button')) return;
+        if (e.target.closest('.rich-textarea-wrap[data-rich-wysiwyg="1"]')) return;
         var nidOpen = cardHit.getAttribute('data-note-id');
         if (nidOpen) openNotesModal(nidOpen);
       }
@@ -2427,6 +2467,10 @@
       var body = document.getElementById('notes-modal-body');
       var card = e.target.closest('.notes-card');
       if (!body || !card || !body.contains(card)) return;
+      var unlockBody = e.target.closest && e.target.closest('.notes-card-body.rich-markdown-wysiwyg[contenteditable="false"]');
+      if (unlockBody) unlockBody.setAttribute('contenteditable', 'true');
+      var unlockTodo = e.target.closest && e.target.closest('.notes-todo-text.rich-markdown-wysiwyg[contenteditable="false"]');
+      if (unlockTodo) unlockTodo.setAttribute('contenteditable', 'true');
       var t = e.target;
       if (t.matches('.notes-card-title[readonly], textarea.notes-card-body[readonly], .notes-todo-text[readonly]')) {
         t.removeAttribute('readonly');
@@ -3208,9 +3252,34 @@
     if (!root || !root.querySelectorAll) return;
     root.querySelectorAll('.rich-format-toolbar').forEach(function (toolbar) {
       if (toolbar.getAttribute('data-rich-bound') === '1') return;
-      toolbar.setAttribute('data-rich-bound', '1');
       var wrap = toolbar.closest('.rich-textarea-wrap');
+      var wysWrap = wrap && wrap.getAttribute('data-rich-wysiwyg') === '1';
+      var wysEditor = wysWrap && wrap.querySelector('.rich-markdown-wysiwyg');
       var ta = wrap && wrap.querySelector('textarea');
+      if (wysEditor && wysWrap) {
+        bindRichMarkdownWysiwygPaste(wysEditor);
+        ensureWysiwygToolbarGlobalSelectionSync();
+        var syncEd = function () {
+          scheduleRichWysiwygToolbarSync(wysEditor);
+        };
+        ['keyup', 'mouseup', 'input', 'focus'].forEach(function (ev) {
+          wysEditor.addEventListener(ev, syncEd);
+        });
+        toolbar.querySelectorAll('[data-rich-cmd]').forEach(function (btn) {
+          btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (wysEditor.getAttribute('contenteditable') === 'false') {
+              wysEditor.setAttribute('contenteditable', 'true');
+            }
+            wysEditor.focus();
+            applyRichWysiwygToolbarCommand(wysEditor, btn.getAttribute('data-rich-cmd'));
+          });
+        });
+        syncRichWysiwygToolbarStateForEditor(wysEditor);
+        toolbar.setAttribute('data-rich-bound', '1');
+        return;
+      }
       if (!ta) return;
       toolbar.querySelectorAll('[data-rich-cmd]').forEach(function (btn) {
         btn.addEventListener('click', function (e) {
@@ -3219,6 +3288,7 @@
           applyRichToolbarCommand(ta, btn.getAttribute('data-rich-cmd'));
         });
       });
+      toolbar.setAttribute('data-rich-bound', '1');
     });
   }
 
@@ -3256,9 +3326,49 @@
     }
   }
 
+  /** Inside a `**...**` span, single `*...*` is italic; `++...++` is underline (may nest). */
+  function applyRichInlineFormatsInsideBoldRun(run) {
+    var x = run;
+    x = x.replace(/\+\+([^+]+)\+\+/g, '<u>$1</u>');
+    x = x.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, function (_, a, b, c) {
+      return a + '<em>' + b + '</em>' + c;
+    });
+    return x;
+  }
+
+  /**
+   * Bold must use balanced `**` pairs so inner `*italic*` from nested formatting still parses.
+   * (Serializer emits e.g. `**hello*mid*hello**` for <strong>hello<em>mid</em>hello</strong>.)
+   */
+  function applyBoldDoubleAsteriskBalanced(escapedLine) {
+    var s = escapedLine;
+    var out = '';
+    var i = 0;
+    while (i < s.length) {
+      var open = s.indexOf('**', i);
+      if (open === -1) {
+        out += s.slice(i);
+        break;
+      }
+      out += s.slice(i, open);
+      var close = s.indexOf('**', open + 2);
+      if (close === -1) {
+        out += s.slice(open);
+        break;
+      }
+      var inner = s.slice(open + 2, close);
+      inner = applyRichInlineFormatsInsideBoldRun(inner);
+      out += '<strong>' + inner + '</strong>';
+      i = close + 2;
+    }
+    return out;
+  }
+
   function applyRichInlineFormats(escapedLine) {
     var x = escapedLine;
-    x = x.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    /* Bold+italic single run (***x***) before splitting `**` pairs. */
+    x = x.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    x = applyBoldDoubleAsteriskBalanced(x);
     x = x.replace(/\+\+([^+]+)\+\+/g, '<u>$1</u>');
     x = x.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, function (_, a, b, c) {
       return a + '<em>' + b + '</em>' + c;
@@ -3359,6 +3469,400 @@
         return formatRichPlainBlock(p.v);
       }).join('');
     }).join('');
+  }
+
+  /** Populate rich WYSIWYG editor DOM from stored markdown (contenteditable only). */
+  function setRichWysiwygFromMarkdown(editorEl, markdown) {
+    if (!editorEl || editorEl.tagName === 'TEXTAREA') return;
+    var md = markdown == null ? '' : String(markdown);
+    editorEl.innerHTML = md ? formatRichDescription(md) : '<br>';
+  }
+
+  /** Read markdown from a rich WYSIWYG editor (textarea legacy or contenteditable). */
+  function getRichWysiwygMarkdown(editorEl) {
+    if (!editorEl) return '';
+    if (editorEl.tagName === 'TEXTAREA') return editorEl.value;
+    if (editorEl.getAttribute('contenteditable') === 'true' || editorEl.isContentEditable) {
+      return wysiwygHtmlToTaskDescriptionMarkdown(editorEl);
+    }
+    return '';
+  }
+
+  function getRichWysiwygMarkdownTrim(editorEl) {
+    return String(getRichWysiwygMarkdown(editorEl) || '').trim();
+  }
+
+  /**
+   * Mousedown (capture) snapshots markdown before the button steals focus from a
+   * contenteditable, which can normalize/collapse formatting so click-time reads differ.
+   */
+  function bindRichEditorMarkdownSnapshotOnMousedown(btn, getEditor) {
+    if (!btn || typeof getEditor !== 'function') return;
+    function snap(e) {
+      if (e && e.button !== 0) return;
+      var ed = getEditor();
+      if (!ed || (ed.closest && ed.closest('.hidden'))) return;
+      btn.__faRichMdSnap = getRichWysiwygMarkdown(ed);
+    }
+    btn.addEventListener('pointerdown', snap, true);
+    btn.addEventListener('mousedown', snap, true);
+  }
+
+  function takeRichEditorMarkdownOnSubmit(btn, getEditor) {
+    if (btn && Object.prototype.hasOwnProperty.call(btn, '__faRichMdSnap')) {
+      var s = btn.__faRichMdSnap;
+      delete btn.__faRichMdSnap;
+      return s;
+    }
+    var ed = getEditor();
+    return ed ? getRichWysiwygMarkdown(ed) : '';
+  }
+
+  /**
+   * Serialize task-description WYSIWYG DOM back to the app's markdown-like description string.
+   * Matches dialect consumed by formatRichDescription / segmentRichFencedBlocks.
+   */
+  function wysiwygHtmlToTaskDescriptionMarkdown(root) {
+    if (!root) return '';
+    function textOnlyEmpty() {
+      var t = root.textContent.replace(/\u00a0/g, ' ').replace(/\u200b/g, '').trim();
+      if (t) return false;
+      return !root.querySelector('ul, ol, pre, li');
+    }
+    if (textOnlyEmpty()) return '';
+
+    function escInlineCodeBody(s) {
+      return String(s || '').replace(/`/g, '\u2018');
+    }
+
+    function serializeInline(el) {
+      if (el && el.nodeType === 1) {
+        var selfNm = el.nodeName;
+        if (selfNm === 'STRONG' || selfNm === 'B' || selfNm === 'EM' || selfNm === 'I' || selfNm === 'U') {
+          var midSelf = '';
+          for (var cx = el.firstChild; cx; cx = cx.nextSibling) {
+            if (cx.nodeType === 3) midSelf += cx.textContent;
+            else if (cx.nodeType === 1) midSelf += serializeInline(cx);
+          }
+          if (selfNm === 'STRONG' || selfNm === 'B') return '**' + midSelf + '**';
+          if (selfNm === 'EM' || selfNm === 'I') return '*' + midSelf + '*';
+          if (selfNm === 'U') return '++' + midSelf + '++';
+        }
+      }
+      var out = '';
+      for (var ch = el.firstChild; ch; ch = ch.nextSibling) {
+        if (ch.nodeType === 3) {
+          out += ch.textContent;
+        } else if (ch.nodeType === 1) {
+          var nm = ch.nodeName;
+          if (nm === 'BR') out += '\n';
+          else if (nm === 'STRONG' || nm === 'B' || nm === 'EM' || nm === 'I' || nm === 'U') out += serializeInline(ch);
+          else if (nm === 'CODE') {
+            if (ch.parentNode && ch.parentNode.nodeName === 'PRE') continue;
+            out += '`' + escInlineCodeBody(ch.textContent) + '`';
+          } else if (nm === 'A') out += serializeInline(ch);
+          else if (nm === 'SPAN' || nm === 'FONT') {
+            var st = ch.style;
+            var fw = st && (st.fontWeight === 'bold' || st.fontWeight === '700' || parseInt(st.fontWeight, 10) >= 600);
+            var it = st && st.fontStyle === 'italic';
+            var ul = st && st.textDecorationLine && String(st.textDecorationLine).indexOf('underline') >= 0;
+            if (fw) out += '**' + serializeInline(ch) + '**';
+            else if (it) out += '*' + serializeInline(ch) + '*';
+            else if (ul) out += '++' + serializeInline(ch) + '++';
+            else out += serializeInline(ch);
+          }
+          else if (nm === 'UL') out += serializeUl(ch);
+          else if (nm === 'OL') out += serializeOl(ch);
+          else if (nm === 'PRE') out += serializePre(ch);
+          else if (nm === 'DIV' || nm === 'P') out += serializeInline(ch);
+          else out += serializeInline(ch);
+        }
+      }
+      return out;
+    }
+
+    function serializeLiLine(li) {
+      var parts = [];
+      for (var c = li.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 1 && (c.nodeName === 'UL' || c.nodeName === 'OL')) break;
+        if (c.nodeType === 3) parts.push(c.textContent);
+        else if (c.nodeType === 1) parts.push(serializeInline(c));
+      }
+      return parts.join('').replace(/\n/g, ' ').trim();
+    }
+
+    function serializeUl(ul) {
+      var lines = [];
+      [].forEach.call(ul.children, function (li) {
+        if (li.nodeName !== 'LI') return;
+        lines.push('- ' + serializeLiLine(li));
+        [].forEach.call(li.children, function (child) {
+          if (child.nodeName === 'UL') lines.push(serializeUl(child));
+          else if (child.nodeName === 'OL') lines.push(serializeOl(child));
+        });
+      });
+      return lines.join('\n');
+    }
+
+    function serializeOl(ol) {
+      var lines = [];
+      [].forEach.call(ol.children, function (li) {
+        if (li.nodeName !== 'LI') return;
+        lines.push('1. ' + serializeLiLine(li));
+        [].forEach.call(li.children, function (child) {
+          if (child.nodeName === 'UL') lines.push(serializeUl(child));
+          else if (child.nodeName === 'OL') lines.push(serializeOl(child));
+        });
+      });
+      return lines.join('\n');
+    }
+
+    function serializePre(pre) {
+      var code = pre.querySelector('code');
+      var body = code ? code.textContent : pre.textContent;
+      return '```\n' + String(body || '').replace(/\r\n/g, '\n') + '\n```';
+    }
+
+    function serializeBlockEl(el) {
+      var nm = el.nodeName;
+      if (nm === 'UL') return serializeUl(el);
+      if (nm === 'OL') return serializeOl(el);
+      if (nm === 'PRE') return serializePre(el);
+      return serializeInline(el);
+    }
+
+    var chunks = [];
+    var ch = root.firstChild;
+    while (ch) {
+      if (ch.nodeType === 3) {
+        var txtRun = String(ch.textContent || '');
+        var adv = ch.nextSibling;
+        while (adv && adv.nodeType === 3) {
+          txtRun += String(adv.textContent || '');
+          adv = adv.nextSibling;
+        }
+        if (txtRun) chunks.push({ block: false, s: txtRun });
+        ch = adv;
+        continue;
+      }
+      if (ch.nodeType === 1) {
+        var name = ch.nodeName;
+        if (name === 'BR') {
+          chunks.push({ block: false, s: '\n' });
+        } else if (name === 'UL' || name === 'OL' || name === 'PRE') {
+          var ser = serializeBlockEl(ch);
+          if (ser) chunks.push({ block: true, s: ser });
+        } else if (name === 'DIV' || name === 'P') {
+          var blk = serializeBlockEl(ch).replace(/\n+$/g, '');
+          if (blk) chunks.push({ block: true, s: blk });
+        } else {
+          var inl = serializeInline(ch);
+          if (inl) chunks.push({ block: false, s: inl });
+        }
+      }
+      ch = ch.nextSibling;
+    }
+    var filtered = chunks.filter(function (c) {
+      return c && c.s != null && String(c.s).length > 0;
+    });
+    var joined = '';
+    for (var j = 0; j < filtered.length; j++) {
+      if (!j) {
+        joined = filtered[j].s;
+        continue;
+      }
+      var sep = filtered[j - 1].block || filtered[j].block ? '\n' : '';
+      joined += sep + filtered[j].s;
+    }
+    joined = joined.replace(/\u00a0/g, ' ');
+    joined = joined.replace(/\n{3,}/g, '\n\n');
+    return joined.replace(/\n+$/g, '');
+  }
+
+  function applyRichWysiwygToolbarCommand(editor, cmd) {
+    if (!editor || !cmd) return;
+    if (!editor.isContentEditable && editor.getAttribute('contenteditable') !== 'true') return;
+    editor.focus();
+    try {
+      if (cmd === 'bold') {
+        document.execCommand('bold', false, null);
+      } else if (cmd === 'italic') {
+        document.execCommand('italic', false, null);
+      } else if (cmd === 'underline') {
+        document.execCommand('underline', false, null);
+      } else if (cmd === 'bullet') {
+        document.execCommand('insertUnorderedList', false, null);
+      } else if (cmd === 'numlist') {
+        document.execCommand('insertOrderedList', false, null);
+      } else if (cmd === 'code') {
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+          var range = sel.getRangeAt(0);
+          var txt = range.toString() || 'code';
+          range.deleteContents();
+          var codeEl = document.createElement('code');
+          codeEl.className = 'rich-code';
+          codeEl.textContent = txt;
+          range.insertNode(codeEl);
+          range.setStartAfter(codeEl);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      } else if (cmd === 'codeblock') {
+        var sel2 = window.getSelection();
+        if (sel2 && sel2.rangeCount) {
+          var range2 = sel2.getRangeAt(0);
+          var body = range2.toString() || 'code';
+          range2.deleteContents();
+          var pre = document.createElement('pre');
+          pre.className = 'rich-code-block';
+          var codeInner = document.createElement('code');
+          codeInner.textContent = body;
+          pre.appendChild(codeInner);
+          range2.insertNode(pre);
+          var z = document.createTextNode('\n');
+          pre.parentNode.insertBefore(z, pre.nextSibling);
+          range2.setStart(codeInner, 0);
+          range2.setEnd(codeInner, codeInner.childNodes.length);
+          sel2.removeAllRanges();
+          sel2.addRange(range2);
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    scheduleRichWysiwygToolbarSync(editor);
+  }
+
+  function wysiwygSelectionAnchoredInEditor(editor) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount || !editor) return false;
+    var a = sel.anchorNode;
+    var f = sel.focusNode;
+    return !!(a && f && editor.contains(a) && editor.contains(f));
+  }
+
+  function wysiwygSelectionInListTag(editor, tagName) {
+    var sel = window.getSelection();
+    if (!wysiwygSelectionAnchoredInEditor(editor)) return false;
+    var node = sel.anchorNode;
+    if (node.nodeType === 3) node = node.parentElement;
+    while (node && node !== editor) {
+      if (node.nodeName === tagName) return true;
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  function wysiwygInlineCodeActive(editor) {
+    var sel = window.getSelection();
+    if (!wysiwygSelectionAnchoredInEditor(editor)) return false;
+    var el = sel.anchorNode;
+    if (el.nodeType === 3) el = el.parentElement;
+    while (el && el !== editor) {
+      if (el.nodeName === 'PRE' && el.classList && el.classList.contains('rich-code-block')) return false;
+      if (el.nodeName === 'CODE' && el.classList && el.classList.contains('rich-code')) return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function wysiwygCodeBlockActive(editor) {
+    var sel = window.getSelection();
+    if (!wysiwygSelectionAnchoredInEditor(editor)) return false;
+    var el = sel.anchorNode;
+    if (el.nodeType === 3) el = el.parentElement;
+    while (el && el !== editor) {
+      if (el.nodeName === 'PRE' && el.classList && el.classList.contains('rich-code-block')) return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function wysiwygEditorSurfaceActive(editor) {
+    if (!editor || !editor.isConnected) return false;
+    if (editor.classList.contains('hidden')) return false;
+    if (editor.closest('.hidden')) return false;
+    try {
+      if (typeof editor.checkVisibility === 'function' && !editor.checkVisibility()) return false;
+    } catch (err) { /* ignore */ }
+    return true;
+  }
+
+  /** Reflects queryCommandState / DOM context on rich WYSIWYG toolbar buttons. */
+  function syncRichWysiwygToolbarStateForEditor(editor) {
+    if (!editor || !editor.isConnected) return;
+    var wrap = editor.closest('.rich-textarea-wrap[data-rich-wysiwyg="1"]');
+    if (!wrap) return;
+    var toolbar = wrap.querySelector('.rich-format-toolbar');
+    if (!toolbar) return;
+    var inSel = wysiwygEditorSurfaceActive(editor) && wysiwygSelectionAnchoredInEditor(editor);
+    toolbar.querySelectorAll('[data-rich-cmd]').forEach(function (btn) {
+      var cmd = btn.getAttribute('data-rich-cmd');
+      var active = false;
+      if (inSel) {
+        try {
+          if (cmd === 'bold') active = document.queryCommandState('bold');
+          else if (cmd === 'italic') active = document.queryCommandState('italic');
+          else if (cmd === 'underline') active = document.queryCommandState('underline');
+          else if (cmd === 'bullet') {
+            active = document.queryCommandState('insertUnorderedList') || wysiwygSelectionInListTag(editor, 'UL');
+          } else if (cmd === 'numlist') {
+            active = document.queryCommandState('insertOrderedList') || wysiwygSelectionInListTag(editor, 'OL');
+          } else if (cmd === 'code') active = wysiwygInlineCodeActive(editor);
+          else if (cmd === 'codeblock') active = wysiwygCodeBlockActive(editor);
+        } catch (err) {
+          active = false;
+        }
+      }
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  var wysiwygToolbarGlobalSelectionBound = false;
+  var wysiwygToolbarSelectionRaf = null;
+  function ensureWysiwygToolbarGlobalSelectionSync() {
+    if (wysiwygToolbarGlobalSelectionBound) return;
+    wysiwygToolbarGlobalSelectionBound = true;
+    document.addEventListener('selectionchange', function () {
+      if (wysiwygToolbarSelectionRaf) return;
+      wysiwygToolbarSelectionRaf = requestAnimationFrame(function () {
+        wysiwygToolbarSelectionRaf = null;
+        document.querySelectorAll('[data-rich-wysiwyg="1"] .rich-markdown-wysiwyg[contenteditable="true"]').forEach(function (ed) {
+          syncRichWysiwygToolbarStateForEditor(ed);
+        });
+      });
+    });
+  }
+
+  function scheduleRichWysiwygToolbarSync(editor) {
+    if (!editor) return;
+    requestAnimationFrame(function () {
+      syncRichWysiwygToolbarStateForEditor(editor);
+    });
+  }
+
+  function bindRichMarkdownWysiwygPaste(editor) {
+    if (!editor || editor.getAttribute('data-wysiwyg-paste-bound') === '1') return;
+    editor.setAttribute('data-wysiwyg-paste-bound', '1');
+    editor.addEventListener('paste', function (e) {
+      e.preventDefault();
+      var plain = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+      try {
+        document.execCommand('insertText', false, plain);
+      } catch (err) {
+        var sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+        var range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(plain));
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    });
   }
 
   function decodeAttr(s) {
@@ -3467,8 +3971,8 @@
         '</div>' +
         (!isAddressed
           ? '<div class="concern-update-form hidden">' +
-              '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-              '<textarea class="concern-update-comment auto-resize rich-text-target" rows="2" placeholder="Comment on how the concern was addressed…"></textarea></div>' +
+              '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+              '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="concern-update-comment rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Comment on how the concern was addressed…"><br></div></div>' +
               '<input type="date" class="concern-addressed-date-in" value="' + today + '">' +
               '<button type="button" class="btn-small concern-submit-update-btn">Mark as Addressed</button>' +
             '</div>'
@@ -3485,8 +3989,8 @@
       '<h4 class="task-update-title">Concerns' + countLabel + '</h4>' +
       (list ? '<ul class="concern-list">' + list + '</ul>' : '') +
       '<div class="concern-add-form">' +
-        '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-        '<textarea class="concern-desc-in auto-resize rich-text-target" rows="2" placeholder="Describe the concern…"></textarea></div>' +
+        '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+        '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="concern-desc-in rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Describe the concern…"><br></div></div>' +
         '<input type="date" class="concern-date-in" value="' + today + '">' +
         '<button type="button" class="btn-small log-concern-btn">Log Concern</button>' +
       '</div>' +
@@ -3616,6 +4120,7 @@
       var subDescEditing = sd && sd.subDescEditing === true;
       var subDescViewCls = subDescEditing ? 'task-description-view hidden' : 'task-description-view';
       var subDescEditCls = subDescEditing ? 'task-description-edit subtask-desc-edit auto-resize rich-text-target' : 'task-description-edit hidden subtask-desc-edit auto-resize rich-text-target';
+      var subDescEditInner = subDescEditing ? (formatRichDescription(subDescRaw || '') || '<br>') : '<br>';
       var subToggleSvg = subDescEditing ? SVG_ICON_CHECK : SVG_ICON_EDIT;
       var stTitle = spick('title', s.title || '');
       var stPri = spick('priority', s.priority != null ? String(s.priority) : '1');
@@ -3634,6 +4139,7 @@
       var sProgE = spick('progressEffort', '');
       var sProgC = spick('progressCategories', []);
       if (!Array.isArray(sProgC)) sProgC = [];
+      var sProgInner = formatRichDescription(sProgT || '') || '<br>';
 
       var sps = state.editorPanelState.subtasks[sdk] || {};
       function spc(key) {
@@ -3677,16 +4183,16 @@
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
             '<div class="' + subDescViewCls + '">' + (subDesc || '<em class="no-desc">No description</em>') + '</div>' +
-            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="' + subDescEditCls + '" rows="2" placeholder="Description…">' + escapeHtml(subDescRaw || '') + '</textarea></div>' +
+            '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+            '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="' + subDescEditCls + ' task-description-wysiwyg rich-markdown-wysiwyg" data-placeholder="Description…">' + subDescEditInner + '</div></div>' +
             '<button type="button" class="btn-edit-cyan toggle-subtask-desc-edit" title="Edit description">' + subToggleSvg + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
           renderProgressLogSection(s.progress_updates, progressLogKeySub(taskId, s.id), true, taskId, s.id) +
           '<div class="progress-add">' +
-            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="progress-text-in subtask-progress-text auto-resize rich-text-target" rows="2" placeholder="Progress note…">' + escapeHtml(sProgT) + '</textarea></div>' +
+            '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+            '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="progress-text-in subtask-progress-text rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Progress here…">' + sProgInner + '</div></div>' +
             '<input type="date" class="progress-date-in subtask-progress-date" value="' + escapeHtml(sProgD) + '">' +
             '<input type="number" class="progress-effort-in subtask-progress-effort" placeholder="Hrs" min="0" step="0.5" value="' + escapeHtml(sProgE) + '">' +
             renderProgressCategoryRowHtml(sProgC, 'subtask-progress-add-cat-' + taskId + '-' + s.id) +
@@ -3834,6 +4340,7 @@
       var descEditing = td && td.descEditing === true;
       var descViewCls = descEditing ? 'task-description-view hidden' : 'task-description-view';
       var descEditCls = descEditing ? 'task-description-edit auto-resize rich-text-target' : 'task-description-edit hidden auto-resize rich-text-target';
+      var descWysiwygInner = descEditing ? (formatRichDescription(descRaw || '') || '<br>') : '<br>';
       var toggleDescSvg = descEditing ? SVG_ICON_CHECK : SVG_ICON_EDIT;
       var exSumChk = pickBool('exclude_from_summary', isTruthyFlag(task.exclude_from_summary));
       var exExpChk = pickBool('exclude_from_export', isTruthyFlag(task.exclude_from_export));
@@ -3864,6 +4371,8 @@
       var ntProj = np('project', '');
       var ntCats = np('categories', []);
       if (!Array.isArray(ntCats)) ntCats = [];
+      var progTextInner = formatRichDescription(progTextVal || '') || '<br>';
+      var ntDescInner = formatRichDescription(ntDesc || '') || '<br>';
 
       bodyHtml = '<div class="task-body">' +
         '<div class="task-body-actions">' +
@@ -3962,16 +4471,16 @@
           '<span class="block-subtitle">Description</span>' +
           '<div class="task-description-wrap">' +
             '<div class="' + descViewCls + '">' + (desc || '<em class="no-desc">No description</em>') + '</div>' +
-            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="' + descEditCls + '" rows="3" placeholder="Description…">' + escapeHtml(descRaw || '') + '</textarea></div>' +
+            '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+            '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="' + descEditCls + ' task-description-wysiwyg rich-markdown-wysiwyg" data-placeholder="Description…">' + descWysiwygInner + '</div></div>' +
             '<button type="button" class="btn-edit-cyan toggle-desc-edit" title="Edit description">' + toggleDescSvg + '</button>' +
           '</div>' +
         '</div>' +
         '<div class="task-progress-block">' +
           renderProgressLogSection(task.progress_updates, progressLogKeyMain(task.id), false, task.id, null) +
           '<div class="progress-add">' +
-            '<div class="rich-textarea-wrap">' + renderRichFormatToolbarHtml() +
-            '<textarea class="progress-text-in auto-resize rich-text-target" rows="2" placeholder="Progress note…">' + escapeHtml(progTextVal) + '</textarea></div>' +
+            '<div class="rich-textarea-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+            '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="progress-text-in rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Progress here…">' + progTextInner + '</div></div>' +
             '<input type="date" class="progress-date-in" value="' + escapeHtml(progDateVal) + '">' +
             '<input type="number" class="progress-effort-in" placeholder="Hrs" min="0" step="0.5" value="' + escapeHtml(progEffVal) + '">' +
             renderProgressCategoryRowHtml(progCats, 'progress-add-cat-' + task.id) +
@@ -4020,8 +4529,8 @@
             '<div class="new-subtask-form">' +
               '<label>Title <input type="text" class="new-subtask-title-in" placeholder="Sub-task title" value="' + escapeHtml(ntTitle) + '"></label>' +
               '<label class="new-subtask-desc-label">Description</label>' +
-              '<div class="rich-textarea-wrap new-subtask-desc-wrap">' + renderRichFormatToolbarHtml() +
-              '<textarea class="new-subtask-desc-in auto-resize rich-text-target" rows="3" placeholder="Description…">' + escapeHtml(ntDesc) + '</textarea></div>' +
+              '<div class="rich-textarea-wrap new-subtask-desc-wrap" data-rich-wysiwyg="1">' + renderRichFormatToolbarHtml() +
+              '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="true" class="new-subtask-desc-in rich-markdown-wysiwyg auto-resize rich-text-target" data-placeholder="Description…">' + ntDescInner + '</div></div>' +
               '<div class="task-details-grid">' +
                 '<label>Priority <input type="number" class="new-subtask-priority-in" min="1" max="10" value="' + escapeHtml(ntPri) + '" placeholder="1–10"></label>' +
                 '<label>Difficulty ' + renderDifficultySelectHtml(ntDiff, 'new-subtask-difficulty') + '</label>' +
@@ -4157,7 +4666,7 @@
         var textEl = li.querySelector('.progress-text');
         var editText = li.querySelector('.progress-edit-text');
         var rawText = li.getAttribute('data-progress-text');
-        editText.value = rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : '');
+        setRichWysiwygFromMarkdown(editText, rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : ''));
         li.querySelector('.progress-edit-date').value = li.dataset.dateAdded || '';
         li.querySelector('.progress-edit-effort').value = li.dataset.effort || '';
         var catWrapEdit = li.querySelector('.progress-item-edit .category-dropdown-wrap');
@@ -4176,6 +4685,10 @@
       });
     });
     root.querySelectorAll('.progress-save-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        var li = btn.closest('.progress-item');
+        return li && li.querySelector('.progress-edit-text');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var li = btn.closest('.progress-item');
@@ -4185,14 +4698,18 @@
         var catWrapSave = li.querySelector('.progress-item-edit .category-dropdown-wrap');
         if (isSub) {
           updateSubtaskProgressUpdate(taskId, subtaskId, updateId, {
-            text: li.querySelector('.progress-edit-text').value,
+            text: takeRichEditorMarkdownOnSubmit(btn, function () {
+              return li.querySelector('.progress-edit-text');
+            }),
             date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
             effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
             categories: getSelectedCategoriesFromWrap(catWrapSave)
           });
         } else {
           updateProgressUpdate(taskId, updateId, {
-            text: li.querySelector('.progress-edit-text').value,
+            text: takeRichEditorMarkdownOnSubmit(btn, function () {
+              return li.querySelector('.progress-edit-text');
+            }),
             date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
             effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
             categories: getSelectedCategoriesFromWrap(catWrapSave)
@@ -4387,27 +4904,46 @@
       });
     });
 
-    var descView = card.querySelector(':scope > .task-body > .task-description-block .task-description-view');
-    var descEdit = card.querySelector(':scope > .task-body > .task-description-block .task-description-edit:not(.subtask-desc-edit)');
     var toggleDesc = card.querySelector(':scope > .task-body > .task-description-block .toggle-desc-edit');
-    if (toggleDesc && descView && descEdit) {
+    if (toggleDesc) {
+      bindRichEditorMarkdownSnapshotOnMousedown(toggleDesc, function () {
+        return card.querySelector(':scope > .task-body > .task-description-block .task-description-edit:not(.subtask-desc-edit)');
+      });
       toggleDesc.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (descEdit.classList.contains('hidden')) {
-          descEdit.classList.remove('hidden');
-          descView.classList.add('hidden');
+        var descViewLive = card.querySelector(':scope > .task-body > .task-description-block .task-description-view');
+        var descEditLive = card.querySelector(':scope > .task-body > .task-description-block .task-description-edit:not(.subtask-desc-edit)');
+        if (!descViewLive || !descEditLive) return;
+        if (descEditLive.classList.contains('hidden')) {
+          delete toggleDesc.__faRichMdSnap;
+          descEditLive.classList.remove('hidden');
+          descViewLive.classList.add('hidden');
           toggleDesc.innerHTML = SVG_ICON_CHECK;
-          autoResizeTextarea(descEdit);
+          var tdOpen = state.editorDrafts.tasks[taskId];
+          var mdOpen = tdOpen && Object.prototype.hasOwnProperty.call(tdOpen, 'description')
+            ? tdOpen.description
+            : null;
+          var taskObj = state.data.tasks.find(function (t) { return t.id === taskId; });
+          if (mdOpen == null) mdOpen = taskObj ? (taskObj.description || '') : '';
+          setRichWysiwygFromMarkdown(descEditLive, mdOpen != null ? String(mdOpen) : '');
+          try {
+            descEditLive.focus();
+          } catch (fe) { /* ignore */ }
+          scheduleRichWysiwygToolbarSync(descEditLive);
+          autoResizeTextarea(descEditLive);
         } else {
-          updateTask(taskId, { description: descEdit.value });
+          var mdSave = takeRichEditorMarkdownOnSubmit(toggleDesc, function () {
+            return card.querySelector(':scope > .task-body > .task-description-block .task-description-edit:not(.subtask-desc-edit)');
+          });
+          updateTask(taskId, { description: mdSave });
           var tdraft = state.editorDrafts.tasks[taskId];
           if (tdraft) {
             delete tdraft.description;
             delete tdraft.descEditing;
           }
-          descEdit.classList.add('hidden');
-          descView.classList.remove('hidden');
-          descView.innerHTML = descEdit.value ? formatRichDescription(descEdit.value) : '<em class="no-desc">No description</em>';
+          descEditLive.classList.add('hidden');
+          descViewLive.classList.remove('hidden');
+          descViewLive.innerHTML = mdSave ? formatRichDescription(mdSave) : '<em class="no-desc">No description</em>';
           toggleDesc.innerHTML = SVG_ICON_EDIT;
         }
       });
@@ -4502,6 +5038,9 @@
     });
 
     card.querySelectorAll('.add-progress-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        return card.querySelector(':scope > .task-body > .task-progress-block .progress-text-in');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var textIn = card.querySelector(':scope > .task-body > .task-progress-block .progress-text-in');
@@ -4509,13 +5048,15 @@
         var effortIn = card.querySelector(':scope > .task-body > .task-progress-block .progress-effort-in');
         var progCatWrap = card.querySelector(':scope > .task-body > .task-progress-block .progress-add .category-dropdown-wrap');
         addProgressUpdate(taskId, {
-          text: textIn && textIn.value,
+          text: takeRichEditorMarkdownOnSubmit(btn, function () {
+            return card.querySelector(':scope > .task-body > .task-progress-block .progress-text-in');
+          }),
           date_added: dateIn && dateIn.value || new Date().toISOString().slice(0, 10),
           effort_consumed_hours: effortIn ? parseFloat(effortIn.value) || 0 : 0,
           categories: getSelectedCategoriesFromWrap(progCatWrap)
         });
         pruneTaskDraftProgressFields(taskId);
-        if (textIn) textIn.value = '';
+        if (textIn) setRichWysiwygFromMarkdown(textIn, '');
         if (dateIn) dateIn.value = '';
         if (effortIn) effortIn.value = '';
         resetCategoryDropdownWrap(progCatWrap);
@@ -4532,7 +5073,7 @@
           var textEl = li.querySelector('.progress-text');
           var editText = li.querySelector('.progress-edit-text');
             var rawText = li.getAttribute('data-progress-text');
-            editText.value = rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : '');
+            setRichWysiwygFromMarkdown(editText, rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : ''));
             li.querySelector('.progress-edit-date').value = li.dataset.dateAdded || '';
             li.querySelector('.progress-edit-effort').value = li.dataset.effort || '';
             var catWrapEdit = li.querySelector('.progress-item-edit .category-dropdown-wrap');
@@ -4553,6 +5094,10 @@
     });
 
     card.querySelectorAll('ul.progress-list:not(.subtask-progress-list) .progress-save-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        var li = btn.closest('.progress-item');
+        return li && li.querySelector('.progress-edit-text');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var li = btn.closest('.progress-item');
@@ -4561,7 +5106,9 @@
         var updateId = li.dataset.updateId;
         var catWrapSave = li.querySelector('.progress-item-edit .category-dropdown-wrap');
         updateProgressUpdate(taskId, updateId, {
-          text: li.querySelector('.progress-edit-text').value,
+          text: takeRichEditorMarkdownOnSubmit(btn, function () {
+            return li.querySelector('.progress-edit-text');
+          }),
           date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
           effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
           categories: getSelectedCategoriesFromWrap(catWrapSave)
@@ -4635,15 +5182,32 @@
       var subDescView = subCard.querySelector('.subtask-description-block .task-description-view');
       var subDescEdit = subCard.querySelector('.subtask-desc-edit');
       if (toggleSubDesc && subDescView && subDescEdit) {
+        bindRichEditorMarkdownSnapshotOnMousedown(toggleSubDesc, function () {
+          return subCard.querySelector('.subtask-desc-edit');
+        });
         toggleSubDesc.addEventListener('click', function (e) {
           e.stopPropagation();
-        if (subDescEdit.classList.contains('hidden')) {
-          subDescEdit.classList.remove('hidden');
-          subDescView.classList.add('hidden');
-          toggleSubDesc.innerHTML = SVG_ICON_CHECK;
-          autoResizeTextarea(subDescEdit);
-        } else {
-            updateSubtask(subTaskId, subId, { description: subDescEdit.value });
+          if (subDescEdit.classList.contains('hidden')) {
+            delete toggleSubDesc.__faRichMdSnap;
+            subDescEdit.classList.remove('hidden');
+            subDescView.classList.add('hidden');
+            toggleSubDesc.innerHTML = SVG_ICON_CHECK;
+            var sdkOpen = state.editorDrafts.subtasks[subTaskId + ':' + subId];
+            var mdOpen = sdkOpen && Object.prototype.hasOwnProperty.call(sdkOpen, 'description') ? sdkOpen.description : null;
+            var taskRow = state.data.tasks.find(function (t) { return t.id === subTaskId; });
+            var subObj = taskRow && (taskRow.subtasks || []).find(function (x) { return x.id === subId; });
+            if (mdOpen == null) mdOpen = subObj ? (subObj.description || '') : '';
+            setRichWysiwygFromMarkdown(subDescEdit, mdOpen != null ? String(mdOpen) : '');
+            try {
+              subDescEdit.focus();
+            } catch (fe) { /* ignore */ }
+            scheduleRichWysiwygToolbarSync(subDescEdit);
+            autoResizeTextarea(subDescEdit);
+          } else {
+            var mdSaveSub = takeRichEditorMarkdownOnSubmit(toggleSubDesc, function () {
+              return subCard.querySelector('.subtask-desc-edit');
+            });
+            updateSubtask(subTaskId, subId, { description: mdSaveSub });
             var subDraft = state.editorDrafts.subtasks[subTaskId + ':' + subId];
             if (subDraft) {
               delete subDraft.description;
@@ -4651,7 +5215,7 @@
             }
             subDescEdit.classList.add('hidden');
             subDescView.classList.remove('hidden');
-            subDescView.innerHTML = subDescEdit.value ? formatRichDescription(subDescEdit.value) : '<em class="no-desc">No description</em>';
+            subDescView.innerHTML = mdSaveSub ? formatRichDescription(mdSaveSub) : '<em class="no-desc">No description</em>';
             toggleSubDesc.innerHTML = SVG_ICON_EDIT;
           }
         });
@@ -4741,6 +5305,9 @@
       });
 
       subCard.querySelectorAll('.add-subtask-progress-btn').forEach(function (btn) {
+        bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+          return subCard.querySelector('.subtask-progress-text');
+        });
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var textIn = subCard.querySelector('.subtask-progress-text');
@@ -4748,13 +5315,15 @@
           var effortIn = subCard.querySelector('.subtask-progress-effort');
           var subProgCatWrap = subCard.querySelector('.progress-add .category-dropdown-wrap');
           addSubtaskProgressUpdate(subTaskId, subId, {
-            text: textIn && textIn.value,
+            text: takeRichEditorMarkdownOnSubmit(btn, function () {
+              return subCard.querySelector('.subtask-progress-text');
+            }),
             date_added: dateIn && dateIn.value || new Date().toISOString().slice(0, 10),
             effort_consumed_hours: effortIn ? parseFloat(effortIn.value) || 0 : 0,
             categories: getSelectedCategoriesFromWrap(subProgCatWrap)
           });
           pruneSubtaskDraftProgressFields(subTaskId, subId);
-          if (textIn) textIn.value = '';
+          if (textIn) setRichWysiwygFromMarkdown(textIn, '');
           if (dateIn) dateIn.value = '';
           if (effortIn) effortIn.value = '';
           resetCategoryDropdownWrap(subProgCatWrap);
@@ -4771,7 +5340,7 @@
             var textEl = li.querySelector('.progress-text');
             var editTextEl = li.querySelector('.progress-edit-text');
             var rawText = li.getAttribute('data-progress-text');
-            editTextEl.value = rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : '');
+            setRichWysiwygFromMarkdown(editTextEl, rawText !== null ? decodeAttr(rawText) : (textEl ? textEl.textContent : ''));
             li.querySelector('.progress-edit-date').value = li.dataset.dateAdded || '';
             li.querySelector('.progress-edit-effort').value = li.dataset.effort || '';
             var subCatWrapEdit = li.querySelector('.progress-item-edit .category-dropdown-wrap');
@@ -4792,6 +5361,10 @@
       });
 
       subCard.querySelectorAll('.subtask-progress-save').forEach(function (btn) {
+        bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+          var li = btn.closest('.progress-item');
+          return li && li.querySelector('.progress-edit-text');
+        });
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var li = btn.closest('.progress-item');
@@ -4800,7 +5373,9 @@
           var updateId = li.dataset.updateId;
           var subCatWrapSave = li.querySelector('.progress-item-edit .category-dropdown-wrap');
           updateSubtaskProgressUpdate(subTaskId, subId, updateId, {
-            text: li.querySelector('.progress-edit-text').value,
+            text: takeRichEditorMarkdownOnSubmit(btn, function () {
+              return li.querySelector('.progress-edit-text');
+            }),
             date_added: li.querySelector('.progress-edit-date').value || new Date().toISOString().slice(0, 10),
             effort_consumed_hours: parseFloat(li.querySelector('.progress-edit-effort').value) || 0,
             categories: getSelectedCategoriesFromWrap(subCatWrapSave)
@@ -4833,12 +5408,19 @@
       });
 
       subCard.querySelectorAll('.task-concerns-block .log-concern-btn').forEach(function (btn) {
+        bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+          var block = btn.closest('.task-concerns-block');
+          return block && block.querySelector('.concern-desc-in');
+        });
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var block = btn.closest('.task-concerns-block');
-          var descIn = block && block.querySelector('.concern-desc-in');
           var dateIn = block && block.querySelector('.concern-date-in');
-          var desc = descIn ? descIn.value.trim() : '';
+          var desc = takeRichEditorMarkdownOnSubmit(btn, function () {
+            var b = btn.closest('.task-concerns-block');
+            return b && b.querySelector('.concern-desc-in');
+          });
+          desc = String(desc || '').trim();
           if (!desc) return;
           addSubtaskConcern(subTaskId, subId, {
             description: desc,
@@ -4860,14 +5442,21 @@
       });
 
       subCard.querySelectorAll('.task-concerns-block .concern-submit-update-btn').forEach(function (btn) {
+        bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+          var li = btn.closest('.concern-item');
+          return li && li.querySelector('.concern-update-comment');
+        });
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
           var li = btn.closest('.concern-item');
           var concernId = li && li.dataset.concernId;
           if (!concernId) return;
           var dateIn = li.querySelector('.concern-addressed-date-in');
-          var commentIn = li.querySelector('.concern-update-comment');
-          var comment = commentIn ? commentIn.value.trim() : '';
+          var comment = takeRichEditorMarkdownOnSubmit(btn, function () {
+            var li2 = btn.closest('.concern-item');
+            return li2 && li2.querySelector('.concern-update-comment');
+          });
+          comment = String(comment || '').trim();
           if (!comment) return;
           addressSubtaskConcern(subTaskId, subId, concernId, {
             addressed_date: dateIn ? (dateIn.value || new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10),
@@ -4927,12 +5516,19 @@
     });
 
     card.querySelectorAll(':scope > .task-body > .task-concerns-block .log-concern-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        var block = btn.closest('.task-concerns-block');
+        return block && block.querySelector('.concern-desc-in');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var block = btn.closest('.task-concerns-block');
-        var descIn = block && block.querySelector('.concern-desc-in');
         var dateIn = block && block.querySelector('.concern-date-in');
-        var desc = descIn ? descIn.value.trim() : '';
+        var desc = takeRichEditorMarkdownOnSubmit(btn, function () {
+          var b = btn.closest('.task-concerns-block');
+          return b && b.querySelector('.concern-desc-in');
+        });
+        desc = String(desc || '').trim();
         if (!desc) return;
         addConcern(taskId, {
           description: desc,
@@ -4954,14 +5550,21 @@
     });
 
     card.querySelectorAll(':scope > .task-body > .task-concerns-block .concern-submit-update-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        var li = btn.closest('.concern-item');
+        return li && li.querySelector('.concern-update-comment');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var li = btn.closest('.concern-item');
         var concernId = li && li.dataset.concernId;
         if (!concernId) return;
         var dateIn = li.querySelector('.concern-addressed-date-in');
-        var commentIn = li.querySelector('.concern-update-comment');
-        var comment = commentIn ? commentIn.value.trim() : '';
+        var comment = takeRichEditorMarkdownOnSubmit(btn, function () {
+          var li2 = btn.closest('.concern-item');
+          return li2 && li2.querySelector('.concern-update-comment');
+        });
+        comment = String(comment || '').trim();
         if (!comment) return;
         addressConcern(taskId, concernId, {
           addressed_date: dateIn ? (dateIn.value || new Date().toISOString().slice(0, 10)) : new Date().toISOString().slice(0, 10),
@@ -5035,6 +5638,10 @@
       });
     });
     card.querySelectorAll('.add-subtask-submit-btn').forEach(function (btn) {
+      bindRichEditorMarkdownSnapshotOnMousedown(btn, function () {
+        var cardEl = btn.closest('.task-card');
+        return cardEl && cardEl.querySelector('.new-subtask-desc-in');
+      });
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
         var cardEl = btn.closest('.task-card');
@@ -5057,7 +5664,10 @@
         var subDiffEl = cardEl.querySelector('.new-subtask-block .task-difficulty-select');
         addSubtask(taskIdEl, {
           title: title,
-          description: (descIn && descIn.value) ? descIn.value : '',
+          description: takeRichEditorMarkdownOnSubmit(btn, function () {
+            var c = btn.closest('.task-card');
+            return c && c.querySelector('.new-subtask-desc-in');
+          }),
           priority: priority,
           difficulty: subDiffEl ? subDiffEl.value : DEFAULT_TASK_DIFFICULTY,
           assigned_date: assigned_date,
@@ -5068,7 +5678,7 @@
         delete state.editorDrafts.newSubtask[taskIdEl];
         persistEditorSessionToStorage();
         if (titleIn) titleIn.value = '';
-        if (descIn) descIn.value = '';
+        if (descIn) setRichWysiwygFromMarkdown(descIn, '');
         if (priorityIn) priorityIn.value = '1';
         if (assignedIn) assignedIn.value = today;
         if (effortIn) effortIn.value = '0';
@@ -5260,7 +5870,9 @@
 
       var descEdit = card.querySelector(':scope > .task-body .task-description-edit:not(.subtask-desc-edit)');
       if (descEdit) {
-        d.description = descEdit.value;
+        if (!descEdit.classList.contains('hidden')) {
+          d.description = getRichWysiwygMarkdown(descEdit);
+        }
         d.descEditing = !descEdit.classList.contains('hidden');
       }
 
@@ -5282,7 +5894,10 @@
       var pd = card.querySelector(':scope > .task-body .progress-add .progress-date-in');
       var pe = card.querySelector(':scope > .task-body .progress-add .progress-effort-in');
       var pc = card.querySelector(':scope > .task-body .progress-add .category-dropdown-wrap');
-      if (pt && pt.value) d.progressText = pt.value;
+      if (pt) {
+        var ptxt = getRichWysiwygMarkdownTrim(pt);
+        if (ptxt) d.progressText = ptxt;
+      }
       if (pd && pd.value) d.progressDate = pd.value;
       if (pe && pe.value) d.progressEffort = pe.value;
       if (pc) d.progressCategories = getSelectedCategoriesFromWrap(pc);
@@ -5314,7 +5929,9 @@
         if (scw) sd.categories = getSelectedCategoriesFromWrap(scw);
         var sdesc = subCard.querySelector('.subtask-desc-edit');
         if (sdesc) {
-          sd.description = sdesc.value;
+          if (!sdesc.classList.contains('hidden')) {
+            sd.description = getRichWysiwygMarkdown(sdesc);
+          }
           sd.subDescEditing = !sdesc.classList.contains('hidden');
         }
         var sex = subCard.querySelector('.subtask-exclude-summary');
@@ -5327,7 +5944,10 @@
         var spd = subCard.querySelector('.subtask-progress-date');
         var spef = subCard.querySelector('.subtask-progress-effort');
         var spc = subCard.querySelector('.progress-add .category-dropdown-wrap');
-        if (spt && spt.value) sd.progressText = spt.value;
+        if (spt) {
+          var stxt = getRichWysiwygMarkdownTrim(spt);
+          if (stxt) sd.progressText = stxt;
+        }
         if (spd && spd.value) sd.progressDate = spd.value;
         if (spef && spef.value) sd.progressEffort = spef.value;
         if (spc) sd.progressCategories = getSelectedCategoriesFromWrap(spc);
@@ -5344,7 +5964,7 @@
       var nCat = card.querySelector('.new-subtask-block .category-dropdown-wrap');
       var nProj = card.querySelector('.new-subtask-block .task-project-select');
       if (nTitle) nt.title = nTitle.value;
-      if (nDesc) nt.description = nDesc.value;
+      if (nDesc) nt.description = getRichWysiwygMarkdown(nDesc);
       if (nPri) nt.priority = nPri.value;
       if (nAsg) nt.assigned = nAsg.value;
       if (nEff) nt.effort = nEff.value;
@@ -8323,6 +8943,7 @@
     if (taskBug) taskBug.value = '';
     var taskProjEl = $('task-project');
     if (taskProjEl) taskProjEl.innerHTML = renderProjectSelectInnerHtml('');
+    if (taskDescription) setRichWysiwygFromMarkdown(taskDescription, '');
   }
 
   var DEBUG_SUMMARY_FROM_KEY = 'fa_debug_summary_from';
@@ -8330,7 +8951,7 @@
 
   function prefillDebugForm() {
     taskTitle.value = 'Debug: Sample task';
-    taskDescription.value = 'Edit or add and click Add Task.';
+    if (taskDescription) setRichWysiwygFromMarkdown(taskDescription, 'Edit or add and click Add Task.');
     setFormDefaults();
   }
 
@@ -8479,6 +9100,11 @@
       });
     });
 
+    if (addTaskBtn && taskDescription) {
+      bindRichEditorMarkdownSnapshotOnMousedown(addTaskBtn, function () {
+        return taskDescription;
+      });
+    }
     addTaskBtn.addEventListener('click', function () {
       var title = (taskTitle.value || '').trim();
       if (!title) return;
@@ -8491,7 +9117,9 @@
       var taskProject = taskProjEl && taskProjEl.value ? taskProjEl.value.trim() : '';
       addTask({
         title: title,
-        description: (taskDescription.value || '').trim(),
+        description: taskDescription
+          ? String(takeRichEditorMarkdownOnSubmit(addTaskBtn, function () { return taskDescription; }) || '').trim()
+          : '',
         priority: parseInt(taskPriority.value, 10) || 1,
         difficulty: taskDifficulty && taskDifficulty.value ? taskDifficulty.value : DEFAULT_TASK_DIFFICULTY,
         tags: tags,
@@ -8504,7 +9132,7 @@
         project: taskProject
       }).then(function () {
         taskTitle.value = '';
-        taskDescription.value = '';
+        if (taskDescription) setRichWysiwygFromMarkdown(taskDescription, '');
         var addCatWrap = $('add-task-category-dropdown') && $('add-task-category-dropdown').querySelector('.category-dropdown-wrap');
         if (addCatWrap) {
           addCatWrap.querySelectorAll('.category-checkbox').forEach(function (cb) { cb.checked = false; });

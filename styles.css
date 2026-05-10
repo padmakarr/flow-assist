@@ -2668,6 +2668,129 @@ select.task-project-select,
   box-shadow: var(--shadow-focus);
 }
 
+.task-description-wysiwyg.task-description-edit,
+.rich-markdown-wysiwyg.task-description-edit {
+  white-space: pre-wrap;
+  font-size: var(--font-base);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.task-description-wysiwyg.task-description-edit ul,
+.task-description-wysiwyg.task-description-edit .rich-ul,
+.rich-markdown-wysiwyg.task-description-edit ul,
+.rich-markdown-wysiwyg.task-description-edit .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.task-description-wysiwyg.task-description-edit ol,
+.task-description-wysiwyg.task-description-edit .rich-ol,
+.rich-markdown-wysiwyg.task-description-edit ol,
+.rich-markdown-wysiwyg.task-description-edit .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.task-description-wysiwyg.task-description-edit li,
+.task-description-wysiwyg.task-description-edit .rich-li,
+.rich-markdown-wysiwyg.task-description-edit li,
+.rich-markdown-wysiwyg.task-description-edit .rich-li {
+  margin: 0.15em 0;
+}
+
+.task-description-wysiwyg.task-description-edit .rich-code,
+.rich-markdown-wysiwyg.task-description-edit .rich-code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--bg-surface-raised);
+  color: #79c0ff;
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+
+.task-description-wysiwyg.task-description-edit .rich-code-block,
+.rich-markdown-wysiwyg.task-description-edit .rich-code-block {
+  display: block;
+  margin: 0.5em 0;
+  padding: 10px 12px;
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.task-description-wysiwyg.task-description-edit:empty:before,
+.task-description-wysiwyg.task-description-edit:has(> br:only-child):before,
+.rich-markdown-wysiwyg.task-description-edit:empty:before,
+.rich-markdown-wysiwyg.task-description-edit:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.task-description-input.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  font-size: var(--font-base);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.task-description-input.rich-markdown-wysiwyg ul,
+.task-description-input.rich-markdown-wysiwyg .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.task-description-input.rich-markdown-wysiwyg ol,
+.task-description-input.rich-markdown-wysiwyg .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.task-description-input.rich-markdown-wysiwyg li,
+.task-description-input.rich-markdown-wysiwyg .rich-li {
+  margin: 0.15em 0;
+}
+
+.task-description-input.rich-markdown-wysiwyg .rich-code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--bg-surface-raised);
+  color: #79c0ff;
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+
+.task-description-input.rich-markdown-wysiwyg .rich-code-block {
+  display: block;
+  margin: 0.5em 0;
+  padding: 10px 12px;
+  background: var(--bg-surface-raised);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.task-description-input.rich-markdown-wysiwyg:empty:before,
+.task-description-input.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
 .task-description-edit.hidden {
   display: none;
 }
@@ -2864,7 +2987,9 @@ select.task-project-select,
 
 .notes-card--modal .notes-card-title[readonly],
 .notes-card--modal textarea.notes-card-body[readonly],
-.notes-card--modal .notes-todo-text[readonly] {
+.notes-card--modal .notes-todo-text[readonly],
+.notes-card--modal .notes-card-body.rich-markdown-wysiwyg[contenteditable="false"],
+.notes-card--modal .notes-todo-text.rich-markdown-wysiwyg[contenteditable="false"] {
   cursor: default;
 }
 
@@ -3046,7 +3171,8 @@ select.task-project-select,
 }
 
 .progress-item-edit input:focus,
-.progress-item-edit textarea:focus {
+.progress-item-edit textarea:focus,
+.progress-item-edit .rich-markdown-wysiwyg:focus {
   outline: none;
   border-color: var(--accent-blue);
   box-shadow: var(--shadow-focus);
@@ -3056,6 +3182,19 @@ select.task-project-select,
   flex: 1 1 100%;
   min-height: 2.5em;
   font-family: inherit;
+}
+
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg:empty:before,
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .progress-edit-actions {
@@ -3111,15 +3250,15 @@ a.auto-link:hover {
   width: 100%;
 }
 
-/* Main/subtask description row: don't reserve full row width for the rich wrap, and hide
-   toolbar + textarea while in view mode (textarea has .hidden but the wrap was still visible). */
 .task-description-wrap > .rich-textarea-wrap {
   flex: 1 1 0;
   min-width: 0;
   width: auto;
 }
 
-.task-description-wrap > .rich-textarea-wrap:has(.task-description-edit.hidden) {
+/* Main/subtask description row: hide toolbar + editor while in view mode. */
+.task-description-wrap > .rich-textarea-wrap:has(.task-description-edit.hidden),
+.task-description-wrap > .rich-textarea-wrap:has(.rich-markdown-wysiwyg.hidden) {
   display: none;
 }
 
@@ -3156,6 +3295,13 @@ a.auto-link:hover {
   background: var(--btn-bg-hover);
   border-color: var(--border-emphasis);
   color: var(--text-primary);
+}
+
+.rich-fmt-btn.is-active {
+  background: var(--btn-bg-hover);
+  border-color: var(--border-emphasis);
+  color: var(--text-primary);
+  box-shadow: inset 0 -2px 0 0 var(--text-secondary);
 }
 
 .rich-fmt-u {
@@ -3255,10 +3401,24 @@ a.auto-link:hover {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.progress-text-in.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
 .progress-text-in:focus {
   outline: none;
   border-color: var(--accent-blue);
   box-shadow: var(--shadow-focus);
+}
+
+.progress-text-in.rich-markdown-wysiwyg:empty:before,
+.progress-text-in.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .progress-effort-in {
@@ -5113,7 +5273,9 @@ a.auto-link:hover {
 }
 
 .concern-desc-in,
-.concern-update-comment {
+.concern-update-comment,
+.concern-desc-in.rich-markdown-wysiwyg,
+.concern-update-comment.rich-markdown-wysiwyg {
   flex: 1 1 100%;
   min-width: 120px;
   min-height: 2.5em;
@@ -5127,11 +5289,30 @@ a.auto-link:hover {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.concern-desc-in.rich-markdown-wysiwyg,
+.concern-update-comment.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
 .concern-desc-in:focus,
-.concern-update-comment:focus {
+.concern-update-comment:focus,
+.concern-desc-in.rich-markdown-wysiwyg:focus,
+.concern-update-comment.rich-markdown-wysiwyg:focus {
   outline: none;
   border-color: var(--accent-blue);
   box-shadow: var(--shadow-focus);
+}
+
+.concern-desc-in.rich-markdown-wysiwyg:empty:before,
+.concern-desc-in.rich-markdown-wysiwyg:has(> br:only-child):before,
+.concern-update-comment.rich-markdown-wysiwyg:empty:before,
+.concern-update-comment.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .task-body input[type="date"],
@@ -5307,6 +5488,21 @@ a.auto-link:hover {
 .new-subtask-form textarea {
   min-height: 60px;
   resize: vertical;
+}
+
+.new-subtask-form .new-subtask-desc-in.rich-markdown-wysiwyg {
+  min-height: 60px;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.new-subtask-form .new-subtask-desc-in.rich-markdown-wysiwyg:empty:before,
+.new-subtask-form .new-subtask-desc-in.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  pointer-events: none;
 }
 
 .new-subtask-form .add-subtask-submit-btn {
@@ -5946,6 +6142,76 @@ a.auto-link:hover {
   background: var(--bg-surface);
 }
 
+.notes-note-body-wrap .rich-format-toolbar {
+  margin-bottom: 8px;
+}
+
+.notes-note-body-wrap .rich-format-toolbar .rich-fmt-btn {
+  padding: 4px 8px;
+  font-size: var(--font-sm);
+}
+
+.notes-card-body.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notes-card-body.rich-markdown-wysiwyg:empty:before,
+.notes-card-body.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.notes-checklist-row--rich {
+  cursor: default;
+  align-items: flex-start;
+}
+
+.notes-todo-rich-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.notes-todo-rich-wrap .rich-format-toolbar {
+  margin-bottom: 6px;
+}
+
+.notes-todo-rich-wrap .rich-format-toolbar .rich-fmt-btn {
+  padding: 3px 7px;
+  font-size: var(--font-xs, 0.75rem);
+}
+
+.notes-todo-text.rich-markdown-wysiwyg {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.notes-todo-text.rich-markdown-wysiwyg:empty:before,
+.notes-todo-text.rich-markdown-wysiwyg:has(> br:only-child):before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.notes-checklist-row--rich:has(.notes-todo-done:checked) .notes-todo-text.rich-markdown-wysiwyg {
+  text-decoration: line-through;
+  opacity: 0.78;
+}
+
+.notes-card-body-display:not(.notes-card-body-display--empty) ul,
+.notes-card-body-display:not(.notes-card-body-display--empty) ol {
+  margin: 0.35em 0;
+  padding-left: 1.35em;
+}
+
+.notes-todo-text-display:not(:empty) ul,
+.notes-todo-text-display:not(:empty) ol {
+  margin: 0.25em 0;
+  padding-left: 1.25em;
+}
+
 .notes-checklist {
   list-style: none;
   margin: 0 0 12px;
@@ -6013,11 +6279,6 @@ a.auto-link:hover {
   background: var(--bg-surface);
 }
 
-.notes-todo-done:checked + .notes-todo-text {
-  text-decoration: line-through;
-  opacity: 0.78;
-}
-
 .notes-checklist-add {
   width: 100%;
 }
@@ -6071,6 +6332,14 @@ a.auto-link:hover {
 /* ── Notes reminders ───────────────────────────────────────── */
 .notes-card-reminders {
   margin-bottom: 10px;
+}
+
+.notes-card-reminders--modal-empty {
+  margin-bottom: 6px;
+}
+
+.notes-card-reminders--modal-empty .notes-reminder-toolbar {
+  margin-top: 0;
 }
 
 .notes-card-reminders--compact {

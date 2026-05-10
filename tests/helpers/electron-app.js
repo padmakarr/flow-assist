@@ -58,10 +58,32 @@ async function getMainWindowPage(app) {
   return page;
 }
 
+/** Compact window for E2E (reproducible “small app” layout). */
+async function setMainWindowCompact(app) {
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    win.unmaximize();
+    const b = win.getBounds();
+    win.setBounds({ x: b.x, y: b.y, width: 960, height: 640 });
+  });
+}
+
+/** Maximized main window for E2E (full-screen width/height). */
+async function setMainWindowMaximized(app) {
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+    if (!win) return;
+    win.maximize();
+  });
+}
+
 module.exports = {
   REPO_ROOT,
   DEFAULT_E2E_PROFILE,
   getElectronExecutablePath,
   launchFlowAssist,
   getMainWindowPage,
+  setMainWindowCompact,
+  setMainWindowMaximized,
 };

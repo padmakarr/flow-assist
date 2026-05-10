@@ -6032,10 +6032,10 @@
     },
     "notesGridColumns": 3,
     "relax": {
-      "breakPresetMinutes": 10,
+      "breakPresetMinutes": 5,
       "workPresetMinutes": 25,
       "soundEnabled": false,
-      "tipIndex": 2
+      "tipIndex": 3
     }
   },
   "notes": {

@@ -31,7 +31,8 @@
       "data-schema.js",
       "package.json",
       "LICENSE",
-      "README.md"
+      "README.md",
+      "minigames/**/*"
     ],
     "win": {
       "signAndEditExecutable": false,

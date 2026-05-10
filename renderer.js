@@ -8635,7 +8635,177 @@
     });
   }
 
-  var relaxSession = { breakEndMs: 0, workEndMs: 0, tickId: null };
+  var RELAX_BREAK_MAX_MIN = 180;
+  var RELAX_WORK_MAX_MIN = 240;
+  var relaxSession = {
+    breakEndMs: 0,
+    workEndMs: 0,
+    workDurationMs: 0,
+    tickId: null,
+    saplingGustUntil: 0,
+    saplingGustStart: 0,
+    saplingGustPeak: 0,
+    saplingGustNextAt: 0
+  };
+
+  function relaxFocusSaplingReducedMotion() {
+    try {
+      return typeof window.matchMedia !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function relaxSaplingResetGrowthState() {
+    relaxSession.saplingGustUntil = 0;
+    relaxSession.saplingGustStart = 0;
+    relaxSession.saplingGustPeak = 0;
+    relaxSession.saplingGustNextAt = 0;
+  }
+
+  function getBreakTotalMinutes() {
+    var elH = document.getElementById('relax-break-hours');
+    var elM = document.getElementById('relax-break-minutes');
+    var h = elH ? parseInt(elH.textContent, 10) : 0;
+    var mi = elM ? parseInt(elM.textContent, 10) : 0;
+    if (isNaN(h)) h = 0;
+    if (isNaN(mi)) mi = 0;
+    var t = h * 60 + mi;
+    return Math.max(1, Math.min(RELAX_BREAK_MAX_MIN, t));
+  }
+
+  function getWorkTotalMinutes() {
+    var elH = document.getElementById('relax-work-hours');
+    var elM = document.getElementById('relax-work-minutes');
+    var h = elH ? parseInt(elH.textContent, 10) : 0;
+    var mi = elM ? parseInt(elM.textContent, 10) : 0;
+    if (isNaN(h)) h = 0;
+    if (isNaN(mi)) mi = 0;
+    var t = h * 60 + mi;
+    return Math.max(1, Math.min(RELAX_WORK_MAX_MIN, t));
+  }
+
+  function syncBreakPresetHighlight() {
+    var card = document.querySelector('.relax-card--break');
+    if (!card) return;
+    var total = getBreakTotalMinutes();
+    card.querySelectorAll('.relax-preset-btn').forEach(function (btn) {
+      var pm = parseInt(btn.getAttribute('data-relax-break-min'), 10);
+      btn.classList.toggle('relax-preset-btn--active', !isNaN(pm) && pm === total);
+    });
+  }
+
+  function syncWorkPresetHighlight() {
+    var card = document.querySelector('.relax-card--work');
+    if (!card) return;
+    var total = getWorkTotalMinutes();
+    card.querySelectorAll('.relax-work-preset-btn').forEach(function (btn) {
+      var pm = parseInt(btn.getAttribute('data-relax-work-min'), 10);
+      btn.classList.toggle('relax-work-preset-btn--active', !isNaN(pm) && pm === total);
+    });
+  }
+
+  function persistRelaxPresetMinutes() {
+    if (!state.data.settings.relax) state.data.settings.relax = {};
+    state.data.settings.relax.breakPresetMinutes = getBreakTotalMinutes();
+    state.data.settings.relax.workPresetMinutes = getWorkTotalMinutes();
+    save().catch(function () {});
+  }
+
+  function setBreakTotalMinutes(total, opts) {
+    opts = opts || {};
+    var t = Math.max(1, Math.min(RELAX_BREAK_MAX_MIN, Math.floor(total)));
+    var h = Math.floor(t / 60);
+    var m = t % 60;
+    var elH = document.getElementById('relax-break-hours');
+    var elM = document.getElementById('relax-break-minutes');
+    if (elH) elH.textContent = String(h);
+    if (elM) elM.textContent = String(m);
+    syncBreakPresetHighlight();
+    if (opts.persist) persistRelaxPresetMinutes();
+  }
+
+  function setWorkTotalMinutes(total, opts) {
+    opts = opts || {};
+    var t = Math.max(1, Math.min(RELAX_WORK_MAX_MIN, Math.floor(total)));
+    var h = Math.floor(t / 60);
+    var m = t % 60;
+    var elH = document.getElementById('relax-work-hours');
+    var elM = document.getElementById('relax-work-minutes');
+    if (elH) elH.textContent = String(h);
+    if (elM) elM.textContent = String(m);
+    syncWorkPresetHighlight();
+    if (opts.persist) persistRelaxPresetMinutes();
+  }
+
+  function adjustBreakTotalMinutes(delta) {
+    setBreakTotalMinutes(getBreakTotalMinutes() + delta, { persist: true });
+  }
+
+  function adjustWorkTotalMinutes(delta) {
+    setWorkTotalMinutes(getWorkTotalMinutes() + delta, { persist: true });
+  }
+
+  function updateFocusSaplingVisual(now) {
+    var wrap = document.getElementById('relax-focus-sapling-wrap');
+    if (!wrap) return;
+    now = now || Date.now();
+    var end = relaxSession.workEndMs;
+    var dur = relaxSession.workDurationMs;
+    var reduced = relaxFocusSaplingReducedMotion();
+
+    function clearSaplingLeafClasses() {
+      for (var j = 1; j <= 7; j++) {
+        wrap.classList.remove('relax-focus-sapling-leaf-on--' + j);
+      }
+    }
+
+    if (end > now && dur > 0) {
+      wrap.removeAttribute('hidden');
+      wrap.setAttribute('aria-hidden', 'false');
+      var elapsed = dur - (end - now);
+      var p = Math.min(1, Math.max(0, elapsed / dur));
+      wrap.style.setProperty('--relax-sapling-p', String(p));
+
+      var slackMs = 3;
+      for (var i = 1; i <= 7; i++) {
+        wrap.classList.toggle('relax-focus-sapling-leaf-on--' + i, elapsed * 7 + slackMs >= dur * i);
+      }
+
+      if (!reduced) {
+        if (relaxSession.saplingGustUntil > now && relaxSession.saplingGustStart > 0) {
+          var gustSpan = relaxSession.saplingGustUntil - relaxSession.saplingGustStart;
+          var e = gustSpan > 0 ? (now - relaxSession.saplingGustStart) / gustSpan : 1;
+          if (e > 1) e = 1;
+          var envelope = Math.sin(e * Math.PI);
+          wrap.style.setProperty('--relax-gust', relaxSession.saplingGustPeak * envelope + 'deg');
+        } else {
+          wrap.style.setProperty('--relax-gust', '0deg');
+          if (relaxSession.saplingGustUntil > 0 && relaxSession.saplingGustStart > 0 && now >= relaxSession.saplingGustUntil) {
+            relaxSession.saplingGustUntil = 0;
+            relaxSession.saplingGustStart = 0;
+            relaxSession.saplingGustPeak = 0;
+            relaxSession.saplingGustNextAt = now + 4000 + Math.random() * 10000;
+          }
+          if (relaxSession.saplingGustUntil === 0 && now >= relaxSession.saplingGustNextAt) {
+            relaxSession.saplingGustStart = now;
+            relaxSession.saplingGustUntil = now + 700 + Math.random() * 1700;
+            relaxSession.saplingGustPeak = (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 11);
+            relaxSession.saplingGustNextAt = Infinity;
+          }
+        }
+      } else {
+        wrap.style.setProperty('--relax-gust', '0deg');
+      }
+    } else {
+      wrap.setAttribute('hidden', '');
+      wrap.setAttribute('aria-hidden', 'true');
+      wrap.style.removeProperty('--relax-sapling-p');
+      wrap.style.setProperty('--relax-gust', '0deg');
+      clearSaplingLeafClasses();
+      relaxSaplingResetGrowthState();
+    }
+  }
 
   var RELAX_TIPS = [
     { title: 'Hydrate', body: 'Drink a glass of water — even a few sips helps focus and energy.' },
@@ -8692,6 +8862,7 @@
     }
     if (relaxSession.workEndMs > 0 && relaxSession.workEndMs <= now) {
       relaxSession.workEndMs = 0;
+      relaxSession.workDurationMs = 0;
       relaxPlayChime();
     }
     var bd = document.getElementById('relax-break-display');
@@ -8704,17 +8875,18 @@
       if (relaxSession.workEndMs > now) wd.textContent = formatRelaxCountdown(relaxSession.workEndMs);
       else wd.textContent = '—';
     }
+    updateFocusSaplingVisual(now);
   }
 
   function startRelaxTickIfNeeded() {
     stopRelaxTick();
     relaxSession.tickId = setInterval(function () {
-      var now = Date.now();
-      var b = relaxSession.breakEndMs > now;
-      var w = relaxSession.workEndMs > now;
       updateRelaxTimerDisplays();
+      var n = Date.now();
+      var b = relaxSession.breakEndMs > n;
+      var w = relaxSession.workEndMs > n;
       if (!b && !w) stopRelaxTick();
-    }, 500);
+    }, 250);
   }
 
   function showRelaxTip(index) {
@@ -8736,6 +8908,13 @@
     state.data.settings.relax.tipIndex = i;
   }
 
+  function collapseRelaxDesertRunPanel() {
+    var desertToggle = document.getElementById('relax-toggle-desert-run');
+    var desertPanel = document.getElementById('relax-desert-run-panel');
+    if (desertPanel) desertPanel.setAttribute('hidden', '');
+    if (desertToggle) desertToggle.setAttribute('aria-expanded', 'false');
+  }
+
   function wireRelaxTabOnce() {
     var root = document.getElementById('view-relax');
     if (!root || root.dataset.relaxWired === '1') return;
@@ -8753,23 +8932,49 @@
       var pr = e.target.closest('.relax-preset-btn');
       if (pr) {
         var min = parseInt(pr.getAttribute('data-relax-break-min'), 10);
-        var inp = document.getElementById('relax-break-custom');
-        if (inp && !isNaN(min)) inp.value = String(min);
+        if (!isNaN(min)) setBreakTotalMinutes(min, { persist: true });
         return;
       }
       var pw = e.target.closest('.relax-work-preset-btn');
       if (pw) {
         var wm = parseInt(pw.getAttribute('data-relax-work-min'), 10);
-        var winp = document.getElementById('relax-work-custom');
-        if (winp && !isNaN(wm)) winp.value = String(wm);
+        if (!isNaN(wm)) setWorkTotalMinutes(wm, { persist: true });
+        return;
+      }
+      var sid = e.target.id;
+      switch (sid) {
+        case 'relax-break-hours-up':
+          adjustBreakTotalMinutes(60);
+          return;
+        case 'relax-break-hours-down':
+          adjustBreakTotalMinutes(-60);
+          return;
+        case 'relax-break-minutes-up':
+          adjustBreakTotalMinutes(1);
+          return;
+        case 'relax-break-minutes-down':
+          adjustBreakTotalMinutes(-1);
+          return;
+        case 'relax-work-hours-up':
+          adjustWorkTotalMinutes(60);
+          return;
+        case 'relax-work-hours-down':
+          adjustWorkTotalMinutes(-60);
+          return;
+        case 'relax-work-minutes-up':
+          adjustWorkTotalMinutes(1);
+          return;
+        case 'relax-work-minutes-down':
+          adjustWorkTotalMinutes(-1);
+          return;
+        default:
+          break;
       }
     });
     var breakStart = document.getElementById('relax-break-start');
     if (breakStart) {
       breakStart.addEventListener('click', function () {
-        var inp = document.getElementById('relax-break-custom');
-        var min = inp ? parseInt(inp.value, 10) : 10;
-        if (isNaN(min) || min < 1) min = 10;
+        var min = getBreakTotalMinutes();
         relaxSession.breakEndMs = Date.now() + min * 60000;
         startRelaxTickIfNeeded();
         updateRelaxTimerDisplays();
@@ -8785,10 +8990,11 @@
     var workStart = document.getElementById('relax-work-start');
     if (workStart) {
       workStart.addEventListener('click', function () {
-        var inp = document.getElementById('relax-work-custom');
-        var min = inp ? parseInt(inp.value, 10) : 25;
-        if (isNaN(min) || min < 1) min = 25;
+        var min = getWorkTotalMinutes();
+        relaxSaplingResetGrowthState();
+        relaxSession.saplingGustNextAt = Date.now() + 600 + Math.random() * 1400;
         relaxSession.workEndMs = Date.now() + min * 60000;
+        relaxSession.workDurationMs = min * 60000;
         startRelaxTickIfNeeded();
         updateRelaxTimerDisplays();
       });
@@ -8797,6 +9003,7 @@
     if (workReset) {
       workReset.addEventListener('click', function () {
         relaxSession.workEndMs = 0;
+        relaxSession.workDurationMs = 0;
         updateRelaxTimerDisplays();
       });
     }
@@ -8808,17 +9015,37 @@
         save().catch(function () {});
       });
     }
+    var desertToggle = document.getElementById('relax-toggle-desert-run');
+    var desertPanel = document.getElementById('relax-desert-run-panel');
+    if (desertToggle && desertPanel) {
+      desertToggle.addEventListener('click', function () {
+        var open = desertPanel.hasAttribute('hidden');
+        if (open) {
+          desertPanel.removeAttribute('hidden');
+          desertToggle.setAttribute('aria-expanded', 'true');
+        } else {
+          desertPanel.setAttribute('hidden', '');
+          desertToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
   }
 
   function renderRelax() {
     wireRelaxTabOnce();
     var tipIx = (getSettings().relax && getSettings().relax.tipIndex) || 0;
     showRelaxTip(tipIx);
-    var bci = document.getElementById('relax-break-custom');
-    var wci = document.getElementById('relax-work-custom');
     var rs = getSettings().relax || {};
-    if (bci && rs.breakPresetMinutes) bci.value = String(rs.breakPresetMinutes);
-    if (wci && rs.workPresetMinutes) wci.value = String(rs.workPresetMinutes);
+    if (rs.breakPresetMinutes != null && rs.breakPresetMinutes >= 1) {
+      setBreakTotalMinutes(rs.breakPresetMinutes, { persist: false });
+    } else {
+      syncBreakPresetHighlight();
+    }
+    if (rs.workPresetMinutes != null && rs.workPresetMinutes >= 1) {
+      setWorkTotalMinutes(rs.workPresetMinutes, { persist: false });
+    } else {
+      syncWorkPresetHighlight();
+    }
     updateRelaxTimerDisplays();
     if (relaxSession.breakEndMs > Date.now() || relaxSession.workEndMs > Date.now()) startRelaxTickIfNeeded();
   }
@@ -8919,7 +9146,10 @@
   }
 
   function setView(view) {
-    if (state.view === 'relax' && view !== 'relax') stopRelaxTick();
+    if (state.view === 'relax' && view !== 'relax') {
+      stopRelaxTick();
+      collapseRelaxDesertRunPanel();
+    }
     if (state.view === 'notes' && view !== 'notes') closeNotesModal(false);
     state.view = view;
     document.querySelectorAll('.view-panel').forEach(function (p) {

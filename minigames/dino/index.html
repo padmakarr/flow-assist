@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desert run — FlowAssist mini-game</title>
+  <link rel="stylesheet" href="dino.css" />
+</head>
+<body data-game-state="idle">
+  <div id="dino-root" class="dino-root">
+    <header class="dino-hud" aria-live="polite">
+      <span class="dino-hud-row">
+        <span class="dino-label">Score</span>
+        <span id="dino-score" class="dino-value">0</span>
+      </span>
+      <span class="dino-hud-row">
+        <span class="dino-label">Best</span>
+        <span id="dino-hiscore" class="dino-value">0</span>
+      </span>
+    </header>
+    <div class="dino-canvas-wrap">
+      <canvas id="dino-canvas" width="800" height="280" tabindex="0" role="img" aria-label="Desert run game canvas — click then Space to jump"></canvas>
+    </div>
+    <p id="dino-hint" class="dino-hint muted">Click the game, then Space or ↑ to jump. P to pause.</p>
+    <p id="dino-overlay-msg" class="dino-overlay-msg" hidden></p>
+  </div>
+  <script src="dino.js"></script>
+</body>
+</html>

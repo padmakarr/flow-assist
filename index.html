@@ -455,10 +455,12 @@
       <div class="relax-toolbar">
         <div class="relax-toolbar-lede">
           <h3 class="relax-toolbar-title">Relax</h3>
-          <p class="relax-toolbar-sub">Breaks, gentle timers, and quick wellbeing prompts.</p>
+          <p class="relax-toolbar-sub">Timers for breaks and focus — plus a quiet wind-down corner.</p>
         </div>
       </div>
-      <div class="relax-grid">
+
+      <p class="relax-section-label" id="relax-section-timers-label">Timers</p>
+      <div class="relax-grid relax-grid--timers" aria-labelledby="relax-section-timers-label">
         <section class="relax-card relax-card--break" aria-labelledby="relax-break-heading">
           <h4 id="relax-break-heading" class="relax-card-title">Break timer</h4>
           <p class="relax-card-hint muted">Step away from the screen — stretch, breathe, hydrate.</p>
@@ -467,23 +469,128 @@
             <button type="button" class="btn-small relax-preset-btn" data-relax-break-min="5">5 min</button>
             <button type="button" class="btn-small relax-preset-btn" data-relax-break-min="10">10 min</button>
             <button type="button" class="btn-small relax-preset-btn" data-relax-break-min="15">15 min</button>
-            <button type="button" class="btn-small" id="relax-break-start">Start</button>
-            <button type="button" class="btn-small" id="relax-break-reset">Reset</button>
+            <button type="button" class="btn-small relax-timer-btn-start" id="relax-break-start">Start</button>
+            <button type="button" class="btn-small relax-timer-btn-reset" id="relax-break-reset">Reset</button>
           </div>
-          <label class="relax-custom-label">Custom (minutes) <input type="number" id="relax-break-custom" class="add-task-input relax-num-input" min="1" max="180" value="10" /></label>
+          <div class="relax-time-steppers" role="group" aria-label="Break duration">
+            <div class="relax-time-stepper">
+              <span class="relax-time-stepper-label">Hours</span>
+              <div class="relax-time-stepper-controls">
+                <button type="button" class="relax-step-btn" id="relax-break-hours-up" aria-label="Increase hours">▲</button>
+                <span class="relax-time-value" id="relax-break-hours">0</span>
+                <button type="button" class="relax-step-btn" id="relax-break-hours-down" aria-label="Decrease hours">▼</button>
+              </div>
+            </div>
+            <div class="relax-time-stepper">
+              <span class="relax-time-stepper-label">Minutes</span>
+              <div class="relax-time-stepper-controls">
+                <button type="button" class="relax-step-btn" id="relax-break-minutes-up" aria-label="Increase minutes">▲</button>
+                <span class="relax-time-value" id="relax-break-minutes">10</span>
+                <button type="button" class="relax-step-btn" id="relax-break-minutes-down" aria-label="Decrease minutes">▼</button>
+              </div>
+            </div>
+          </div>
         </section>
         <section class="relax-card relax-card--work" aria-labelledby="relax-work-heading">
           <h4 id="relax-work-heading" class="relax-card-title">Focus block</h4>
           <p class="relax-card-hint muted">A gentle stretch of focused time before the next break.</p>
-          <div class="relax-timer-display" id="relax-work-display">—</div>
+          <div class="relax-work-focus-row">
+            <div class="relax-timer-display" id="relax-work-display">—</div>
+            <div id="relax-focus-sapling-wrap" class="relax-focus-sapling-wrap" hidden aria-hidden="true">
+              <svg class="relax-focus-sapling-svg" width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g class="relax-focus-sapling-gust">
+                  <g class="relax-focus-sapling-sway-a">
+                    <g class="relax-focus-sapling-sway-b">
+                      <g class="relax-focus-sapling-scale">
+                      <path class="relax-focus-sapling-stem" d="M12 22V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      <g transform="translate(12,19.4) scale(0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--1" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,17.8) scale(-0.24,0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--2" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,16.2) scale(0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--3" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,14.6) scale(-0.24,0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--4" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,13) scale(0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--5" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,11.4) scale(-0.24,0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--6" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                      <g transform="translate(12,9.8) scale(0.24)">
+                        <path class="relax-focus-sapling-leaf relax-focus-sapling-leaf--7" d="M0 0c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/>
+                      </g>
+                    </g>
+                  </g>
+                </g>
+                </g>
+              </svg>
+            </div>
+          </div>
           <div class="relax-timer-actions">
             <button type="button" class="btn-small relax-work-preset-btn" data-relax-work-min="25">25 min</button>
             <button type="button" class="btn-small relax-work-preset-btn" data-relax-work-min="45">45 min</button>
-            <button type="button" class="btn-small" id="relax-work-start">Start</button>
-            <button type="button" class="btn-small" id="relax-work-reset">Reset</button>
+            <button type="button" class="btn-small relax-timer-btn-start" id="relax-work-start">Start</button>
+            <button type="button" class="btn-small relax-timer-btn-reset" id="relax-work-reset">Reset</button>
           </div>
-          <label class="relax-custom-label">Custom (minutes) <input type="number" id="relax-work-custom" class="add-task-input relax-num-input" min="1" max="240" value="25" /></label>
+          <div class="relax-time-steppers" role="group" aria-label="Focus duration">
+            <div class="relax-time-stepper">
+              <span class="relax-time-stepper-label">Hours</span>
+              <div class="relax-time-stepper-controls">
+                <button type="button" class="relax-step-btn" id="relax-work-hours-up" aria-label="Increase hours">▲</button>
+                <span class="relax-time-value" id="relax-work-hours">0</span>
+                <button type="button" class="relax-step-btn" id="relax-work-hours-down" aria-label="Decrease hours">▼</button>
+              </div>
+            </div>
+            <div class="relax-time-stepper">
+              <span class="relax-time-stepper-label">Minutes</span>
+              <div class="relax-time-stepper-controls">
+                <button type="button" class="relax-step-btn" id="relax-work-minutes-up" aria-label="Increase minutes">▲</button>
+                <span class="relax-time-value" id="relax-work-minutes">25</span>
+                <button type="button" class="relax-step-btn" id="relax-work-minutes-down" aria-label="Decrease minutes">▼</button>
+              </div>
+            </div>
+          </div>
         </section>
+      </div>
+
+      <p class="relax-section-label" id="relax-section-casual-label">Casual games</p>
+      <div class="relax-grid relax-grid--casual" aria-labelledby="relax-section-casual-label">
+        <section class="relax-card relax-card--casual relax-card--wide" aria-labelledby="relax-casual-heading">
+          <h4 id="relax-casual-heading" class="relax-card-title">Pick up & play</h4>
+          <p class="relax-card-hint muted">Light movement breaks — expand when you have a minute. Assets live in <code class="relax-code-inline">minigames/dino/</code>.</p>
+          <button
+            type="button"
+            id="relax-toggle-desert-run"
+            class="btn-small relax-casual-game-btn"
+            aria-expanded="false"
+            aria-controls="relax-desert-run-panel"
+          >
+            Desert Run
+          </button>
+          <div id="relax-desert-run-panel" class="relax-desert-run-panel" hidden>
+            <div class="relax-game-frame-wrap">
+              <iframe
+                id="relax-minigame-dino"
+                class="relax-game-iframe"
+                src="minigames/dino/index.html"
+                title="Desert run mini-game"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                scrolling="no"
+              ></iframe>
+            </div>
+            <p class="relax-game-focus-hint muted">Click inside the game area, then Space or ↑ to jump.</p>
+          </div>
+        </section>
+      </div>
+
+      <p class="relax-section-label" id="relax-section-wind-label">Wind down</p>
+      <div class="relax-grid relax-grid--wind-down" aria-labelledby="relax-section-wind-label">
         <section class="relax-card relax-card--tips relax-card--wide" aria-labelledby="relax-tips-heading">
           <h4 id="relax-tips-heading" class="relax-card-title">Wellbeing tip</h4>
           <div class="relax-tip-card" id="relax-tip-card">
@@ -495,9 +602,6 @@
             <label class="relax-sound-label"><input type="checkbox" id="relax-sound-enabled" /> Timer chime when done</label>
           </div>
         </section>
-      </div>
-      <div class="relax-sapling-footer" aria-hidden="true">
-        <svg class="relax-sapling-svg" width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path class="relax-sapling-canopy" d="M12 12c-2.5-4-6-5.5-8-5 .8 3 3 5 8 5Zm0 0c2.5-4 6-5.5 8-5-.8 3-3 5-8 5Z" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="1"/></svg>
       </div>
     </div>
     </div>

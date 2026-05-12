@@ -515,6 +515,112 @@ body.sidebar-mode-collapsed .nav-btn-icon {
   gap: 10px;
 }
 
+.top-bar-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 6px;
+}
+
+.top-bar-relax-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 8px 14px 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-base);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: var(--btn-bg);
+  box-shadow: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.top-bar-relax-pill:hover {
+  background: var(--btn-bg-hover);
+  border-color: var(--border-emphasis);
+  color: var(--text-primary);
+}
+
+.top-bar-relax-pill:active {
+  transform: scale(0.98);
+}
+
+.top-bar-relax-pill:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+.top-bar-relax-pill--focus {
+  border-left: 3px solid var(--accent-red);
+  background: color-mix(in srgb, var(--accent-red) 9%, var(--btn-bg));
+}
+
+.top-bar-relax-pill--focus:hover {
+  background: color-mix(in srgb, var(--accent-red) 14%, var(--btn-bg-hover));
+}
+
+.top-bar-relax-pill--break {
+  border-left: 3px solid var(--accent-green-bright);
+  background: color-mix(in srgb, var(--accent-green) 11%, var(--btn-bg));
+}
+
+.top-bar-relax-pill--break:hover {
+  background: color-mix(in srgb, var(--accent-green) 16%, var(--btn-bg-hover));
+}
+
+.top-bar-relax-pill-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  line-height: 0;
+}
+
+.top-bar-relax-pill-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.top-bar-relax-pill:hover .top-bar-relax-pill-icon {
+  color: var(--text-secondary);
+}
+
+.top-bar-relax-pill-copy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.top-bar-relax-pill-label {
+  flex-shrink: 0;
+}
+
+.top-bar-relax-pill-sep {
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.top-bar-relax-pill-time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
 /* ── Notification bell ── */
 .notif-wrap {
   position: relative;
@@ -3033,10 +3139,19 @@ select.task-project-select,
 }
 
 .notes-checklist-truncated {
-  margin: 0 0 12px;
-  font-size: var(--font-sm);
-  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-2xs);
+  line-height: 1.15;
   color: var(--text-muted);
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist-truncated {
+  margin: 0;
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist {
+  margin-bottom: 2px;
 }
 
 .progress-history-modal-header {
@@ -6070,6 +6185,42 @@ a.auto-link:hover {
   line-height: 1.2;
 }
 
+.notes-todo-stats-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 10px;
+}
+
+.notes-todo-stat-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.notes-todo-stat-pill--total {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--accent-blue);
+  border-color: color-mix(in srgb, var(--accent-blue) 38%, var(--border-muted));
+}
+
+.notes-todo-stat-pill--done {
+  background: color-mix(in srgb, var(--accent-green) 18%, transparent);
+  color: var(--accent-green-bright);
+  border-color: color-mix(in srgb, var(--accent-green) 42%, var(--border-default));
+}
+
+.notes-todo-stat-pill--open {
+  background: rgba(110, 118, 129, 0.12);
+  color: var(--text-secondary);
+}
+
 .notes-card-delete {
   flex-shrink: 0;
   border: none;
@@ -6342,6 +6493,21 @@ a.auto-link:hover {
   border-radius: var(--radius-md);
   background: var(--bg-inset);
   border: 1px solid var(--border-default);
+  align-items: center;
+}
+
+.notes-card--readonly.notes-card--todo .notes-todo-done {
+  margin-top: 0;
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist-item-delete {
+  margin-top: 0;
+}
+
+/* Match one-line text rows: empty display collapsed to ~18px (log); force min line box + padding. */
+.notes-card--readonly.notes-card--todo .notes-todo-text-display:empty {
+  box-sizing: border-box;
+  min-height: calc(16px + 1.45em);
 }
 
 .notes-card--readonly.notes-card--todo .notes-checklist-item--done,

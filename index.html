@@ -190,6 +190,16 @@
           </div>
         </div>
       </div>
+      <div class="top-bar-center" id="top-bar-relax-timers" hidden>
+        <button type="button" class="top-bar-relax-pill top-bar-relax-pill--focus" id="top-bar-relax-focus-pill" hidden title="Go to Relax — Focus timer" aria-label="Focus timer running, open Relax tab">
+          <span class="top-bar-relax-pill-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5l3.5 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="top-bar-relax-pill-copy"><span class="top-bar-relax-pill-label">Focus Time</span><span class="top-bar-relax-pill-sep">:</span><span class="top-bar-relax-pill-time" id="top-bar-relax-focus-time">0:00</span></span>
+        </button>
+        <button type="button" class="top-bar-relax-pill top-bar-relax-pill--break" id="top-bar-relax-break-pill" hidden title="Go to Relax — Break timer" aria-label="Break timer running, open Relax tab">
+          <span class="top-bar-relax-pill-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M12 8v5l3.5 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="top-bar-relax-pill-copy"><span class="top-bar-relax-pill-label">Break Time</span><span class="top-bar-relax-pill-sep">:</span><span class="top-bar-relax-pill-time" id="top-bar-relax-break-time">0:00</span></span>
+        </button>
+      </div>
       <div class="top-bar-end">
         <div class="notif-wrap" id="notif-wrap">
           <button type="button" id="notif-bell-btn" class="notif-bell-btn" title="Notifications" aria-haspopup="true" aria-expanded="false">
@@ -461,7 +471,7 @@
 
       <p class="relax-section-label" id="relax-section-timers-label">Timers</p>
       <div class="relax-grid relax-grid--timers" aria-labelledby="relax-section-timers-label">
-        <section class="relax-card relax-card--break" aria-labelledby="relax-break-heading">
+        <section class="relax-card relax-card--break" id="relax-card-break" aria-labelledby="relax-break-heading">
           <h4 id="relax-break-heading" class="relax-card-title">Break timer</h4>
           <p class="relax-card-hint muted">Step away from the screen — stretch, breathe, hydrate.</p>
           <div class="relax-timer-display" id="relax-break-display">—</div>
@@ -491,7 +501,7 @@
             </div>
           </div>
         </section>
-        <section class="relax-card relax-card--work" aria-labelledby="relax-work-heading">
+        <section class="relax-card relax-card--work" id="relax-card-focus" aria-labelledby="relax-work-heading">
           <h4 id="relax-work-heading" class="relax-card-title">Focus block</h4>
           <p class="relax-card-hint muted">A gentle stretch of focused time before the next break.</p>
           <div class="relax-work-focus-row">

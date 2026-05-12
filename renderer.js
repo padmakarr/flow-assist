@@ -1975,6 +1975,7 @@
     if (!it || it.kind !== 'todo') return;
     syncNoteCardToModel(cardA);
     it.checklist.push({ id: generateId(), text: '', done: false });
+    it.checklist = partitionChecklistOpenFirst(it.checklist);
     it.updatedAt = new Date().toISOString();
     notesAfterChecklistAdd(nid2);
   }
@@ -1993,6 +1994,7 @@
     if (it.checklist.length === 0) {
       it.checklist.push({ id: generateId(), text: '', done: false });
     }
+    it.checklist = partitionChecklistOpenFirst(it.checklist);
     it.updatedAt = new Date().toISOString();
     flushNotesSave(true);
     if (state.notesModalNoteId === nid) {
@@ -2057,6 +2059,7 @@
         }
       }
     });
+    item.checklist = partitionChecklistOpenFirst(item.checklist);
   }
 
   /** Merge open modal DOM into state before re-render (modal editors may use contenteditable=false until focus). */
@@ -2310,6 +2313,18 @@
     });
   }
 
+  /** Open (incomplete) items first, then completed; stable order within each group. */
+  function partitionChecklistOpenFirst(list) {
+    list = list || [];
+    var open = [];
+    var done = [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].done) done.push(list[i]);
+      else open.push(list[i]);
+    }
+    return open.concat(done);
+  }
+
   /** Per checklist row (board + modal); same handler class for readonly and rich rows. */
   var NOTES_CHECKLIST_ITEM_DELETE_BTN =
     '<button type="button" class="btn-icon notes-checklist-item-delete" title="Remove item" aria-label="Remove item">' +
@@ -2346,7 +2361,7 @@
     var headInner = '<div class="notes-card-head-inner">' + titleBlock + datePillHtml + '</div>';
     var remindersHtml = renderNoteRemindersSection(item, { compact: compact, modal: isModal });
     if (item.kind === 'todo') {
-      var fullList = item.checklist || [];
+      var fullList = partitionChecklistOpenFirst(item.checklist || []);
       var rowSource = compact ? fullList.slice(0, 5) : fullList;
       var moreCount = compact && fullList.length > 5 ? fullList.length - 5 : 0;
       var rows = rowSource.map(function (row) {
@@ -2379,12 +2394,26 @@
           '</div></li>';
       }).join('');
       var truncatedHint = moreCount > 0
-        ? '<p class="notes-checklist-truncated muted">+' + moreCount + ' more — open to view</p>'
+        ? '<p class="notes-checklist-truncated muted">' + moreCount + ' more items</p>'
+        : '';
+      var totalTodo = fullList.length;
+      var doneTodo = 0;
+      for (var tix = 0; tix < fullList.length; tix++) {
+        if (fullList[tix].done) doneTodo++;
+      }
+      var openTodo = totalTodo - doneTodo;
+      var statsPillsRo = readonlyPreview
+        ? '<div class="notes-todo-stats-pills" role="group" aria-label="Checklist counts">' +
+          '<span class="notes-todo-stat-pill notes-todo-stat-pill--total" title="Total to-do items">' + totalTodo + ' total</span>' +
+          '<span class="notes-todo-stat-pill notes-todo-stat-pill--done" title="Completed">' + doneTodo + ' done</span>' +
+          '<span class="notes-todo-stat-pill notes-todo-stat-pill--open" title="Open">' + openTodo + ' open</span>' +
+          '</div>'
         : '';
       var addBtnHtml = readonlyPreview ? '' : '<button type="button" class="btn-small notes-checklist-add">Add item</button>';
       return '<article class="notes-card notes-card--todo notes-card--accent-' + accent + cardMods + '" data-note-id="' + escapeHtml(item.id) + '">' +
         '<div class="notes-card-top">' + delBtn + headInner + '</div>' +
         remindersHtml +
+        statsPillsRo +
         '<ul class="notes-checklist">' + rows + '</ul>' +
         truncatedHint +
         addBtnHtml +
@@ -2453,6 +2482,7 @@
       if (!card || !board.contains(card)) return;
       syncNoteCardToModel(card);
       scheduleNotesSave();
+      if (e.target && e.target.classList && e.target.classList.contains('notes-todo-done')) renderNotes();
     });
     board.addEventListener('click', function (e) {
       if (state.view !== 'notes') return;
@@ -2478,6 +2508,7 @@
       var cardHit = e.target.closest('.notes-card');
       if (cardHit && board.contains(cardHit)) {
         if (e.target.closest('input.notes-todo-done')) return;
+        if (e.target.closest('.notes-todo-stats-pills')) return;
         if (e.target.closest('button')) return;
         if (e.target.closest('.rich-textarea-wrap[data-rich-wysiwyg="1"]')) return;
         var nidOpen = cardHit.getAttribute('data-note-id');
@@ -2510,6 +2541,10 @@
       if (!body || !card || !body.contains(card)) return;
       syncNoteCardToModel(card);
       scheduleNotesSave();
+      if (e.target && e.target.classList && e.target.classList.contains('notes-todo-done')) {
+        renderNotesModal();
+        renderNotes();
+      }
     });
     modal.addEventListener('focusin', function (e) {
       if (state.view !== 'notes') return;
@@ -8745,7 +8780,9 @@
     saplingGustUntil: 0,
     saplingGustStart: 0,
     saplingGustPeak: 0,
-    saplingGustNextAt: 0
+    saplingGustNextAt: 0,
+    /** Top-bar pills only after Start from Relax tab; cleared when no timer is running. */
+    topBarPillsEligible: false
   };
 
   function relaxFocusSaplingReducedMotion() {
@@ -8954,6 +8991,25 @@
     } catch (e) { /* ignore */ }
   }
 
+  function updateRelaxTopBarPills() {
+    var now = Date.now();
+    var wrap = document.getElementById('top-bar-relax-timers');
+    var fp = document.getElementById('top-bar-relax-focus-pill');
+    var bp = document.getElementById('top-bar-relax-break-pill');
+    var ft = document.getElementById('top-bar-relax-focus-time');
+    var bt = document.getElementById('top-bar-relax-break-time');
+    if (!wrap || !fp || !bp) return;
+    var wRun = relaxSession.workEndMs > now;
+    var bRun = relaxSession.breakEndMs > now;
+    if (!wRun && !bRun) relaxSession.topBarPillsEligible = false;
+    var showBar = relaxSession.topBarPillsEligible && state.view !== 'relax';
+    fp.hidden = !wRun || !showBar;
+    bp.hidden = !bRun || !showBar;
+    wrap.hidden = !showBar || (!wRun && !bRun);
+    if (ft) ft.textContent = wRun ? formatRelaxCountdown(relaxSession.workEndMs) : '0:00';
+    if (bt) bt.textContent = bRun ? formatRelaxCountdown(relaxSession.breakEndMs) : '0:00';
+  }
+
   function updateRelaxTimerDisplays() {
     var now = Date.now();
     if (relaxSession.breakEndMs > 0 && relaxSession.breakEndMs <= now) {
@@ -8976,17 +9032,31 @@
       else wd.textContent = '—';
     }
     updateFocusSaplingVisual(now);
+    updateRelaxTopBarPills();
   }
 
-  function startRelaxTickIfNeeded() {
-    stopRelaxTick();
+  function startRelaxTick() {
+    if (relaxSession.tickId) return;
     relaxSession.tickId = setInterval(function () {
       updateRelaxTimerDisplays();
       var n = Date.now();
-      var b = relaxSession.breakEndMs > n;
-      var w = relaxSession.workEndMs > n;
-      if (!b && !w) stopRelaxTick();
+      if (relaxSession.breakEndMs <= n && relaxSession.workEndMs <= n) stopRelaxTick();
     }, 250);
+  }
+
+  function startRelaxTickIfNeeded() {
+    var n = Date.now();
+    if (relaxSession.breakEndMs <= n && relaxSession.workEndMs <= n) return;
+    startRelaxTick();
+  }
+
+  function navigateToRelaxTimer(which) {
+    setView('relax');
+    var id = which === 'focus' ? 'relax-card-focus' : 'relax-card-break';
+    window.requestAnimationFrame(function () {
+      var el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   }
 
   function showRelaxTip(index) {
@@ -9076,6 +9146,7 @@
       breakStart.addEventListener('click', function () {
         var min = getBreakTotalMinutes();
         relaxSession.breakEndMs = Date.now() + min * 60000;
+        if (state.view === 'relax') relaxSession.topBarPillsEligible = true;
         startRelaxTickIfNeeded();
         updateRelaxTimerDisplays();
       });
@@ -9095,6 +9166,7 @@
         relaxSession.saplingGustNextAt = Date.now() + 600 + Math.random() * 1400;
         relaxSession.workEndMs = Date.now() + min * 60000;
         relaxSession.workDurationMs = min * 60000;
+        if (state.view === 'relax') relaxSession.topBarPillsEligible = true;
         startRelaxTickIfNeeded();
         updateRelaxTimerDisplays();
       });
@@ -9159,6 +9231,8 @@
     renderNotes();
     if (state.progressHistoryOpen) refreshProgressHistoryModal();
     refreshNotifications();
+    startRelaxTickIfNeeded();
+    updateRelaxTopBarPills();
   }
 
   function loadSidebarModeFromStorage() {
@@ -9247,7 +9321,9 @@
 
   function setView(view) {
     if (state.view === 'relax' && view !== 'relax') {
-      stopRelaxTick();
+      var nowLeave = Date.now();
+      var relaxTimersStillRunning = relaxSession.breakEndMs > nowLeave || relaxSession.workEndMs > nowLeave;
+      if (!relaxTimersStillRunning) stopRelaxTick();
       collapseRelaxDesertRunPanel();
     }
     if (state.view === 'notes' && view !== 'notes') closeNotesModal(false);
@@ -9520,6 +9596,21 @@
       topBarSidebarToggle.addEventListener('click', function (e) {
         e.stopPropagation();
         toggleSidebarHiddenFromTopBar();
+      });
+    }
+
+    var topBarRelaxFocusPill = document.getElementById('top-bar-relax-focus-pill');
+    var topBarRelaxBreakPill = document.getElementById('top-bar-relax-break-pill');
+    if (topBarRelaxFocusPill) {
+      topBarRelaxFocusPill.addEventListener('click', function (e) {
+        e.stopPropagation();
+        navigateToRelaxTimer('focus');
+      });
+    }
+    if (topBarRelaxBreakPill) {
+      topBarRelaxBreakPill.addEventListener('click', function (e) {
+        e.stopPropagation();
+        navigateToRelaxTimer('break');
       });
     }
 

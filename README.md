@@ -21,6 +21,7 @@ FlowAssist is built for **individual contributors and small teams** who track re
 - [Settings](#settings)
 - [Application shell](#application-shell)
 - [Stack](#stack)
+- [Makefile (all platforms)](#makefile-all-platforms)
 - [Development (Windows)](#development-windows)
 - [Building Windows executables](#building-windows-executables)
 - [Data and schema](#data-and-schema)
@@ -214,6 +215,39 @@ In the modal, the reminder area stays **compact** until you have at least one sc
 
 ---
 
+## Makefile (all platforms)
+
+The repo includes a **[Makefile](Makefile)** so you can use the same commands on **Linux** and **macOS** (install **GNU Make** if needed). On **Windows**, stock **PowerShell** does not include `make`; use the bundled scripts from the repo root instead (same targets as the Makefile):
+
+**PowerShell (recommended on Windows):**
+
+```powershell
+.\make.ps1 help
+.\make.ps1 install
+.\make.ps1 start
+```
+
+**Command Prompt:**
+
+```bat
+make.cmd help
+```
+
+**Git Bash / MSYS2 / WSL** (if `make` is installed):
+
+```bash
+make help
+make doctor
+make install
+make start
+make dist-local
+make test-regression
+```
+
+`make dist` / `.\make.ps1 dist` runs the interactive **`scripts/dist.mjs`** flow (TTY required unless you use `FLOWASSIST_RELEASE`—see [Building Windows executables](#building-windows-executables)).
+
+---
+
 ## Development (Windows)
 
 ### Prerequisites
@@ -253,13 +287,30 @@ From the project root, after `npm install`:
 npm run dist
 ```
 
+This runs **`scripts/dist.mjs`**, which prompts for release type:
+
+1. **Major** — bumps `x.0.0` in **`package.json`** (and the root entry in **`package-lock.json`**), then runs **electron-builder**.
+2. **Minor** — bumps `0.x.0`.
+3. **Patch** — bumps `0.0.x`.
+4. **Local** — runs **electron-builder** only; **version is not changed** (use for test builds).
+
+**Non-interactive / CI:** use a local build without a TTY:
+
+```powershell
+npm run dist:local
+```
+
+Or set **`FLOWASSIST_RELEASE`** to `major`, `minor`, `patch`, or `local` (for example `$env:FLOWASSIST_RELEASE='patch'; npm run dist` in PowerShell).
+
+The canonical app version for builds is **`package.json` → `version`** (shown in the app via `getAppMetadata` from that file).
+
 This uses **electron-builder** and writes output under **`dist\`**.
 
 Typical artifacts:
 
 | Artifact | Role |
 |----------|------|
-| **`FlowAssist-Portable.exe`** | Self-contained portable build—run without running an installer. |
+| **`FlowAssist-Portable-<version>.exe`** | Self-contained portable build—run without running an installer. |
 | **`FlowAssist-Setup-<version>.exe`** | NSIS installer (choose install directory, not one-click). |
 
 The **`dist\`** folder is **gitignored**; ship binaries via **GitHub Releases** (or similar), not by committing them to the repo.

@@ -3194,6 +3194,7 @@ select.task-project-select,
 .progress-item-edit .progress-edit-text.rich-markdown-wysiwyg:has(> br:only-child):before {
   content: attr(data-placeholder);
   color: var(--text-faint);
+  opacity: 0.62;
   pointer-events: none;
 }
 
@@ -3418,7 +3419,50 @@ a.auto-link:hover {
 .progress-text-in.rich-markdown-wysiwyg:has(> br:only-child):before {
   content: attr(data-placeholder);
   color: var(--text-faint);
+  opacity: 0.62;
   pointer-events: none;
+}
+
+.progress-text-in.rich-markdown-wysiwyg ul,
+.progress-text-in.rich-markdown-wysiwyg .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.progress-text-in.rich-markdown-wysiwyg ol,
+.progress-text-in.rich-markdown-wysiwyg .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.progress-text-in.rich-markdown-wysiwyg li,
+.progress-text-in.rich-markdown-wysiwyg .rich-li {
+  margin: 0.15em 0;
+}
+
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg ul,
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg ol,
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg li,
+.progress-item-edit .progress-edit-text.rich-markdown-wysiwyg .rich-li {
+  margin: 0.15em 0;
 }
 
 .progress-effort-in {
@@ -6164,23 +6208,46 @@ a.auto-link:hover {
   pointer-events: none;
 }
 
+/* execCommand insert*List creates bare ul/ol (no .rich-*); outside markers + zero margin read as flush-left until markdown round-trip adds classes */
+.notes-card-body.rich-markdown-wysiwyg ul,
+.notes-card-body.rich-markdown-wysiwyg .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.notes-card-body.rich-markdown-wysiwyg ol,
+.notes-card-body.rich-markdown-wysiwyg .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.notes-card-body.rich-markdown-wysiwyg li,
+.notes-card-body.rich-markdown-wysiwyg .rich-li {
+  margin: 0.15em 0;
+}
+
 .notes-checklist-row--rich {
   cursor: default;
   align-items: flex-start;
 }
 
+.notes-checklist-item-delete {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.notes-checklist-item-delete:hover {
+  color: var(--accent-red);
+}
+
 .notes-todo-rich-column {
   flex: 1;
   min-width: 0;
-}
-
-.notes-todo-rich-wrap .rich-format-toolbar {
-  margin-bottom: 6px;
-}
-
-.notes-todo-rich-wrap .rich-format-toolbar .rich-fmt-btn {
-  padding: 3px 7px;
-  font-size: var(--font-xs, 0.75rem);
 }
 
 .notes-todo-text.rich-markdown-wysiwyg {
@@ -6191,8 +6258,30 @@ a.auto-link:hover {
 .notes-todo-text.rich-markdown-wysiwyg:empty:before,
 .notes-todo-text.rich-markdown-wysiwyg:has(> br:only-child):before {
   content: attr(data-placeholder);
-  color: var(--text-muted);
+  color: var(--text-faint);
+  opacity: 0.62;
   pointer-events: none;
+}
+
+.notes-todo-text.rich-markdown-wysiwyg ul,
+.notes-todo-text.rich-markdown-wysiwyg .rich-ul {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: disc;
+  color: inherit;
+}
+
+.notes-todo-text.rich-markdown-wysiwyg ol,
+.notes-todo-text.rich-markdown-wysiwyg .rich-ol {
+  margin: 0.35em 0 0.5em 1.25em;
+  padding: 0;
+  list-style: decimal;
+  color: inherit;
+}
+
+.notes-todo-text.rich-markdown-wysiwyg li,
+.notes-todo-text.rich-markdown-wysiwyg .rich-li {
+  margin: 0.15em 0;
 }
 
 .notes-checklist-row--rich:has(.notes-todo-done:checked) .notes-todo-text.rich-markdown-wysiwyg {
@@ -6243,13 +6332,61 @@ a.auto-link:hover {
   cursor: default;
 }
 
+/* Board todo preview: distinct rows (scoped to readonly todo cards only). */
+.notes-card--readonly.notes-card--todo .notes-checklist-item {
+  margin-bottom: 10px;
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist-row--readonly {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-default);
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist-item--done,
+.notes-card--readonly.notes-card--todo .notes-checklist-item:has(.notes-todo-done:checked) {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.notes-card--readonly.notes-card--todo .notes-checklist-item:has(.notes-todo-done:checked) .notes-checklist-row--readonly {
+  background: color-mix(in srgb, var(--accent-green) 18%, var(--bg-inset));
+  border-color: color-mix(in srgb, var(--accent-green) 40%, var(--border-default));
+}
+
 .notes-todo-done {
   flex-shrink: 0;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-top: 8px;
-  accent-color: var(--accent-green-bright);
+  width: 18px;
+  height: 18px;
+  margin-top: 6px;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1.5px solid var(--border-emphasis);
+  border-radius: 5px;
+  background-color: var(--bg-inset);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px 11px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.notes-todo-done:hover:not(:checked) {
+  border-color: var(--accent-blue);
+}
+
+.notes-todo-done:checked {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M2.5 6l2.5 2.5L9.5 3.5'/%3E%3C/svg%3E");
+}
+
+.notes-todo-done:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
 }
 
 .notes-todo-text {

@@ -1727,6 +1727,7 @@
       r.dismissedAt = new Date().toISOString();
     }
     item.updatedAt = new Date().toISOString();
+    syncNotesModalDomToModelIfOpen();
     var doOpen = action === 'open';
     save().then(function () {
       render();
@@ -1932,7 +1933,7 @@
       var card = body.querySelector('.notes-card');
       if (card) syncNoteCardToModel(card);
     }
-    flushNotesSave();
+    flushNotesSave(true);
     state.notesModalNoteId = null;
     var m = document.getElementById('notes-modal');
     if (m) {
@@ -1976,6 +1977,29 @@
     it.checklist.push({ id: generateId(), text: '', done: false });
     it.updatedAt = new Date().toISOString();
     notesAfterChecklistAdd(nid2);
+  }
+
+  function notesOnChecklistItemDelete(btn) {
+    var row = btn && btn.closest('.notes-checklist-item');
+    var card = btn && btn.closest('.notes-card');
+    var nid = card && card.getAttribute('data-note-id');
+    var itemId = row && row.getAttribute('data-item-id');
+    var it = findNoteItemById(nid);
+    if (!it || it.kind !== 'todo' || !itemId) return;
+    syncNoteCardToModel(card);
+    it.checklist = (it.checklist || []).filter(function (r) {
+      return r.id !== itemId;
+    });
+    if (it.checklist.length === 0) {
+      it.checklist.push({ id: generateId(), text: '', done: false });
+    }
+    it.updatedAt = new Date().toISOString();
+    flushNotesSave(true);
+    if (state.notesModalNoteId === nid) {
+      renderNotesModal();
+    } else {
+      renderNotes();
+    }
   }
 
   function notesOnCardDelete(delBtn) {
@@ -2033,6 +2057,15 @@
         }
       }
     });
+  }
+
+  /** Merge open modal DOM into state before re-render (modal editors may use contenteditable=false until focus). */
+  function syncNotesModalDomToModelIfOpen() {
+    if (state.view !== 'notes' || !state.notesModalNoteId) return;
+    var body = document.getElementById('notes-modal-body');
+    if (!body) return;
+    var card = body.querySelector('.notes-card');
+    if (card) syncNoteCardToModel(card);
   }
 
   function renderNoteRemindersSection(item, opts) {
@@ -2142,6 +2175,7 @@
       dismissedAt: ''
     });
     item.updatedAt = new Date().toISOString();
+    syncNotesModalDomToModelIfOpen();
     renderNotes();
     if (state.notesModalNoteId === noteId) renderNotesModal();
     flushNotesSave(true);
@@ -2153,6 +2187,7 @@
     if (!item || !Array.isArray(item.reminders)) return;
     item.reminders = item.reminders.filter(function (r) { return r.id !== reminderId; });
     item.updatedAt = new Date().toISOString();
+    syncNotesModalDomToModelIfOpen();
     renderNotes();
     if (state.notesModalNoteId === noteId) renderNotesModal();
     flushNotesSave(true);
@@ -2275,6 +2310,11 @@
     });
   }
 
+  /** Per checklist row (board + modal); same handler class for readonly and rich rows. */
+  var NOTES_CHECKLIST_ITEM_DELETE_BTN =
+    '<button type="button" class="btn-icon notes-checklist-item-delete" title="Remove item" aria-label="Remove item">' +
+    '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"/></svg></button>';
+
   function renderNoteCardHtml(item, opts) {
     opts = opts || {};
     var compact = opts.compact !== false;
@@ -2321,6 +2361,7 @@
             '<div class="notes-checklist-row notes-checklist-row--readonly">' +
             '<input type="checkbox" class="notes-todo-done"' + done + ' title="Done">' +
             '<span class="notes-todo-text-display">' + todoDisp + '</span>' +
+            NOTES_CHECKLIST_ITEM_DELETE_BTN +
             '</div></li>';
         }
         var rawTodo = row.text != null ? String(row.text) : '';
@@ -2331,10 +2372,11 @@
           '<input type="checkbox" class="notes-todo-done"' + done + '>' +
           '<div class="notes-todo-rich-column">' +
           '<div class="rich-textarea-wrap notes-todo-rich-wrap" data-rich-wysiwyg="1">' +
-          renderRichFormatToolbarHtml() +
           '<div tabindex="0" role="textbox" aria-multiline="true" contenteditable="' + ceTodo + '"' +
           ' class="notes-todo-text rich-markdown-wysiwyg auto-resize" data-placeholder="Item…">' +
-          todoInner + '</div></div></div></div></li>';
+          todoInner + '</div></div></div>' +
+          NOTES_CHECKLIST_ITEM_DELETE_BTN +
+          '</div></li>';
       }).join('');
       var truncatedHint = moreCount > 0
         ? '<p class="notes-checklist-truncated muted">+' + moreCount + ' more — open to view</p>'
@@ -2426,6 +2468,13 @@
         notesOnChecklistAddClick(addBtn);
         return;
       }
+      var itemDel = e.target.closest('.notes-checklist-item-delete');
+      if (itemDel) {
+        e.preventDefault();
+        e.stopPropagation();
+        notesOnChecklistItemDelete(itemDel);
+        return;
+      }
       var cardHit = e.target.closest('.notes-card');
       if (cardHit && board.contains(cardHit)) {
         if (e.target.closest('input.notes-todo-done')) return;
@@ -2490,6 +2539,14 @@
       if (addBtn && body.contains(addBtn)) {
         e.preventDefault();
         notesOnChecklistAddClick(addBtn);
+        return;
+      }
+      var itemDel = e.target.closest('.notes-checklist-item-delete');
+      if (itemDel && body.contains(itemDel)) {
+        e.preventDefault();
+        e.stopPropagation();
+        notesOnChecklistItemDelete(itemDel);
+        return;
       }
     });
     document.addEventListener('keydown', function (e) {
@@ -3482,7 +3539,7 @@
   function getRichWysiwygMarkdown(editorEl) {
     if (!editorEl) return '';
     if (editorEl.tagName === 'TEXTAREA') return editorEl.value;
-    if (editorEl.getAttribute('contenteditable') === 'true' || editorEl.isContentEditable) {
+    if (editorEl.classList && editorEl.classList.contains('rich-markdown-wysiwyg')) {
       return wysiwygHtmlToTaskDescriptionMarkdown(editorEl);
     }
     return '';
@@ -3492,6 +3549,53 @@
     return String(getRichWysiwygMarkdown(editorEl) || '').trim();
   }
 
+  /** True when a rich WYSIWYG box has no meaningful text/lists/code (matches serializer empty check). */
+  function richMarkdownWysiwygIsVisuallyEmpty(root) {
+    if (!root) return true;
+    var t = root.textContent.replace(/\u00a0/g, ' ').replace(/\u200b/g, '').trim();
+    if (t) return false;
+    return !root.querySelector('ul, ol, pre, li');
+  }
+
+  var __faRichPlaceholderCaretBound = false;
+  /** Empty rich fields: first mousedown places caret at start (default is often end after lone &lt;br&gt;). */
+  function ensureRichPlaceholderCaretFixGlobalOnce() {
+    if (__faRichPlaceholderCaretBound) return;
+    __faRichPlaceholderCaretBound = true;
+    document.addEventListener(
+      'mousedown',
+      function (e) {
+        if (e.button !== 0) return;
+        var el = e.target.closest && e.target.closest('.rich-markdown-wysiwyg[data-placeholder]');
+        if (!el || !el.classList || !el.classList.contains('rich-markdown-wysiwyg')) return;
+        if (el.getAttribute('contenteditable') === 'false') return;
+        if (!el.isContentEditable && el.getAttribute('contenteditable') !== 'true') return;
+        if (!richMarkdownWysiwygIsVisuallyEmpty(el)) return;
+        e.preventDefault();
+        try {
+          el.focus();
+        } catch (fe) {
+          /* ignore */
+        }
+        try {
+          var sel = window.getSelection();
+          var r = document.createRange();
+          if (el.firstChild) {
+            r.setStart(el.firstChild, 0);
+          } else {
+            r.setStart(el, 0);
+          }
+          r.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(r);
+        } catch (err) {
+          /* ignore */
+        }
+      },
+      true
+    );
+  }
+
   /**
    * Mousedown (capture) snapshots markdown before the button steals focus from a
    * contenteditable, which can normalize/collapse formatting so click-time reads differ.
@@ -3499,6 +3603,7 @@
   function bindRichEditorMarkdownSnapshotOnMousedown(btn, getEditor) {
     if (!btn || typeof getEditor !== 'function') return;
     function snap(e) {
+      if (btn) delete btn.__faRichMdSnap;
       if (e && e.button !== 0) return;
       var ed = getEditor();
       if (!ed || (ed.closest && ed.closest('.hidden'))) return;
@@ -3524,12 +3629,7 @@
    */
   function wysiwygHtmlToTaskDescriptionMarkdown(root) {
     if (!root) return '';
-    function textOnlyEmpty() {
-      var t = root.textContent.replace(/\u00a0/g, ' ').replace(/\u200b/g, '').trim();
-      if (t) return false;
-      return !root.querySelector('ul, ol, pre, li');
-    }
-    if (textOnlyEmpty()) return '';
+    if (richMarkdownWysiwygIsVisuallyEmpty(root)) return '';
 
     function escInlineCodeBody(s) {
       return String(s || '').replace(/`/g, '\u2018');
@@ -9291,6 +9391,7 @@
     }
     syncAddTaskProjectSelect();
     bindRichFormatToolbars(document.getElementById('add-new-task-block'));
+    ensureRichPlaceholderCaretFixGlobalOnce();
 
     var mainFilterWrap = document.querySelector('.main-task-filter-wrap');
     var listViewTabBar = $('list-view-tab-bar');

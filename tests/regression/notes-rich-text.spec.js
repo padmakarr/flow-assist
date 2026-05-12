@@ -67,7 +67,7 @@ test.describe('Notes rich text', () => {
     }
   });
 
-  test('todo modal shows toolbar above item editor and bold round-trip', async () => {
+  test('todo modal has no per-item formatting toolbar; bold via execCommand round-trip', async () => {
     const mutPath = copyProfileForMutation(DEFAULT_E2E_PROFILE, 'notes-rich-todo');
     const app = await launchFlowAssist({ profilePath: mutPath });
     try {
@@ -80,7 +80,7 @@ test.describe('Notes rich text', () => {
       await expect(page.locator('#notes-modal')).toHaveAttribute('aria-hidden', 'false');
 
       const wrap = page.locator('#notes-modal .notes-todo-rich-wrap').first();
-      await expect(wrap.locator('.rich-format-toolbar')).toBeVisible();
+      await expect(wrap.locator('.rich-format-toolbar')).toHaveCount(0);
       const editor = wrap.locator('.notes-todo-text.rich-markdown-wysiwyg');
       await editor.click();
       await page.keyboard.type('TodoBold');
@@ -90,9 +90,29 @@ test.describe('Notes rich text', () => {
         var s = window.getSelection();
         s.removeAllRanges();
         s.addRange(r);
+        document.execCommand('bold', false, null);
       });
-      await wrap.locator('.rich-fmt-btn[data-rich-cmd="bold"]').click();
       await expect(editor.locator('strong, b')).toHaveCount(1);
+    } finally {
+      await app.close();
+    }
+  });
+
+  test('todo checklist remove item deletes one row and keeps one item', async () => {
+    const mutPath = copyProfileForMutation(DEFAULT_E2E_PROFILE, 'notes-todo-delete-item');
+    const app = await launchFlowAssist({ profilePath: mutPath });
+    try {
+      const page = await getMainWindowPage(app);
+      await waitForProfileLoaded(page);
+      await page.locator('.nav-btn[data-view="notes"]').click();
+      await page.locator('#notes-add-todo-btn').click();
+      await expect(page.locator('#notes-board .notes-card--todo').first()).toBeVisible({ timeout: 10_000 });
+      await page.locator('#notes-board .notes-card--todo').first().locator('.notes-card-head-inner').click();
+      await expect(page.locator('#notes-modal')).toHaveAttribute('aria-hidden', 'false');
+      await page.locator('#notes-modal .notes-checklist-add').click();
+      await expect(page.locator('#notes-modal .notes-checklist-item')).toHaveCount(2);
+      await page.locator('#notes-modal .notes-checklist-item').last().locator('.notes-checklist-item-delete').click();
+      await expect(page.locator('#notes-modal .notes-checklist-item')).toHaveCount(1);
     } finally {
       await app.close();
     }
